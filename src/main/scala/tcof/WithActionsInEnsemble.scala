@@ -25,10 +25,10 @@ trait WithActionsInEnsemble {
   }
 
   def allow(subject: Component, action: String, objct: Component): Unit = allow(List(subject), action, List(objct))
-  def allow(subjects: Seq[Component], action: String, objct: Component): Unit = allow(subjects, action, List(objct))
-  def allow(subject: Component, action: String, objects: Seq[Component]): Unit = allow(List(subject), action, objects)
+  def allow(subjects: => Iterable[Component], action: String, objct: Component): Unit = allow(subjects, action, List(objct))
+  def allow(subject: Component, action: String, objects: => Iterable[Component]): Unit = allow(List(subject), action, objects)
 
-  def allow(subjects: Seq[Component], action: String, objects: Seq[Component]): Unit = {
+  def allow(subjects: => Iterable[Component], action: String, objects: => Iterable[Component]): Unit = {
     _actions += (() => {
       for {
         objct <- objects
@@ -38,10 +38,10 @@ trait WithActionsInEnsemble {
   }
 
   def deny(subject: Component, action: String, objct: Component, privacyLevel: PrivacyLevel.PrivacyLevel): Unit = deny(List(subject), action, List(objct), privacyLevel)
-  def deny(subjects: Seq[Component], action: String, objct: Component, privacyLevel: PrivacyLevel.PrivacyLevel): Unit = deny(subjects, action, List(objct), privacyLevel)
-  def deny(subject: Component, action: String, objects: Seq[Component], privacyLevel: PrivacyLevel.PrivacyLevel): Unit = deny(List(subject), action, objects, privacyLevel)
+  def deny(subjects: => Iterable[Component], action: String, objct: Component, privacyLevel: PrivacyLevel.PrivacyLevel): Unit = deny(subjects, action, List(objct), privacyLevel)
+  def deny(subject: Component, action: String, objects: => Iterable[Component], privacyLevel: PrivacyLevel.PrivacyLevel): Unit = deny(List(subject), action, objects, privacyLevel)
 
-  def deny(subjects: Seq[Component], action: String, objects: Seq[Component], privacyLevel: PrivacyLevel.PrivacyLevel): Unit = {
+  def deny(subjects: => Iterable[Component], action: String, objects: => Iterable[Component], privacyLevel: PrivacyLevel.PrivacyLevel): Unit = {
     _actions += (() => {
       for {
         objct <- objects
@@ -52,7 +52,7 @@ trait WithActionsInEnsemble {
 
   def notify(subject: Component, notification: Notification): Unit = notify(List(subject), notification)
 
-  def notify(subjects: Seq[Component], notification: Notification): Unit = {
+  def notify(subjects: => Iterable[Component], notification: Notification): Unit = {
     _actions += (() => {
       subjects.foreach(_.notify(notification))
       subjects.map(NotifyAction(_, notification))

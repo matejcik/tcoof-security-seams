@@ -214,7 +214,7 @@ trait ModelGenerator {
       }
 
       def addWorker(id: String, caps: Set[String]): Unit = {
-        builder.workersMap(id) = new Worker(id, Position(0 + offsetX, 90 + offsetY), caps)
+        builder.workersMap(id) = new Worker(id, Position(0 + offsetX, 90 + offsetY), caps, false)
       }
 
       def addShift(id: String, startTime: LocalDateTime, endTime: LocalDateTime, workPlace: String, foreman: String, workers: List[String], standbys: List[String], assignments: Map[String, String]): Unit = {
@@ -237,7 +237,7 @@ trait ModelGenerator {
 
 
     def withUnscopedWorker(id: String, caps: Set[String])(implicit builder: ModelBuilder): Unit = {
-      builder.workersMap(id) = new Worker(id, Position(0, 90), caps)
+      builder.workersMap(id) = new Worker(id, Position(0, 90), caps, false)
     }
 
 

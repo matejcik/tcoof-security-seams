@@ -53,7 +53,8 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
   class Worker(
                 val id: String,
                 var position: Position,
-                val capabilities: Set[String]
+                val capabilities: Set[String],
+                var hasHeadGear: Boolean
               ) extends Component {
     name(s"Worker ${id}")
 
@@ -199,17 +200,42 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
     val assignedWorkers = (shift.workers union calledInStandbys) diff cancelledWorkers
 
 
-    object AccessToTheHall extends Ensemble { // Kdyz se constraints vyhodnoti na LogicalBoolean, tak ten ensemble vubec nezatahujeme solver modelu a poznamename si, jestli vysel nebo ne
-      name(s"AccessToHall")
+    object AccessToFactory extends Ensemble { // Kdyz se constraints vyhodnoti na LogicalBoolean, tak ten ensemble vubec nezatahujeme solver modelu a poznamename si, jestli vysel nebo ne
+      name(s"AccessToFactory")
 
       situation {
         (now isAfter (shift.startTime minusMinutes 30)) &&
           (now isBefore (shift.endTime plusMinutes 30))
       }
 
-      allow(shift.foreman, "enter", shift.workPlace)
-      allow(assignedWorkers, "enter", shift.workPlace)
+      allow(shift.foreman, "enter", shift.workPlace.factory)
+      allow(assignedWorkers, "enter", shift.workPlace.factory)
     }
+
+    object AccessToDispenser extends Ensemble {
+      name(s"AccessToDispenser")
+
+      situation {
+        (now isAfter (shift.startTime minusMinutes 15)) &&
+          (now isBefore shift.endTime)
+      }
+
+      allow(assignedWorkers, "use", shift.workPlace.factory.dispenser)
+    }
+
+    object AccessToWorkplace extends Ensemble { // Kdyz se constraints vyhodnoti na LogicalBoolean, tak ten ensemble vubec nezatahujeme solver modelu a poznamename si, jestli vysel nebo ne
+      name(s"AccessToWorkplace")
+
+      val workersWithHeadGear = (shift.foreman :: assignedWorkers).filter(wrk => wrk.hasHeadGear)
+
+      situation {
+        (now isAfter (shift.startTime minusMinutes 30)) &&
+          (now isBefore (shift.endTime plusMinutes 30))
+      }
+
+      allow(workersWithHeadGear, "enter", shift.workPlace)
+    }
+
 
 
     object NotificationAboutWorkersThatArePotentiallyLate extends Ensemble {
@@ -238,18 +264,6 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
       }
 
       notify(workersThatAreLate, AssignmentCancelledNotification(shift))
-    }
-
-
-    object AccessToTheDispenser extends Ensemble {
-      name(s"AccessToTheDispenser")
-
-      situation {
-        (now isAfter (shift.startTime minusMinutes 15)) &&
-          (now isBefore shift.endTime)
-      }
-
-      allow(assignedWorkers, "use", shift.workPlace.factory.dispenser)
     }
 
     object AssignmentOfStandbys extends Ensemble {
@@ -285,6 +299,8 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
       utility {
         standbyAssignments.sum(_.utility)
       }
+
+      notify(selectedStandbys.selectedMembers, CallStandbyNotification(shift))
     }
 
     object NoAccessToPersonalDataExceptForLateWorkers extends Ensemble {
@@ -308,11 +324,12 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
 
     rules(
       // Grants
-      AccessToTheHall,
+      AccessToFactory,
+      AccessToDispenser,
+      AccessToWorkplace,
       NotificationAboutWorkersThatArePotentiallyLate,
       CancellationOfWorkersThatAreLate,
       AssignmentOfStandbys,
-      AccessToTheDispenser,
 
       // Assertions
       NoAccessToPersonalDataExceptForLateWorkers
@@ -353,8 +370,8 @@ object TestScenario {
     logPrintWriter.flush()
   }
 
-  def logPerf(scenarioParams: TestScenarioSpec, iterationNo: Int, time: Long): Unit = {
-    perfLogPrintWriter.println(s"'${scenarioParams}', ${iterationNo}, ${time}")
+  def logPerf(scenarioId: String, iterationNo: Int, time: Long): Unit = {
+    perfLogPrintWriter.println(s"${scenarioId}, ${iterationNo}, ${time}")
     perfLogPrintWriter.flush()
   }
 
@@ -375,7 +392,7 @@ object TestScenario {
     val measurementsCount = 100
     val solverLimitTime = "30s"
 
-    for (measurePhase <- List(0, 1)) {
+    for (measurePhase <- List(1)) {
       for (partitionStandbys <- List(false, true)) {
         breakable {
           for (factoriesCount <- 1 :: 5.to(100, 5).toList) {
@@ -408,7 +425,12 @@ object TestScenario {
               // log("Events: " + events)
 
               for (event <- events) {
-                scenario.workersMap(event.person).position = event.position
+                val worker = scenario.workersMap(event.person)
+                worker.position = event.position
+
+                if (event.eventType == "access-dispenser") {
+                  worker.hasHeadGear = true
+                }
               }
 
               shiftTeams.init()
@@ -422,7 +444,7 @@ object TestScenario {
                 shiftTeams.commit()
 
                 // for (action <- shiftTeams.actions) {
-                //   log(action)
+                //  log(action)
                 // }
 
               } else {
@@ -474,7 +496,7 @@ object TestScenario {
 
               if (shiftTeams.exists) {
                 log(f"${measurementIdx}%04d - ${duration / 1000.0}%f seconds")
-                logPerf(scenarioSpec, measurementIdx, perfEndTime - perfStartTime)
+                logPerf(scenarioSpec.id, measurementIdx, perfEndTime - perfStartTime)
               } else {
 
                 log("Error. No solution exists.")
