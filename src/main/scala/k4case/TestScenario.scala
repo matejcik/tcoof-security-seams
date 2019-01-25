@@ -369,7 +369,7 @@ object TestScenario {
     val measurementsCount = 100
     val solverLimitTime = "60s"
 
-    for (measurePhase <- List(1)) {
+    for (measurePhase <- List(0, 1)) {
       for (factoriesCount <- 1 :: 50.to(200, 50).toList) {
         breakable {
           for (workersPerWorkplaceCount <- 50.to(500, 50)) {
