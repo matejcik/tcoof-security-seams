@@ -303,13 +303,16 @@ class SolverModel extends ChocoModel {
   def createDefaultSearchStategy = {
     val solver = getSolver
 
+    val strats1 = mutable.ListBuffer.empty[AbstractStrategy[_ <: Variable]]
+    val strats2 = mutable.ListBuffer.empty[AbstractStrategy[_ <: Variable]]
+
     // 1. retrieve variables, keeping the declaration order, and put them in four groups:
-    val livars = mutable.ListBuffer.empty[IntVar]
     // integer and boolean variables
-    val lsvars = mutable.ListBuffer.empty[SetVar]
+    val livars = mutable.ListBuffer.empty[IntVar]
     // set variables
-    val lrvars = mutable.ListBuffer.empty[RealVar]
+    val lsvars = mutable.ListBuffer.empty[SetVar]
     // real variables.
+    val lrvars = mutable.ListBuffer.empty[RealVar]
     val variables = getVars
     var objective: Variable = null
 
@@ -319,10 +322,19 @@ class SolverModel extends ChocoModel {
         val kind = typ & Variable.KIND
         kind match {
           case Variable.BOOL =>
-          case Variable.INT =>
             livars += vr.asInstanceOf[IntVar]
+          case Variable.INT =>
+            if (vr.getName.startsWith("R_oneOf")) {
+              strats1 += Search.intVarSearch(vr.asInstanceOf[IntVar])
+            } else {
+              livars += vr.asInstanceOf[IntVar]
+            }
           case Variable.SET =>
-            lsvars += vr.asInstanceOf[SetVar]
+            if (vr.getName.startsWith("R_oneOf")) {
+              strats2 += Search.setVarSearch(vr.asInstanceOf[SetVar])
+            } else {
+              lsvars += vr.asInstanceOf[SetVar]
+            }
           case Variable.REAL =>
             lrvars += vr.asInstanceOf[RealVar]
           case _ =>
@@ -343,8 +355,12 @@ class SolverModel extends ChocoModel {
 
     // 3. Creates a default search strategy for each variable kind
     val strats = mutable.ListBuffer.empty[AbstractStrategy[_ <: Variable]]
-    if (lsvars.size > 0) strats += Search.setVarSearch(lsvars : _*)
+
+    strats ++= strats1
+    strats ++= strats2
+
     if (livars.size > 0) strats += Search.intVarSearch(livars : _*)
+    if (lsvars.size > 0) strats += Search.setVarSearch(lsvars : _*)
     if (lrvars.size > 0) strats += Search.realVarSearch(lrvars: _*)
 
     // 4. lexico LB/UB branching for the objective variable
@@ -370,7 +386,8 @@ class SolverModel extends ChocoModel {
 
   def init(): Unit = {
     val solver = getSolver
-    solver.setSearch(createDefaultSearchStategy)
+    // val searchStrategy = createDefaultSearchStategy
+    // solver.setSearch(searchStrategy)
   }
 
   def solveAndRecord(): Boolean = {

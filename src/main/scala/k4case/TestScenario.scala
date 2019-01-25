@@ -7,12 +7,10 @@ import tcof._
 import scala.util.control.Breaks._
 
 case class TestScenarioSpec(
-                             id: String,
                              workersOnTimePerWorkplaceCount: Int,
                              workersLatePerWorkplaceCount: Int,
                              workersOnStandbyCount: Int,
                              factoriesCount: Int,
-                             partitionStandbys: Boolean,
                              startTs: String,
                              measureTs: String
                            )
@@ -28,7 +26,8 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
   case class WorkerPotentiallyLateNotification(shift: Shift, worker: Worker) extends Notification
 
   case class AssignmentCancelledNotification(shift: Shift) extends Notification
-  case class CallStandbyNotification(shift: Shift) extends Notification
+  case class StandbyNotification(shift: Shift) extends Notification
+  case class WorkerReplacedNotification(shift: Shift, worker: Worker) extends Notification
 
   case class ScenarioEvent(timestamp: LocalDateTime, eventType: String, person: String, position: Position)
 
@@ -114,23 +113,11 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
     override def toString = s"Shift($startTime, $endTime, $workPlace, $foreman, $workers, $standbys, $assignments)"
   }
 
-  /*
-  val workersOnTimePerWorkplaceCount = 96
-  val workersLatePerWorkplaceCount = 4
-  val workersOnStandbyCount = 1000
-  val factoriesCount = 50
-*/
 
   val factoryIds = (1 to scenarioParams.factoriesCount).map(idx => f"factory$idx%02d")
 
   import ModelDSL._
   val (workersMap, factoriesMap, shiftsMap) = withModel { implicit builder =>
-    val workersOnStandby = (1 to scenarioParams.workersOnStandbyCount).map(idx => f"standby-$idx%03d")
-
-    for (id <- workersOnStandby) {
-      withUnscopedWorker(id, Set("A", "B", "C", "D", "E"))
-    }
-
     for ((factoryId, factoryIdx) <- factoryIds.zipWithIndex) {
       withFactory(factoryId, 0, 0) { implicit scope =>
         for (wp <- List("A", "B", "C")) {
@@ -147,6 +134,12 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
             withWorker(id, Set("A", "B", "C", "D", "E"))
           }
 
+          val workersOnStandby = (1 to scenarioParams.workersOnStandbyCount).map(idx => f"$factoryId%s-standby-$idx%03d")
+
+          for (id <- workersOnStandby) {
+            withWorker(id, Set("A", "B", "C", "D", "E"))
+          }
+
           val workersInShift = workersOnTime ++ workersLate
 
           withShift(
@@ -156,11 +149,7 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
             wp,
             foremanId,
             workersInShift.toList,
-            if (scenarioParams.partitionStandbys)
-              workersOnStandby.toList.slice(factoryIdx * scenarioParams.workersLatePerWorkplaceCount * 3, (factoryIdx + 5) * scenarioParams.workersLatePerWorkplaceCount * 3)
-            else
-              workersOnStandby.toList
-            ,
+            workersOnStandby.toList,
             workersInShift.map(wrk => (wrk, "A")).toMap
           )
         }
@@ -192,10 +181,11 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
     name(s"Shift team ${shift.id}")
 
     // These are like invariants at a given point of time
-    val cancelledWorkers = shift.workers.filter(wrk => wrk notified AssignmentCancelledNotification(shift))
-
-    val calledInStandbys = shift.standbys.filter(wrk => wrk notified CallStandbyNotification(shift))
+    val calledInStandbys = shift.standbys.filter(wrk => wrk notified StandbyNotification(shift))
     val availableStandbys = shift.standbys diff calledInStandbys
+
+    val cancelledWorkers = shift.workers.filter(wrk => wrk notified AssignmentCancelledNotification(shift))
+    val cancelledWorkersWithoutStandby = cancelledWorkers.filterNot(wrk => shift.foreman notified WorkerReplacedNotification(shift, wrk))
 
     val assignedWorkers = (shift.workers union calledInStandbys) diff cancelledWorkers
 
@@ -272,18 +262,14 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
       class StandbyAssignment(cancelledWorker: Worker) extends Ensemble {
         name(s"StandbyAssignment for ${cancelledWorker.id}")
 
-        val standby = oneOf(availableStandbys union calledInStandbys)
+        val standby = oneOf(availableStandbys)
 
         constraints {
           standby.all(_.capabilities contains shift.assignments(cancelledWorker))
         }
-
-        utility {
-          standby.sum(wrk => if (calledInStandbys contains wrk) 1 else 0)
-        }
       }
 
-      val standbyAssignments = rules(cancelledWorkers.map(new StandbyAssignment(_)))
+      val standbyAssignments = rules(cancelledWorkersWithoutStandby.map(new StandbyAssignment(_)))
 
       val selectedStandbys = unionOf(standbyAssignments.map(_.standby))
 
@@ -296,11 +282,8 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
         standbyAssignments.map(_.standby).allDisjoint
       }
 
-      utility {
-        standbyAssignments.sum(_.utility)
-      }
-
-      notify(selectedStandbys.selectedMembers, CallStandbyNotification(shift))
+      notify(selectedStandbys.selectedMembers, StandbyNotification(shift))
+      cancelledWorkersWithoutStandby.foreach(wrk => notify(shift.foreman, WorkerReplacedNotification(shift, wrk)))
     }
 
     object NoAccessToPersonalDataExceptForLateWorkers extends Ensemble {
@@ -316,10 +299,6 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
 
         deny(shift.foreman, "read.personalData", workers, PrivacyLevel.ANY)
         deny(shift.foreman, "read.personalData", workersPotentiallyLate, PrivacyLevel.SENSITIVE)
-    }
-
-    utility {
-      AssignmentOfStandbys.utility
     }
 
     rules(
@@ -340,14 +319,6 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
     name(s"Shift teams")
 
     val shiftTeams = rules(shiftsMap.values.map(shift => new ShiftTeam(shift)))
-
-    constraints {
-      shiftTeams.map(_.AssignmentOfStandbys.selectedStandbys).allDisjoint
-    }
-
-    utility {
-      shiftTeams.sum(_.utility)
-    }
   }
 
   val shiftTeams = root(new ShiftTeams)
@@ -370,33 +341,31 @@ object TestScenario {
     logPrintWriter.flush()
   }
 
-  def logPerf(scenarioId: String, iterationNo: Int, time: Long): Unit = {
-    perfLogPrintWriter.println(s"${scenarioId}, ${iterationNo}, ${time}")
+  def logPerf(factoriesCount: Int, workersLatePerWorkplaceCount: Int, iterationNo: Int, time: Long): Unit = {
+    perfLogPrintWriter.println(s"${factoriesCount}, ${workersLatePerWorkplaceCount}, ${iterationNo}, ${time}")
     perfLogPrintWriter.flush()
   }
 
 
-  def createScenarioSpec(factoriesCount: Int, partitionStandbys: Boolean, measurePhase: Int) = TestScenarioSpec(
-      id = (if (partitionStandbys) "partitioned" else "nonPartitioned") + "_" + factoriesCount,
-      workersOnTimePerWorkplaceCount = 96,
-      workersLatePerWorkplaceCount = 4,
-      workersOnStandbyCount = factoriesCount * 20,
+  def createScenarioSpec(factoriesCount: Int, workersLatePerWorkplaceCount: Int, measurePhase: Int) = TestScenarioSpec(
+      workersOnTimePerWorkplaceCount = 100 - workersLatePerWorkplaceCount,
+      workersLatePerWorkplaceCount = workersLatePerWorkplaceCount,
+      workersOnStandbyCount = workersLatePerWorkplaceCount * 5,
       factoriesCount = factoriesCount,
-      partitionStandbys = partitionStandbys,
       startTs = "2018-12-03T08:00:00",
-      measureTs = if (measurePhase == 0) "2018-12-03T08:43:00" else "2018-12-03T08:50:00"
+      measureTs = if (measurePhase == 0) "2018-12-03T08:43:00" else "2018-12-03T08:47:00"
     )
 
   def main(args: Array[String]): Unit = {
-    val warmupCount = 10
-    val measurementsCount = 100
-    val solverLimitTime = "30s"
+    val warmupCount = 5
+    val measurementsCount = 50
+    val solverLimitTime = "60s"
 
     for (measurePhase <- List(1)) {
-      for (partitionStandbys <- List(false, true)) {
+      for (factoriesCount <- 1 :: 20.to(200, 20).toList) {
         breakable {
-          for (factoriesCount <- 1 :: 5.to(100, 5).toList) {
-            val scenarioSpec = createScenarioSpec(factoriesCount, partitionStandbys, measurePhase)
+          for (workersLatePerWorkplaceCount <- List(2, 4, 6, 8, 10, 12, 14, 16, 18, 20)) {
+            val scenarioSpec = createScenarioSpec(factoriesCount, workersLatePerWorkplaceCount, measurePhase)
 
             val scenario = new TestScenario(scenarioSpec)
 
@@ -435,11 +404,11 @@ object TestScenario {
 
               shiftTeams.init()
               shiftTeams.solverLimitTime(solverLimitTime)
-              while (shiftTeams.solve()) {}
+              shiftTeams.solve()
 
               if (shiftTeams.exists) {
-                // log("Utility: " + shiftTeams.instance.solutionUtility)
-                // log(shiftTeams.instance.toString)
+                 // log("Utility: " + shiftTeams.instance.solutionUtility)
+                 // log(shiftTeams.instance.toString)
 
                 shiftTeams.commit()
 
@@ -466,7 +435,7 @@ object TestScenario {
 
               shiftTeams.init()
               shiftTeams.solverLimitTime(solverLimitTime)
-              while (shiftTeams.solve()) {}
+              shiftTeams.solve()
 
               val perfEndTime = System.currentTimeMillis()
               val duration = perfEndTime - perfStartTime
@@ -489,14 +458,14 @@ object TestScenario {
 
               shiftTeams.init()
               shiftTeams.solverLimitTime(solverLimitTime)
-              while (shiftTeams.solve()) {}
+              shiftTeams.solve()
 
               val perfEndTime = System.currentTimeMillis()
               val duration = perfEndTime - perfStartTime
 
               if (shiftTeams.exists) {
                 log(f"${measurementIdx}%04d - ${duration / 1000.0}%f seconds")
-                logPerf(scenarioSpec.id, measurementIdx, perfEndTime - perfStartTime)
+                logPerf(scenarioSpec.factoriesCount, scenarioSpec.workersLatePerWorkplaceCount, measurementIdx, perfEndTime - perfStartTime)
               } else {
 
                 log("Error. No solution exists.")

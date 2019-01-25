@@ -236,11 +236,6 @@ trait ModelGenerator {
     }
 
 
-    def withUnscopedWorker(id: String, caps: Set[String])(implicit builder: ModelBuilder): Unit = {
-      builder.workersMap(id) = new Worker(id, Position(0, 90), caps, false)
-    }
-
-
     def withFactory(id: String, offsetX: Int, offsetY: Int)(ops: FactoryScope => Unit)(implicit builder: ModelBuilder): Unit = {
       val ms = new FactoryScope(builder, id, offsetX, offsetY)
       ops(ms)

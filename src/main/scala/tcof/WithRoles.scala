@@ -19,7 +19,7 @@ trait WithRoles extends Initializable with CommonImplicits {
     for (role <- roles) {
       for ((member, idx) <- role.allMembers.values.zipWithIndex) {
         val entry = (role, idx)
-        val parentIndices = allMembersWithParentIndices(member) += entry
+        allMembersWithParentIndices(member) += entry
       }
     }
 
@@ -27,7 +27,7 @@ trait WithRoles extends Initializable with CommonImplicits {
       for (member <- allMembersWithParentIndices.keys) yield
         new RoleMembersUnionMember(member, allMembersWithParentIndices(member))
 
-    _addRole("unionOf_" + randomName, new RoleMembersUnion(items), null)
+    _addRole("unionOf_" + randomName, new RoleMembersUnion(items.toList), null)
   }
 
 
