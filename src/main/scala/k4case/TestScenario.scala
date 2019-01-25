@@ -371,9 +371,9 @@ object TestScenario {
 
     for (measurePhase <- List(0, 1)) {
       for (factoriesCount <- 1 :: 50.to(200, 50).toList) {
-        for (workersPerWorkplaceCount <- 50.to(500, 50)) {
+        for (workersLateRatio <- List(0.05, 0.1, 0.15, 0.2)) {
           breakable {
-            for (workersLateRatio <- List(0.05, 0.1, 0.15, 0.2)) {
+            for (workersPerWorkplaceCount <- 50.to(500, 50)) {
               val scenarioSpec = createScenarioSpec(factoriesCount, workersPerWorkplaceCount, workersLateRatio, measurePhase)
 
               val scenario = new TestScenario(scenarioSpec)
