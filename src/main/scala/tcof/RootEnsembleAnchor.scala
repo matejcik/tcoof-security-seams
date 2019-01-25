@@ -19,7 +19,7 @@ class RootEnsembleAnchor[EnsembleType <: RootEnsemble] private[tcof](val builder
     solverModel.init()
   }
 
-  def solverLimitTime(limit: String) = _solution._solverModel.getSolver.limitTime(limit)
+  def solverLimitTime(limit: Long) = _solution._solverModel.getSolver.limitTime(limit)
 
   def solve(): Boolean = _solution._solverModel.solveAndRecord()
 

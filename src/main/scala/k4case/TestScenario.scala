@@ -367,12 +367,12 @@ object TestScenario {
   def main(args: Array[String]): Unit = {
     val warmupCount = 10
     val measurementsCount = 100
-    val solverLimitTime = "60s"
+    val solverLimitTime = 60000
 
     for (measurePhase <- List(0, 1)) {
       for (factoriesCount <- 1 :: 50.to(200, 50).toList) {
-        breakable {
-          for (workersPerWorkplaceCount <- 50.to(500, 50)) {
+        for (workersPerWorkplaceCount <- 50.to(500, 50)) {
+          breakable {
             for (workersLateRatio <- List(0.05, 0.1, 0.15, 0.2)) {
               val scenarioSpec = createScenarioSpec(factoriesCount, workersPerWorkplaceCount, workersLateRatio, measurePhase)
 
@@ -411,12 +411,19 @@ object TestScenario {
                   }
                 }
 
+
+                val perfStartTime = System.currentTimeMillis()
+                var duration, perfEndTime = 0L
+
                 for (factoryTeam <- factoryTeams) {
                   factoryTeam.init()
                   factoryTeam.solverLimitTime(solverLimitTime)
                   factoryTeam.solve()
 
-                  if (factoryTeam.exists) {
+                  perfEndTime = System.currentTimeMillis()
+                  duration = perfEndTime - perfStartTime
+
+                  if (factoryTeam.exists && duration <= solverLimitTime) {
                     // log("Utility: " + shiftTeams.instance.solutionUtility)
                     // log(shiftTeams.instance.toString)
 
@@ -443,6 +450,7 @@ object TestScenario {
 
               for (measurementIdx <- 0 until warmupCount) {
                 val perfStartTime = System.currentTimeMillis()
+                var duration, perfEndTime = 0L
 
                 for (factoryTeam <- factoryTeams) {
 
@@ -450,17 +458,16 @@ object TestScenario {
                   factoryTeam.solverLimitTime(solverLimitTime)
                   factoryTeam.solve()
 
-                  val perfEndTime = System.currentTimeMillis()
-                  val duration = perfEndTime - perfStartTime
+                  perfEndTime = System.currentTimeMillis()
+                  duration = perfEndTime - perfStartTime
 
-                  if (factoryTeam.exists) {
-                    log(f"${measurementIdx}%04d - ${duration / 1000.0}%f seconds")
-                  } else {
-
+                  if (!factoryTeam.exists || duration > solverLimitTime) {
                     log("Error. No solution exists.")
                     break()
                   }
                 }
+
+                log(f"${measurementIdx}%04d - ${duration / 1000.0}%f seconds")
               }
 
 
@@ -469,24 +476,24 @@ object TestScenario {
 
               for (measurementIdx <- 0 until measurementsCount) {
                 val perfStartTime = System.currentTimeMillis()
+                var duration, perfEndTime = 0L
 
                 for (factoryTeam <- factoryTeams) {
                   factoryTeam.init()
                   factoryTeam.solverLimitTime(solverLimitTime)
                   factoryTeam.solve()
 
-                  val perfEndTime = System.currentTimeMillis()
-                  val duration = perfEndTime - perfStartTime
+                  perfEndTime = System.currentTimeMillis()
+                  duration = perfEndTime - perfStartTime
 
-                  if (factoryTeam.exists) {
-                    log(f"${measurementIdx}%04d - ${duration / 1000.0}%f seconds")
-                    logPerf(measurePhase, factoriesCount, workersPerWorkplaceCount, workersLateRatio, measurementIdx, perfEndTime - perfStartTime)
-                  } else {
-
+                  if (!factoryTeam.exists || duration > solverLimitTime) {
                     log("Error. No solution exists.")
                     break()
                   }
                 }
+
+                log(f"${measurementIdx}%04d - ${duration / 1000.0}%f seconds")
+                logPerf(measurePhase, factoriesCount, workersPerWorkplaceCount, workersLateRatio, measurementIdx, perfEndTime - perfStartTime)
               }
             }
           }
