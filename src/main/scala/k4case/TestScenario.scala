@@ -25,7 +25,7 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
 
   case class WorkerPotentiallyLateNotification(shift: Shift, worker: Worker) extends Notification
 
-  case class AssignmentCancelledNotification(shift: Shift) extends Notification
+  case class AssignmentCanceledNotification(shift: Shift) extends Notification
   case class StandbyNotification(shift: Shift) extends Notification
   case class WorkerReplacedNotification(shift: Shift, worker: Worker) extends Notification
 
@@ -177,151 +177,151 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
   }
 
 
-  class ShiftTeam(shift: Shift) extends Ensemble {
-    name(s"Shift team ${shift.id}")
-
-    // These are like invariants at a given point of time
-    val calledInStandbys = shift.standbys.filter(wrk => wrk notified StandbyNotification(shift))
-    val availableStandbys = shift.standbys diff calledInStandbys
-
-    val cancelledWorkers = shift.workers.filter(wrk => wrk notified AssignmentCancelledNotification(shift))
-    val cancelledWorkersWithoutStandby = cancelledWorkers.filterNot(wrk => shift.foreman notified WorkerReplacedNotification(shift, wrk))
-
-    val assignedWorkers = (shift.workers union calledInStandbys) diff cancelledWorkers
-
-
-    object AccessToFactory extends Ensemble { // Kdyz se constraints vyhodnoti na LogicalBoolean, tak ten ensemble vubec nezatahujeme solver modelu a poznamename si, jestli vysel nebo ne
-      name(s"AccessToFactory")
-
-      situation {
-        (now isAfter (shift.startTime minusMinutes 30)) &&
-          (now isBefore (shift.endTime plusMinutes 30))
-      }
-
-      allow(shift.foreman, "enter", shift.workPlace.factory)
-      allow(assignedWorkers, "enter", shift.workPlace.factory)
-    }
-
-    object AccessToDispenser extends Ensemble {
-      name(s"AccessToDispenser")
-
-      situation {
-        (now isAfter (shift.startTime minusMinutes 15)) &&
-          (now isBefore shift.endTime)
-      }
-
-      allow(assignedWorkers, "use", shift.workPlace.factory.dispenser)
-    }
-
-    object AccessToWorkplace extends Ensemble { // Kdyz se constraints vyhodnoti na LogicalBoolean, tak ten ensemble vubec nezatahujeme solver modelu a poznamename si, jestli vysel nebo ne
-      name(s"AccessToWorkplace")
-
-      val workersWithHeadGear = (shift.foreman :: assignedWorkers).filter(wrk => wrk.hasHeadGear)
-
-      situation {
-        (now isAfter (shift.startTime minusMinutes 30)) &&
-          (now isBefore (shift.endTime plusMinutes 30))
-      }
-
-      allow(workersWithHeadGear, "enter", shift.workPlace)
-    }
-
-
-
-    object NotificationAboutWorkersThatArePotentiallyLate extends Ensemble {
-      name(s"NotificationAboutWorkersThatArePotentiallyLate")
-
-      val workersThatAreLate = assignedWorkers.filter(wrk => !(wrk isAt shift.workPlace.factory))
-
-      situation {
-        now isAfter (shift.startTime minusMinutes 20)
-      }
-
-      workersThatAreLate.foreach(wrk => notify(shift.foreman, WorkerPotentiallyLateNotification(shift, wrk)))
-
-      allow(shift.foreman, "read.personalData.phoneNo", workersThatAreLate)
-      allow(shift.foreman, "read.distanceToWorkPlace", workersThatAreLate)
-    }
-
-
-    object CancellationOfWorkersThatAreLate extends Ensemble {
-      name(s"CancellationOfWorkersThatAreLate")
-
-      val workersThatAreLate = assignedWorkers.filter(wrk => !(wrk isAt shift.workPlace.factory))
-
-      situation {
-        now isAfter (shift.startTime minusMinutes 15)
-      }
-
-      notify(workersThatAreLate, AssignmentCancelledNotification(shift))
-    }
-
-    object AssignmentOfStandbys extends Ensemble {
-      name(s"AssignmentOfStandbys")
-
-      class StandbyAssignment(cancelledWorker: Worker) extends Ensemble {
-        name(s"StandbyAssignment for ${cancelledWorker.id}")
-
-        val standby = oneOf(availableStandbys)
-
-        constraints {
-          standby.all(_.capabilities contains shift.assignments(cancelledWorker))
-        }
-      }
-
-      val standbyAssignments = rules(cancelledWorkersWithoutStandby.map(new StandbyAssignment(_)))
-
-      val selectedStandbys = unionOf(standbyAssignments.map(_.standby))
-
-      situation {
-        (now isAfter (shift.startTime minusMinutes 15)) &&
-        (now isBefore shift.endTime)
-      }
-
-      constraints {
-        standbyAssignments.map(_.standby).allDisjoint
-      }
-
-      notify(selectedStandbys.selectedMembers, StandbyNotification(shift))
-      cancelledWorkersWithoutStandby.foreach(wrk => notify(shift.foreman, WorkerReplacedNotification(shift, wrk)))
-    }
-
-    object NoAccessToPersonalDataExceptForLateWorkers extends Ensemble {
-        name(s"NoAccessToPersonalDataExceptForLateWorkers")
-
-        val workersPotentiallyLate =
-            if ((now isAfter (shift.startTime minusMinutes 20)) && (now isBefore shift.startTime))
-                assignedWorkers.filter(wrk => !(wrk isAt shift.workPlace.factory))
-            else
-                Nil
-
-        val workers = shift.workers diff workersPotentiallyLate
-
-        deny(shift.foreman, "read.personalData", workers, PrivacyLevel.ANY)
-        deny(shift.foreman, "read.personalData", workersPotentiallyLate, PrivacyLevel.SENSITIVE)
-    }
-
-    rules(
-      // Grants
-      AccessToFactory,
-      AccessToDispenser,
-      AccessToWorkplace,
-      NotificationAboutWorkersThatArePotentiallyLate,
-      CancellationOfWorkersThatAreLate,
-      AssignmentOfStandbys,
-
-      // Assertions
-      NoAccessToPersonalDataExceptForLateWorkers
-    )
-  }
-
   class FactoryTeam(factory: Factory) extends RootEnsemble {
     name(s"Factory team ${factory.id}")
+
+    class ShiftTeam(shift: Shift) extends Ensemble {
+      name(s"Shift team ${shift.id}")
+
+      // These are like invariants at a given point of time
+      val calledInStandbys = shift.standbys.filter(wrk => wrk notified StandbyNotification(shift))
+      val availableStandbys = shift.standbys diff calledInStandbys
+
+      val canceledWorkers = shift.workers.filter(wrk => wrk notified AssignmentCanceledNotification(shift))
+      val canceledWorkersWithoutStandby = canceledWorkers.filterNot(wrk => shift.foreman notified WorkerReplacedNotification(shift, wrk))
+
+      val assignedWorkers = (shift.workers union calledInStandbys) diff canceledWorkers
+
+
+      object AccessToFactory extends Ensemble { // Kdyz se constraints vyhodnoti na LogicalBoolean, tak ten ensemble vubec nezatahujeme solver modelu a poznamename si, jestli vysel nebo ne
+        name(s"AccessToFactory")
+
+        situation {
+          (now isAfter (shift.startTime minusMinutes 30)) &&
+            (now isBefore (shift.endTime plusMinutes 30))
+        }
+
+        allow(shift.foreman, "enter", shift.workPlace.factory)
+        allow(assignedWorkers, "enter", shift.workPlace.factory)
+      }
+
+      object AccessToDispenser extends Ensemble {
+        name(s"AccessToDispenser")
+
+        situation {
+          (now isAfter (shift.startTime minusMinutes 15)) &&
+            (now isBefore shift.endTime)
+        }
+
+        allow(assignedWorkers, "use", shift.workPlace.factory.dispenser)
+      }
+
+      object AccessToWorkplace extends Ensemble { // Kdyz se constraints vyhodnoti na LogicalBoolean, tak ten ensemble vubec nezatahujeme solver modelu a poznamename si, jestli vysel nebo ne
+        name(s"AccessToWorkplace")
+
+        val workersWithHeadGear = (shift.foreman :: assignedWorkers).filter(wrk => wrk.hasHeadGear)
+
+        situation {
+          (now isAfter (shift.startTime minusMinutes 30)) &&
+            (now isBefore (shift.endTime plusMinutes 30))
+        }
+
+        allow(workersWithHeadGear, "enter", shift.workPlace)
+      }
+
+
+
+      object NotificationAboutWorkersThatArePotentiallyLate extends Ensemble {
+        name(s"NotificationAboutWorkersThatArePotentiallyLate")
+
+        val workersThatAreLate = assignedWorkers.filter(wrk => !(wrk isAt shift.workPlace.factory))
+
+        situation {
+          now isAfter (shift.startTime minusMinutes 20)
+        }
+
+        workersThatAreLate.foreach(wrk => notify(shift.foreman, WorkerPotentiallyLateNotification(shift, wrk)))
+
+        allow(shift.foreman, "read.personalData.phoneNo", workersThatAreLate)
+        allow(shift.foreman, "read.distanceToWorkPlace", workersThatAreLate)
+      }
+
+
+      object CancellationOfWorkersThatAreLate extends Ensemble {
+        name(s"CancellationOfWorkersThatAreLate")
+
+        val workersThatAreLate = assignedWorkers.filter(wrk => !(wrk isAt shift.workPlace.factory))
+
+        situation {
+          now isAfter (shift.startTime minusMinutes 15)
+        }
+
+        notify(workersThatAreLate, AssignmentCanceledNotification(shift))
+      }
+
+      object AssignmentOfStandbys extends Ensemble {
+        name(s"AssignmentOfStandbys")
+
+        class StandbyAssignment(canceledWorker: Worker) extends Ensemble {
+          name(s"StandbyAssignment for ${canceledWorker.id}")
+
+          val standby = oneOf(availableStandbys)
+
+          constraints {
+            standby.all(_.capabilities contains shift.assignments(canceledWorker))
+          }
+        }
+
+        val standbyAssignments = rules(canceledWorkersWithoutStandby.map(new StandbyAssignment(_)))
+
+        val selectedStandbys = unionOf(standbyAssignments.map(_.standby))
+
+        situation {
+          (now isAfter (shift.startTime minusMinutes 15)) &&
+          (now isBefore shift.endTime)
+        }
+
+        constraints {
+          standbyAssignments.map(_.standby).allDisjoint
+        }
+
+        notify(selectedStandbys.selectedMembers, StandbyNotification(shift))
+        canceledWorkersWithoutStandby.foreach(wrk => notify(shift.foreman, WorkerReplacedNotification(shift, wrk)))
+      }
+
+      object NoAccessToPersonalDataExceptForLateWorkers extends Ensemble {
+          name(s"NoAccessToPersonalDataExceptForLateWorkers")
+
+          val workersPotentiallyLate =
+              if ((now isAfter (shift.startTime minusMinutes 20)) && (now isBefore shift.startTime))
+                  assignedWorkers.filter(wrk => !(wrk isAt shift.workPlace.factory))
+              else
+                  Nil
+
+          val workers = shift.workers diff workersPotentiallyLate
+
+          deny(shift.foreman, "read.personalData", workers, PrivacyLevel.ANY)
+          deny(shift.foreman, "read.personalData", workersPotentiallyLate, PrivacyLevel.SENSITIVE)
+      }
+
+      rules(
+        // Grants
+        AccessToFactory,
+        AccessToDispenser,
+        AccessToWorkplace,
+        NotificationAboutWorkersThatArePotentiallyLate,
+        CancellationOfWorkersThatAreLate,
+        AssignmentOfStandbys,
+
+        // Assertions
+        NoAccessToPersonalDataExceptForLateWorkers
+      )
+    }
 
     val shiftTeams = rules(shiftsMap.values.filter(shift => shift.workPlace.factory == factory).map(shift => new ShiftTeam(shift)))
 
     constraints {
-      shiftTeams.map(_.AssignmentOfStandbys.selectedStandbys).allDisjoint
+      shiftTeams.map(shift => shift.AssignmentOfStandbys.selectedStandbys).allDisjoint
     }
   }
 
@@ -367,10 +367,10 @@ object TestScenario {
   def main(args: Array[String]): Unit = {
     val warmupCount = 10
     val measurementsCount = 100
-    val solverLimitTime = 60000
+    val solverLimitTime = 60000000000L
 
     for (measurePhase <- List(0, 1)) {
-      for (factoriesCount <- 1 :: 50.to(200, 50).toList) {
+      for (factoriesCount <- List(1)) {
         for (workersLateRatio <- List(0.05, 0.1, 0.15, 0.2)) {
           breakable {
             for (workersPerWorkplaceCount <- 50.to(500, 50)) {
@@ -449,7 +449,7 @@ object TestScenario {
               log(s"Warmup (time: ${scenario.now})")
 
               for (measurementIdx <- 0 until warmupCount) {
-                val perfStartTime = System.currentTimeMillis()
+                val perfStartTime = System.nanoTime()
                 var duration, perfEndTime = 0L
 
                 for (factoryTeam <- factoryTeams) {
@@ -458,7 +458,7 @@ object TestScenario {
                   factoryTeam.solverLimitTime(solverLimitTime)
                   factoryTeam.solve()
 
-                  perfEndTime = System.currentTimeMillis()
+                  perfEndTime = System.nanoTime()
                   duration = perfEndTime - perfStartTime
 
                   if (!factoryTeam.exists || duration > solverLimitTime) {
@@ -467,7 +467,7 @@ object TestScenario {
                   }
                 }
 
-                log(f"${measurementIdx}%04d - ${duration / 1000.0}%f seconds")
+                log(f"${measurementIdx}%04d - ${duration / 1000000.0}%f milliseconds")
               }
 
 
@@ -475,7 +475,7 @@ object TestScenario {
               log(s"Measurements (time: ${scenario.now})")
 
               for (measurementIdx <- 0 until measurementsCount) {
-                val perfStartTime = System.currentTimeMillis()
+                val perfStartTime = System.nanoTime()
                 var duration, perfEndTime = 0L
 
                 for (factoryTeam <- factoryTeams) {
@@ -483,7 +483,7 @@ object TestScenario {
                   factoryTeam.solverLimitTime(solverLimitTime)
                   factoryTeam.solve()
 
-                  perfEndTime = System.currentTimeMillis()
+                  perfEndTime = System.nanoTime()
                   duration = perfEndTime - perfStartTime
 
                   if (!factoryTeam.exists || duration > solverLimitTime) {
@@ -492,7 +492,7 @@ object TestScenario {
                   }
                 }
 
-                log(f"${measurementIdx}%04d - ${duration / 1000.0}%f seconds")
+                log(f"${measurementIdx}%04d - ${duration / 1000000.0}%f milliseconds")
                 logPerf(measurePhase, factoriesCount, workersPerWorkplaceCount, workersLateRatio, measurementIdx, perfEndTime - perfStartTime)
               }
             }
