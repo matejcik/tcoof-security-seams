@@ -4,7 +4,14 @@ import tcof.Utils._
 
 import scala.collection.mutable
 
-trait Ensemble extends WithConfig with WithName with WithUtility with WithEnsembleGroups with WithRoles with WithActionsInEnsemble with CommonImplicits {
+trait Ensemble
+    extends WithConfig
+      with WithName
+      with WithUtility
+      with WithEnsembleGroups
+      with WithRoles
+      with WithActionsInEnsemble
+      with CommonImplicits {
   private[tcof] val _constraintsClauseFuns = mutable.ListBuffer.empty[() => Logical]
   private[tcof] var _situationFun: () => Boolean = null
 
@@ -31,12 +38,13 @@ trait Ensemble extends WithConfig with WithName with WithUtility with WithEnsemb
   }
 
   override def toString: String =
-    s"""Ensemble "$name":\n${indent(_roles.values.mkString(""), 1)}${indent(_ensembleGroups.mkString(""), 1)}"""
+    s"""Ensemble "$name":\n${indent("rOles:\n" + _roles.values.mkString(""), 1)}${indent("groups:\n" + _ensembleGroups.mkString(""), 1)}"""
 
   def toStringWithUtility: String = {
     s"""Ensemble "$name" (utility: $solutionUtility):\n${indent(_roles.values.mkString(""), 1)}${indent(_ensembleGroups.mapValues(_.toStringWithUtility).mkString(""), 1)}\n"""
   }
 
   implicit def iterableToMembersStatic[ComponentType <: Component](components: Iterable[ComponentType]): RoleMembersStatic[ComponentType] = new RoleMembersStatic(components)
+
   implicit def ensembleGroupToMembers[EnsembleType <: Ensemble](group: EnsembleGroup[EnsembleType]): EnsembleGroupMembers[EnsembleType] = group.allMembers
 }
