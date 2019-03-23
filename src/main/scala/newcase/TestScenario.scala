@@ -20,12 +20,18 @@ class TestScenario extends Model {
   case object WorkerWorking extends WorkerStatus
   case object WorkerHungry extends WorkerStatus
 
-  class Worker(name: String, val status: WorkerStatus) extends Component
+  class Worker(name: String, val status: WorkerStatus) extends Component {
+    name(name)
+    var project: Project = null
+  }
 
-  class Project(name: String, val workers: Seq[Worker]) extends Component
+  class Project(name: String, val workers: Seq[Worker]) extends Component {
+    name(name)
+    workers.foreach(_.project = this)
+  }
 
   val allWorkers = for (i <- 1 to 10)
-    yield new Worker(s"Worker-{i}", WorkerHungry)
+    yield new Worker(s"Worker-${i}", WorkerHungry)
 
   val lunchrooms =
     List(new LunchRoom("Lunchroom 1", 10), new LunchRoom("Lunchroom 2", 10))
@@ -43,11 +49,11 @@ class TestScenario extends Model {
       val lunchers = _addRole(
         "lunchers"+room.name,
         allWorkers.filter(_.status == WorkerHungry),
-        c => c < room.capacity
+        c => c <= room.capacity
       )
 
       constraints {
-        project.all(p => lunchers.all(p.workers.contains(_)))
+        project.all(p => lunchers.all(_.project == p))
       }
 
       allow(lunchers.selectedMembers, "enter", room)
@@ -55,8 +61,9 @@ class TestScenario extends Model {
 
     val lunchGroups = rules(lunchrooms.map(new LunchGroup(_)))
 
-    constraints {
-      lunchGroups.map(_.lunchers).allDisjoint
+    constraints (lunchGroups.map(_.lunchers).allDisjoint)
+    for (worker <- allWorkers) {
+      constraints(lunchGroups.some(_.lunchers.contains(worker)))
     }
   }
 
@@ -70,6 +77,7 @@ object TestScenario {
   def main(args: Array[String]): Unit = {
     val scenario = new TestScenario
     scenario.everybody.init()
+    scenario.everybody.solve()
     scenario.everybody.solve()
     if (scenario.everybody.exists) {
       scenario.everybody.commit()
