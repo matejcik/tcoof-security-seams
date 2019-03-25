@@ -37,6 +37,17 @@ trait Ensemble
       true
   }
 
+  def _collectUtility: Option[Integer] = {
+    // TODO should this be in WithUtility?
+    val noMemberHasUtility = _ensembleGroups.values.flatMap(g => g.allMembers.flatMap(_._collectUtility)).isEmpty
+    if (noMemberHasUtility) {
+      _getUtility
+    } else {
+      val subUtilities = _ensembleGroups.values.map(g => g.sum(_._collectUtility.getOrElse(_solverModel.IntegerInt(0))))
+      Some(utility + subUtilities.reduceOption(_ + _).getOrElse(_solverModel.IntegerInt(0)))
+    }
+  }
+
   override def toString: String =
     s"""Ensemble "$name":\n${indent("rOles:\n" + _roles.values.mkString(""), 1)}${indent("groups:\n" + _ensembleGroups.mkString(""), 1)}"""
 

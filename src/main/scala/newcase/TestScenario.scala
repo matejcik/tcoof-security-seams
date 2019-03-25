@@ -34,7 +34,12 @@ class TestScenario extends Model {
     yield new Worker(s"Worker-${i}", WorkerHungry)
 
   val lunchrooms =
-    List(new LunchRoom("Lunchroom 1", 10), new LunchRoom("Lunchroom 2", 10))
+    List(
+      new LunchRoom("Lunchroom 1", 10),
+      new LunchRoom("Lunchroom 2", 1),
+      new LunchRoom("Lunchroom 3", 1),
+      new LunchRoom("Lunchroom 4", 1)
+    )
 
   val projects = List(
     new Project("Project A", allWorkers.take(5)),
@@ -56,15 +61,14 @@ class TestScenario extends Model {
         project.all(p => lunchers.all(_.project == p))
       }
 
+      utility(lunchers.cardinality)
+
       allow(lunchers.selectedMembers, "enter", room)
     }
 
     val lunchGroups = rules(lunchrooms.map(new LunchGroup(_)))
 
     constraints (lunchGroups.map(_.lunchers).allDisjoint)
-    for (worker <- allWorkers) {
-      constraints(lunchGroups.some(_.lunchers.contains(worker)))
-    }
   }
 
   case class LunchroomAssignedNotification(worker: Worker, room: LunchRoom)
@@ -77,8 +81,10 @@ object TestScenario {
   def main(args: Array[String]): Unit = {
     val scenario = new TestScenario
     scenario.everybody.init()
-    scenario.everybody.solve()
-    scenario.everybody.solve()
+    while (scenario.everybody.solve()) {
+      println(scenario.everybody._solution.toStringWithUtility)
+      scenario.everybody._solution.printUtility
+    }
     if (scenario.everybody.exists) {
       scenario.everybody.commit()
       for (action <- scenario.everybody.actions) {
