@@ -43,6 +43,13 @@ trait WithRoles extends Initializable with CommonImplicits {
     _addRole("unionOf_" + randomName, new RoleMembersUnion(items.toList), null)
   }
 
+  def subsetOf[ComponentType <: Component](
+    items: RoleMembers[ComponentType],
+    cardinality: Integer => Logical = null
+  ): Role[ComponentType] = {
+    _addRole("subsetOf_" + randomName, items, cardinality)
+  }
+
   def _addRole[ComponentType <: Component](
     name: String,
     items: RoleMembers[ComponentType],

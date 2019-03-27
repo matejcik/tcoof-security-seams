@@ -103,11 +103,8 @@ class TestScenario extends Model {
         .filterNot(_.notified[RoomAssignedNotification])
         .filter(_.status == room.targetStatus)
 
-      val invitees = _addRole(
-        "invitees-" + room.name,
-        notNotified,
-        c => c <= room.capacity - belongHere.size
-      )
+      val freeSpaces = room.capacity - belongHere.size
+      val invitees = subsetOf(notNotified, _ <= freeSpaces)
 
       constraints {
         project.all(p => invitees.all(_.project == p)) &&
