@@ -136,7 +136,7 @@ object TestScenario {
   def solveScenario(scenario: TestScenario): Unit = {
     scenario.everybody.init()
     while (scenario.everybody.solve()) {
-      scenario.everybody._solution.printUtility
+      scenario.everybody.instance.printUtility
     }
     if (scenario.everybody.exists) {
       scenario.everybody.commit()

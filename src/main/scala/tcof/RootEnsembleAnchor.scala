@@ -2,7 +2,7 @@ package tcof
 
 
 class RootEnsembleAnchor[EnsembleType <: RootEnsemble] private[tcof](val builder: () => EnsembleType) {
-  var _solution: EnsembleType = _
+  private var _solution: EnsembleType = _
 
   def instance: EnsembleType = _solution
 
