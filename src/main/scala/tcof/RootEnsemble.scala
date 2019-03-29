@@ -26,10 +26,8 @@ class RootEnsemble extends Ensemble {
     }
   }
 
-  def printUtility: Unit = {
-    _collectedUtility match {
-      case Some(v: Integer) => println(s"Solution utility: ${v.solutionValue}")
-      case _ => println("No utility defined")
-    }
+  override def solutionUtility: Int = _collectedUtility match {
+    case Some(v) => v.solutionValue
+    case _ => 0
   }
 }
