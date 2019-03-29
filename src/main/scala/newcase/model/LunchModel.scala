@@ -26,7 +26,7 @@ class LunchModel(val projects: Seq[Project],
                  val rooms: Seq[Room])
     extends Model {
 
-  object LunchProblem extends RootEnsemble {
+  class LunchProblem extends RootEnsemble {
     name("match hungry workers to free lunchrooms")
 
     class RoomAssignment(room: Room) extends Ensemble {
@@ -59,8 +59,8 @@ class LunchModel(val projects: Seq[Project],
     val roomAssignments = rules(rooms.map(new RoomAssignment(_)))
 
     constraints(roomAssignments.map(_.assignees).allDisjoint)
+//    utility(roomAssignments.sum(_.utility))
   }
 
-
-  def problem = root(LunchProblem)
+  val problem = root(new LunchProblem)
 }

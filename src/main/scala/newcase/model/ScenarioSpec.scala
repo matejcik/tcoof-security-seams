@@ -1,13 +1,22 @@
 package newcase.model
 
-object RoomUtilization extends Enumeration {
-  val DENSE, SPARSE, RANDOM = Value
+object ProjectAssignment extends Enumeration {
+  val ROUND_ROBIN, RANDOM = Value
 }
 
-case class ScenarioSpec(rooms: Int,
+case class ScenarioSpec(projects: Int,
+                        rooms: Int,
                         roomCapacity: Int,
-                        projects: Int,
+                        randomCapacity: Boolean,
                         workers: Int,
-                        existingAssignments: Int,
-                        roomUtilization: RoomUtilization.Value,
-)
+                        projectAssignment: ProjectAssignment.Value,
+                       ) {
+  def toPerfLine: String = {
+    val roomCapacityStr =
+      if (randomCapacity)
+        s"rand($roomCapacity)"
+      else
+        roomCapacity.toString
+    s"$projects, $rooms, $roomCapacityStr, $workers, $projectAssignment"
+  }
+}
