@@ -10,13 +10,9 @@ case class ScenarioSpec(projects: Int,
                         randomCapacity: Boolean,
                         workers: Int,
                         projectAssignment: ProjectAssignment.Value,
-                       ) {
+                        preassignedRooms: Int,
+) {
   def toPerfLine: String = {
-    val roomCapacityStr =
-      if (randomCapacity)
-        s"rand($roomCapacity)"
-      else
-        roomCapacity.toString
-    s"$projects, $rooms, $roomCapacityStr, $workers, $projectAssignment"
+    s"$projects, $rooms, $roomCapacity, $randomCapacity, $workers, $projectAssignment, $preassignedRooms"
   }
 }

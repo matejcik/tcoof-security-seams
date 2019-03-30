@@ -26,45 +26,11 @@ object ModelGenerator {
       new Room(i.toString, capacity)
     }
 
-    //    // generate assignments
-    //    spec.roomUtilization match {
-    //
-    //      case RoomUtilization.DENSE => {
-    //        val projectWorkers =
-    //          allWorkers.take(spec.existingAssignments).groupBy(_.project)
-    //        var remainingRooms = rooms
-    //        for (workers <- projectWorkers.values) {
-    //          val roomsNeeded =
-    //            scala.math.ceil(workers.length.toDouble / spec.roomCapacity).toInt
-    //          val roomsTaken = remainingRooms.take(roomsNeeded)
-    //          remainingRooms = remainingRooms.drop(roomsNeeded)
-    //          if (roomsTaken.length < roomsNeeded)
-    //            throw new Exception(
-    //              "Not enough rooms to fit specified number of workers"
-    //            )
-    //          var remainingWorkers = workers
-    //          for (room <- roomsTaken) {
-    //            val workersAssigned = remainingWorkers.take(room.capacity)
-    //            remainingWorkers = remainingWorkers.drop(room.capacity)
-    //            workersAssigned.foreach(_.notify(RoomAssignedNotification(room)))
-    //          }
-    //        }
-    //      }
-    //
-    //      case RoomUtilization.SPARSE => for (i <- 0 to spec.existingAssignments) {
-    //        val projectId = i % projects.size
-    //        val roomId = i % rooms.size
-    //        if (roomId % projects.size != projectId) {
-    //
-    //        }
-    //      }
-    //
-    //    }
+    val roomsToPreassign = rooms.take(spec.preassignedRooms)
+    for ((room, worker) <- roomsToPreassign.zip(allWorkers)) {
+      worker.notify(RoomAssignedNotification(room))
+    }
 
     new LunchModel(projects, allWorkers, rooms)
-  }
-
-  def main(args: Array[String]): Unit = {
-    println("hello")
   }
 }

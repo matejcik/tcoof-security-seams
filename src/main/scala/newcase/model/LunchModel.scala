@@ -29,12 +29,13 @@ class LunchModel(val projects: Seq[Project],
   class LunchProblem extends RootEnsemble {
     name("match hungry workers to free lunchrooms")
 
+    val unassigned =
+      workers.filterNot(_.notified[RoomAssignedNotification])
+
     class RoomAssignment(room: Room) extends Ensemble {
       name(s"assign workers to room ${room.name}")
       val occupants =
         workers.filter(_.notified(RoomAssignedNotification(room)))
-      val unassigned =
-        workers.filterNot(_.notified[RoomAssignedNotification])
 
       val freeSpaces = room.capacity - occupants.size
       val assignees = subsetOf(unassigned, _ <= freeSpaces)
