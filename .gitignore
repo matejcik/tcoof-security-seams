@@ -6,7 +6,6 @@ project/boot/
 .cache
 
 *.class
-*.log
 
 .lib/
 dist/*
