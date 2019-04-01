@@ -4,14 +4,23 @@ object ProjectAssignment extends Enumeration {
   val ROUND_ROBIN, RANDOM = Value
 }
 
+case class RoomParam(n: Int, capacity: Int)
+
 case class ScenarioSpec(projects: Int,
-                        rooms: Int,
-                        roomCapacity: Int,
-                        randomCapacity: Boolean,
+                        lunchrooms: RoomParam,
+                        workrooms: RoomParam,
                         workers: Int,
+                        hungryWorkers: Int,
                         preassignedRooms: Int,
-) {
+                        isLunchTime: Boolean,
+                       ) {
   def toPerfLine: String = {
-    s"$projects, $rooms, $roomCapacity, $randomCapacity, $workers, $preassignedRooms"
+    s"$projects, ${lunchrooms.n}, ${lunchrooms.capacity}, ${workrooms.n}, ${
+      workrooms.capacity
+    }, $workers, $hungryWorkers, $preassignedRooms, $isLunchTime"
   }
+}
+
+object ScenarioSpec {
+  implicit def tupleToRoomParam(tuple: (Int, Int)): RoomParam = RoomParam(tuple._1, tuple._2)
 }
