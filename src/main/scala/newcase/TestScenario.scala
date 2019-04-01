@@ -130,8 +130,8 @@ object TestScenario {
       projects = 7,
       lunchrooms = (2, 5),
       workrooms = (10, 50),
-      workers = 5,
-      hungryWorkers = 0,
+      workers = 50,
+      hungryWorkers = 5,
       preassignedRooms = 0,
       isLunchTime = true,
     )
@@ -166,17 +166,28 @@ object TestScenario {
       }
     }
   }
-  /*
+
   def measure_workerCount_moreRoomsThanProjects: Unit = {
     log("===== varying worker count - more rooms than projects =====")
+    val defaultSpec = ScenarioSpec(
+      projects = 3,
+      lunchrooms = (4, 5),
+      workrooms = (10, 50),
+      workers = 50,
+      hungryWorkers = 0,
+      preassignedRooms = 0,
+      isLunchTime = true,
+    )
+    warmup(defaultSpec)
     breakable {
-      for (workerCount <- 2 to 50) {
-        val spec = ScenarioSpec(3, 4, 5, false, workerCount, 0)
+      for (workerCount <- 5 to 40) {
+        val spec = defaultSpec.copy(hungryWorkers = workerCount)
         if (!measureScenario(spec)) break
       }
     }
   }
 
+  /*
   def measure_workerCount_randomRoomSizes: Unit = {
     log("===== varying worker count - unevenly sized rooms =====")
     breakable {
@@ -226,10 +237,10 @@ object TestScenario {
     warmup
     measure_workerCount_simple(false)
     measure_workerCount_simple(true)
-    //measure_workerCount_moreProjectsThanRooms
+    measure_workerCount_moreProjectsThanRooms
+    measure_workerCount_moreRoomsThanProjects
     measure_roomCapacity
     /*
-    measure_workerCount_moreRoomsThanProjects
     measure_preassignedRooms
     measure_roomCount*/
   }

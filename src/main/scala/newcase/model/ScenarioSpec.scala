@@ -16,6 +16,9 @@ case class ScenarioSpec(projects: Int,
                         preassignedRooms: Int,
                         isLunchTime: Boolean,
                        ) {
+  require(workers >= hungryWorkers)
+  require(lunchrooms.n >= preassignedRooms)
+
   def toPerfLine: String = {
     s"$projects, ${lunchrooms.n}, ${lunchrooms.capacity}, ${workrooms.n}, ${
       workrooms.capacity
