@@ -3,15 +3,15 @@ package newcase
 import java.io.{File, PrintWriter}
 
 import newcase.model._
+import newcase.model.ScenarioSpec._
 import org.chocosolver.solver.search.loop.lns.neighbors.Neighbor
 import org.chocosolver.util.tools.TimeUtils
 
 import scala.util.Random
 import scala.util.control.Breaks._
 
-
 object TestScenario {
-  val TEST_ROUNDS = 30
+  val TEST_ROUNDS = 50
   val SOLVER_TIME_LIMIT = 30L * 1000
 
   val logWriter = new PrintWriter(new File("lunch.log"))
@@ -35,8 +35,9 @@ object TestScenario {
   def measureScenario(spec: ScenarioSpec): Boolean = {
     var utility = 0
     val measurements = for (i <- 0 until TEST_ROUNDS) yield {
-      val (success, time, _) = solveScenario(spec)
+      val (success, time, oneUtility) = solveScenario(spec)
       perf(spec, i, success, time)
+      utility = oneUtility
       time
     }
 
@@ -45,14 +46,15 @@ object TestScenario {
     val max = formatMs(measurements.max)
     val avg = formatMs(measurements.sum / TEST_ROUNDS)
     val med = formatMs(measurementsSorted(TEST_ROUNDS / 2))
-    log(s"Scenario ${spec} solved in avg $avg ms (min: $min, max: $max, med: $med)")
+    log(s"Scenario ${spec} solved in avg $avg ms (min: $min, max: $max, med: $med), utility $utility")
 
     measurements.exists(_ < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS)
   }
 
   def solutionFitsAllWorkers(model: LunchModel): Boolean = {
     val alreadyNotified = model.workers.count(_.notified[RoomAssignedNotification])
-    val selectCardinalities = model.problem.instance.roomAssignments.selectedMembers
+    val selectCardinalities = model.problem.instance
+      .lunchroomAssignments.selectedMembers
       .map(_.assignees.cardinality.solutionValue)
       .sum
     alreadyNotified + selectCardinalities == model.workers.length
@@ -80,9 +82,20 @@ object TestScenario {
     (success, time, model.problem.instance.solutionUtility)
   }
 
+  def warmup: Unit = {
+    val spec = ScenarioSpec(
+      projects = 3,
+      lunchrooms = (3, 10),
+      workrooms = (3, 10),
+      workers = 10,
+      hungryWorkers = 10,
+      preassignedRooms = 0,
+      isLunchTime = true
+    )
+    warmup(spec)
+  }
 
-  def warmup = {
-    val spec = ScenarioSpec(3, 3, 10, false, 10, 0)
+  def warmup(spec: ScenarioSpec): Unit = {
     var totalTime: Long = 0
     for (_ <- 0 until 100) {
       val (_, time, _) = solveScenario(spec)
@@ -91,17 +104,69 @@ object TestScenario {
     log(s"warmup completed in ${formatMs(totalTime)} ms")
   }
 
-
-  def measure_workerCount_moreProjectsThanRooms: Unit = {
-    log("===== varying worker count - more projects than rooms =====")
+  def measure_workerCount_simple(isLunchTime: Boolean): Unit = {
+    log(s"===== varying worker count - ${if (isLunchTime) "" else "not "}lunch hour =====")
+    val defaultSpec = ScenarioSpec(
+      projects = 40,
+      lunchrooms = (0, 0),
+      workrooms = (100, 50),
+      workers = 50,
+      hungryWorkers = 0,
+      preassignedRooms = 0,
+      isLunchTime = isLunchTime,
+    )
+    warmup(defaultSpec)
     breakable {
-      for (workerCount <- 2 to 50) {
-        val spec = ScenarioSpec(4, 3, 5, false, workerCount, 0)
+      for (workerCount <- 50.to(1000, 50)) {
+        val spec = defaultSpec.copy(workers = workerCount)
         if (!measureScenario(spec)) break
       }
     }
   }
 
+  def measure_workerCount_moreProjectsThanRooms: Unit = {
+    log("===== varying worker count - more projects than rooms =====")
+    val defaultSpec = ScenarioSpec(
+      projects = 7,
+      lunchrooms = (2, 5),
+      workrooms = (10, 50),
+      workers = 5,
+      hungryWorkers = 0,
+      preassignedRooms = 0,
+      isLunchTime = true,
+    )
+    warmup(defaultSpec)
+    for (lunchroomCount <- 2 to 5) {
+      breakable {
+        for (workerCount <- 5 to 40) {
+          val spec = defaultSpec.copy(hungryWorkers = workerCount, lunchrooms = (lunchroomCount, 5))
+          if (!measureScenario(spec)) break
+        }
+      }
+    }
+  }
+
+  def measure_roomCapacity: Unit = {
+    log("===== slowdown with increasing room capacity =====")
+    /* technically with number of people available to fit into rooms */
+    val defaultSpec = ScenarioSpec(
+      projects = 4,
+      lunchrooms = (3, 5),
+      workrooms = (10, 50),
+      workers = 50,
+      hungryWorkers = 25,
+      preassignedRooms = 0,
+      isLunchTime = true,
+    )
+    warmup(defaultSpec)
+    breakable {
+      for (lunchroomCapacity <- 5 to 15) {
+        val spec = defaultSpec.copy(lunchrooms = (3, lunchroomCapacity))
+        if (!measureScenario(spec)) break
+      }
+    }
+  }
+  /*
   def measure_workerCount_moreRoomsThanProjects: Unit = {
     log("===== varying worker count - more rooms than projects =====")
     breakable {
@@ -144,18 +209,28 @@ object TestScenario {
         }
       }
     }
-  }
-
+  }*/
 
   def main(args: Array[String]): Unit = {
-//    val spec = ScenarioSpec(5, 12, 5, false, 40, 0)
-//    solveScenario(spec)
-
+//    val defaultSpec = ScenarioSpec(
+//      projects = 4,
+//      lunchrooms = (3, 20),
+//      workrooms = (10, 50),
+//      workers = 50,
+//      hungryWorkers = 50,
+//      preassignedRooms = 0,
+//      isLunchTime = true,
+//    )
+//    solveScenario(defaultSpec)
+//    return
     warmup
-
-    measure_workerCount_moreRoomsThanProjects
+    measure_workerCount_simple(false)
+    measure_workerCount_simple(true)
+    //measure_workerCount_moreProjectsThanRooms
+    measure_roomCapacity
+    /*
     measure_workerCount_moreRoomsThanProjects
     measure_preassignedRooms
-    measure_roomCount
+    measure_roomCount*/
   }
 }

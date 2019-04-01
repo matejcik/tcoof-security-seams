@@ -4,7 +4,9 @@ object ProjectAssignment extends Enumeration {
   val ROUND_ROBIN, RANDOM = Value
 }
 
-case class RoomParam(n: Int, capacity: Int)
+case class RoomParam(n: Int, capacity: Int) {
+  override def toString: String = s"($n,$capacity)"
+}
 
 case class ScenarioSpec(projects: Int,
                         lunchrooms: RoomParam,
