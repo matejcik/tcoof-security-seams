@@ -146,6 +146,30 @@ object TestScenario {
     }
   }
 
+  def measure_projectsFitRooms: Unit = {
+    log("===== assigning worker to rooms when project config matches =====")
+    /* technically with number of people available to fit into rooms */
+    val defaultSpec = ScenarioSpec(
+      projects = 3,
+      lunchrooms = (3, 5),
+      workrooms = (10, 50),
+      workers = 15,
+      hungryWorkers = 15,
+      preassignedRooms = 0,
+      isLunchTime = true,
+    )
+    warmup(defaultSpec)
+    for (workersPerProject <- 5 to 50) {
+      val workersCount = workersPerProject * 3
+      val spec = defaultSpec.copy(
+        lunchrooms = (3, workersPerProject),
+        workers = workersCount,
+        hungryWorkers = workersCount,
+      )
+      measureScenario(spec)
+    }
+  }
+
   def measure_roomCapacity: Unit = {
     log("===== slowdown with increasing room capacity =====")
     /* technically with number of people available to fit into rooms */
@@ -235,13 +259,13 @@ object TestScenario {
 //    solveScenario(defaultSpec)
 //    return
     warmup
+    measure_projectsFitRooms
+    return
     measure_workerCount_simple(false)
     measure_workerCount_simple(true)
     measure_workerCount_moreProjectsThanRooms
     measure_workerCount_moreRoomsThanProjects
     measure_roomCapacity
-    /*
-    measure_preassignedRooms
-    measure_roomCount*/
+
   }
 }
