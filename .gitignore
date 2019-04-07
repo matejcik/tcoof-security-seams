@@ -4,8 +4,11 @@ src_managed/
 project/boot/
 .history
 .cache
+.vscode
+__pycache__
 
 *.class
+*.py[co]
 
 .lib/
 dist/*
