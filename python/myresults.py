@@ -67,10 +67,11 @@ def box_graph(datasets, labels, colors, x_ticks):
     fig = plt.figure(figsize=(7, 5), dpi=300)
     ax = fig.add_subplot(111)
 
-    assert len(datasets) == len(colors)
+    assert len(datasets) <= len(colors)
+    assert len(datasets) <= len(labels)
     for dataset in datasets:
         if len(dataset) < len(x_ticks):
-            dataset.extend([[]] * len(x_ticks) - len(dataset))
+            dataset.extend([[]] * (len(x_ticks) - len(dataset)))
 
     group_size = len(datasets)
     step_size = group_size + 1
