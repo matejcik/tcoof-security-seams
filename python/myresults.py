@@ -46,101 +46,48 @@ def read_csv(label, scaling_factor):
     return df
 
 
-data = np.concatenate((read_csv("0", 1e-6), read_csv("1", 1)))
+def box_graph(datasets, labels, colors, x_ticks):
+    """
+    Datasets is a list of lists of series: the outer list is the number of "lines"
+    (i.e., different measure types that will be shown per each tick). 
+    The inner list has an element for each data point (each x-ticks), and is a series
+    of values from which a single candlebar is drawn.
 
-measure_phases = np.unique(data[:, 0])
-factories_counts = np.unique(data[:, 1])
-workers_per_workplace_counts = np.unique(data[:, 2])
-workers_late_ratios = np.unique(data[:, 3])
+    `colors` is a list of hex/rgb colors, same length as `datasets`
 
-# print(measure_phases)
-# print(factories_counts)
-# print(workers_per_workplace_counts)
-# print(workers_late_ratios)
+    `x_ticks` is a list of values on the X axis, same length as elements of `datasets`
+    """
 
-
-def set_box_color(bp, color):
-    plt.setp(bp["boxes"], color=color)
-    plt.setp(bp["whiskers"], color=color)
-    plt.setp(bp["caps"], color=color)
-    plt.setp(bp["medians"], color=color)
-
-
-group_size = len(workers_late_ratios)
-space_size = 1
-step_size = group_size + space_size
-colors = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3"]
-
-factories_count = np.float32(1)
-
-for measure_phase in measure_phases:
-
-    expected_no_of_data_points = 10000 if measure_phase == 0 else 100
+    def setcolor(bp, color):
+        plt.setp(bp["boxes"], color=color)
+        plt.setp(bp["whiskers"], color=color)
+        plt.setp(bp["caps"], color=color)
+        plt.setp(bp["medians"], color=color)
 
     fig = plt.figure(figsize=(7, 5), dpi=300)
-    ax = fig.add_subplot(1, 1, 1)
+    ax = fig.add_subplot(111)
 
-    for workers_late_ratio_idx, (workers_late_ratio, color) in enumerate(
-        zip(workers_late_ratios, colors)
-    ):
-        boxes = []
+    assert len(datasets) == len(colors)
+    for dataset in datasets:
+        if len(dataset) < len(x_ticks):
+            dataset.extend([[]] * len(x_ticks) - len(dataset))
 
-        for workers_per_workplace_count in workers_per_workplace_counts:
-            data_selection = np.equal(
-                data[:, 0:4],
-                [
-                    measure_phase,
-                    factories_count,
-                    workers_per_workplace_count,
-                    workers_late_ratio,
-                ],
-            ).all(1)
+    group_size = len(datasets)
+    step_size = group_size + 1
+    x_size = len(x_ticks)
 
-            if np.sum(data_selection) == expected_no_of_data_points:
-                boxes.append(data[data_selection, [5]])
-            else:
-                boxes.append([])
-
+    for idx, (series, label, color) in enumerate(zip(datasets, labels, colors)):
         bp = ax.boxplot(
-            boxes,
-            positions=np.array(range(len(workers_per_workplace_counts))) * step_size
-            + workers_late_ratio_idx,
+            series,
+            positions=[i * step_size + idx for i in range(x_size)],
             showfliers=False,
-            widths=0.6,
         )
-        set_box_color(bp, color)
-
-        ax.yaxis.grid(True, linestyle="-", which="major", color="lightgrey", alpha=0.5)
-
-        workers_late_ratio_percentage = int(workers_late_ratio * 100)
-        plt.plot([], c=color, label=f"{workers_late_ratio_percentage}% late workers")
+        setcolor(bp, color)
+        plt.plot([], c=color, label=label)
 
     plt.legend()
-
-    plt.xticks(
-        [
-            x + group_size / 2.0 - 0.5
-            for x in range(0, step_size * len(workers_per_workplace_counts), step_size)
-        ],
-        [int(x) for x in workers_per_workplace_counts],
-    )
-    plt.xlim(-1, step_size * len(workers_per_workplace_counts) - space_size + 1)
-
-    ax.set_xlabel("Workers in a shift (3 shifts in a factory)", fontsize=12)
-    ax.set_ylabel("Computation time (ms)", fontsize=12)
-
-    if measure_phase == 0:
-        measure_phase_desc = "17 minutes before the start of the shift (notification about workers potentially late)"
-    else:
-        measure_phase_desc = (
-            "13 minutes before the start of the shift (selection of standbys)"
-        )
-
-    # ax.set_title(measure_phase_desc)
-
+    plt.xticks([(x * step_size) + group_size / 2 - 0.5 for x in range(x_size)], x_ticks)
+    plt.xlim(-1, step_size * x_size)
     fig.tight_layout()
 
-    plt.savefig(f"figures/{int(measure_phase)}.pdf")
-    plt.close()
-
-    # plt.show()
+    return fig, ax
