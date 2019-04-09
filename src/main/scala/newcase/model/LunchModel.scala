@@ -8,8 +8,8 @@ class Room(name: String, val capacity: Int) extends Component {
   name(s"Room:$name")
 }
 
-class LunchRoom(name: String, capacity: Int) extends Room(name, capacity)
-class WorkRoom(name: String, capacity: Int) extends Room(name, capacity)
+class LunchRoom(name: String, capacity: Int) extends Room("Lunch" + name, capacity)
+class WorkRoom(name: String, capacity: Int) extends Room("Work" + name, capacity)
 
 class Project(name: String, val workrooms: Seq[WorkRoom]) extends Component {
   name(s"Project:$name")
@@ -53,7 +53,7 @@ class LunchModel(val projects: Seq[Project],
         (now isAfter BUILDING_OPEN_TIME) && (now isBefore BUILDING_CLOSE_TIME)
       }
 
-      allow(workersByProject(project), "enter", project.workrooms)
+      //allow(workersByProject(project), "enter", project.workrooms)
     }
 
     class LunchroomAssignment(room: LunchRoom) extends Ensemble {

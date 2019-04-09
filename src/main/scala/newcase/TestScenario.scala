@@ -13,7 +13,7 @@ import scala.util.Random
 import scala.util.control.Breaks._
 
 object TestScenario {
-  val TEST_ROUNDS = 50
+  val TEST_ROUNDS = 5
   val SOLVER_TIME_LIMIT = 30L * 1000
 
   val RESULT_PATH = "results/" + LocalDate.now.format(
@@ -76,29 +76,82 @@ object TestScenario {
   }
 
   def solutionFitsAllWorkers(model: LunchModel): Boolean = {
+    val hungryWorkers = model.workers.filter(_.hungry)
     val alreadyNotified =
-      model.workers.count(_.notified[RoomAssignedNotification])
+      hungryWorkers.count(_.notified[RoomAssignedNotification])
     val selectCardinalities =
       model.problem.instance.lunchroomAssignments.selectedMembers
         .map(_.assignees.cardinality.solutionValue)
         .sum
-    alreadyNotified + selectCardinalities == model.workers.length
+    alreadyNotified + selectCardinalities == hungryWorkers.length
   }
 
-  def solveScenario(spec: ScenarioSpec) = {
+  def solveUntilFitsAll(spec: ScenarioSpec): Measure = {
     val model = ModelGenerator.modelFromSpec(spec)
 
     val start = System.nanoTime()
     model.problem.init()
     model.problem.solverLimitTime(SOLVER_TIME_LIMIT)
-//    val init = System.nanoTime()
-//    while (model.problem.solve() && !solutionFitsAllWorkers(model)) { }
+    //    val init = System.nanoTime()
+    while (model.problem.solve() && !solutionFitsAllWorkers(model)) {}
+    if (model.problem.exists) {
+      model.problem.commit()
+      //      for (action <- model.problem.actions) println(action)
+    }
+    val end = System.nanoTime()
+    val time = end - start
+
+    val success = time < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
+
+    Measure(success, time, model.problem.instance.solutionUtility)
+  }
+
+  def solveScenario(spec: ScenarioSpec): Measure = {
+    val model = ModelGenerator.modelFromSpec(spec)
+
+    val start = System.nanoTime()
+    model.problem.init()
+    model.problem.solverLimitTime(SOLVER_TIME_LIMIT)
     while (model.problem.solve()) {}
     if (model.problem.exists) {
       model.problem.commit()
 //      for (action <- model.problem.actions) println(action)
     }
 //    println(model.problem.instance.toStringWithUtility)
+    val end = System.nanoTime()
+    val time = end - start
+
+    val success = time < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
+
+    Measure(success, time, model.problem.instance.solutionUtility)
+  }
+
+  def solveOneByOne(spec: ScenarioSpec): Measure = {
+    val model = ModelGenerator.modelFromSpec(spec)
+
+    val hungryWorkers = Random.shuffle(model.workers.filter(_.hungry))
+    hungryWorkers.foreach(_.hungry = false)
+
+    val start = System.nanoTime()
+
+    breakable {
+      for (worker <- hungryWorkers) {
+        worker.hungry = true
+
+        model.problem.init()
+        model.problem.solverLimitTime(SOLVER_TIME_LIMIT)
+        while (model.problem.solve()) {}
+        if (model.problem.exists) {
+          model.problem.commit()
+          //for (action <- model.problem.actions) println(action)
+        }
+
+        if (solutionFitsAllWorkers(model)) {
+          break
+        }
+      }
+    }
+    //    println(model.problem.instance.toStringWithUtility)
     val end = System.nanoTime()
     val time = end - start
 
@@ -120,35 +173,35 @@ object TestScenario {
     warmup(spec)
   }
 
-  def warmup(spec: ScenarioSpec, repeats: Int = 100): Unit = {
+  def warmup(spec: ScenarioSpec,
+             repeats: Int = 100,
+             solverFunc: ScenarioSpec => Measure = solveScenario): Unit = {
     var totalTime: Long = 0
     for (_ <- 0 until repeats) {
-      totalTime += solveScenario(spec).time
+      totalTime += solverFunc(spec).time
     }
     log(s"warmup completed in ${formatMs(totalTime)} ms")
   }
 
   def measure_workerCount_simple =
-    measure(
-      "workercount-simple",
-      "varying worker count - not lunch hour"
-    ) { m =>
-      val defaultSpec = ScenarioSpec(
-        projects = 40,
-        lunchrooms = (0, 0),
-        workrooms = (100, 50),
-        workers = 50,
-        hungryWorkers = 0,
-        preassignedRooms = 0,
-        isLunchTime = false,
-      )
-      warmup(defaultSpec, 100000)
-      breakable {
-        for (workerCount <- 1000.to(30000, 1000)) {
-          val spec = defaultSpec.copy(workers = workerCount)
-          if (!m(spec)) break
+    measure("workercount-simple", "varying worker count - not lunch hour") {
+      m =>
+        val defaultSpec = ScenarioSpec(
+          projects = 40,
+          lunchrooms = (0, 0),
+          workrooms = (100, 50),
+          workers = 50,
+          hungryWorkers = 0,
+          preassignedRooms = 0,
+          isLunchTime = false,
+        )
+        warmup(defaultSpec, 100000)
+        breakable {
+          for (workerCount <- 1000.to(30000, 1000)) {
+            val spec = defaultSpec.copy(workers = workerCount)
+            if (!m(spec)) break
+          }
         }
-      }
     }
 
   def measure_workerCount_moreProjectsThanRooms =
@@ -179,19 +232,113 @@ object TestScenario {
       }
     }
 
+  def measure_moreRoomsThanProjects(sat: Boolean) =
+    measure(
+      "more-rooms-than-projects" + (if (sat) "-sat" else ""),
+      "varying worker count - more rooms than projects"
+        + (if (sat) " (satisfy)" else ""),
+      solverFunc = if (sat) solveUntilFitsAll _ else solveScenario _
+    ) { m =>
+      val defaultSpec = ScenarioSpec(
+        projects = 3,
+        lunchrooms = (4, 10),
+        workrooms = (10, 50),
+        workers = 50,
+        hungryWorkers = 5,
+        preassignedRooms = 0,
+        isLunchTime = true,
+      )
+      warmup(defaultSpec)
+      breakable {
+        for (workerCount <- 5 to 40) {
+          val spec = defaultSpec.copy(hungryWorkers = workerCount)
+          if (!m(spec)) break
+        }
+      }
+    }
+
+  def measure_allVsOneByOne = {
+    val defaultSpec = ScenarioSpec(
+      projects = 3,
+      lunchrooms = (4, 10),
+      workrooms = (10, 50),
+      workers = 50,
+      hungryWorkers = 5,
+      preassignedRooms = 0,
+      isLunchTime = true,
+    )
+    warmup(defaultSpec)
+    measure(
+      "allone-all",
+      "all-vs-one - place all workers in the same iteration",
+    ) { m =>
+      breakable {
+        for (workerCount <- 5 to 40) {
+          val spec = defaultSpec.copy(hungryWorkers = workerCount)
+          if (!m(spec)) break
+        }
+      }
+    }
+    warmup(defaultSpec, 1000, solveOneByOne)
+    measure(
+      "allone-one",
+      "all-vs-one - place one worker at a time",
+      solverFunc = solveOneByOne,
+    ) { m =>
+      breakable {
+        for (workerCount <- 5 to 40) {
+          val spec = defaultSpec.copy(hungryWorkers = workerCount)
+          if (!m(spec)) break
+        }
+      }
+    }
+  }
+
+  def measure_oneByOne_growingNumberOfProjects =
+    measure(
+      "onebyone-projects",
+      "varying worker count with growing number of projects",
+      solverFunc = solveOneByOne
+    ) { m =>
+      val defaultSpec = ScenarioSpec(
+        projects = 3,
+        lunchrooms = (15, 20),
+        workrooms = (10, 50),
+        workers = 500,
+        hungryWorkers = 5,
+        preassignedRooms = 0,
+        isLunchTime = true,
+      )
+      warmup(defaultSpec, solverFunc = solveOneByOne)
+      for (projectCount <- Seq(5, 15, 25)) {
+        breakable {
+          for (workerCount <- 50.to(500, 50)) {
+            val spec = defaultSpec.copy(
+              hungryWorkers = workerCount,
+              projects = projectCount,
+            )
+            if (!m(spec)) break
+          }
+        }
+      }
+    }
+
   def main(args: Array[String]): Unit = {
 //    val defaultSpec = ScenarioSpec(
-//      projects = 4,
-//      lunchrooms = (3, 20),
+//      projects = 3,
+//      lunchrooms = (15, 5),
 //      workrooms = (10, 50),
-//      workers = 50,
-//      hungryWorkers = 50,
+//      workers = 200,
+//      hungryWorkers = 5,
 //      preassignedRooms = 0,
 //      isLunchTime = true,
 //    )
-//    solveScenario(defaultSpec)
+//    warmup(defaultSpec, 10, solveOneByOne)
 //    return
     warmup
-    measure_workerCount_simple
+    measure_oneByOne_growingNumberOfProjects
+    //measure_moreRoomsThanProjects(true)
+    //measure_moreRoomsThanProjects(false)
+    //measure_workerCount_simple
   }
 }
