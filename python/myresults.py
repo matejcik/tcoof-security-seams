@@ -1,4 +1,5 @@
 import os
+import colorsys
 
 import matplotlib
 
@@ -9,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(__file__)
-RESULT_PATH = os.path.abspath(os.path.join(HERE, "..", "results", "2019-04-07"))
+RESULT_PATH = os.path.abspath(os.path.join(HERE, "..", "results", "2019-04-09"))
 
 COLUMNS = {
     "projects": np.int32,
@@ -28,7 +29,7 @@ COLUMNS = {
 NS_TIME = int(30e9)
 
 
-def read_csv(label, scaling_factor):
+def read_csv(label, scaling_factor=1e-6):
     filename = os.path.join(RESULT_PATH, label + ".log")
     df = pd.read_csv(
         filename,
@@ -92,3 +93,80 @@ def box_graph(datasets, labels, colors, x_ticks):
     fig.tight_layout()
 
     return fig, ax
+
+
+def plot_moreprojects():
+    files = ["moreprojects-" + s for s in ("optimizing", "satisfying", "onebyone")]
+    hues = [0, 0.333, 0.666]
+    headers = ["Optimizing solver", "Satisfying solver", "One-by-one solver"]
+    datasets = []
+    labels = []
+    colors = []
+    room_counts = [3, 5]
+
+    for ifn, hue, header in zip(files, hues, headers):
+        data = read_csv(ifn)
+        for i, room_count in enumerate(room_counts):
+            subsel = data[data.lunch_n == room_count]
+            subsel = subsel[~subsel.failed]
+            subsel = subsel[["hungry", "nsec"]]
+            grouping = subsel.groupby("hungry")["nsec"]
+            series = [s for _, s in grouping]
+
+            label = f"{header} - {room_count} rooms"
+            color = colorsys.hsv_to_rgb(hue + 0.15 * i, 0.9, 0.86)
+            datasets.append(series)
+            labels.append(label)
+            colors.append(color)
+
+    x_ticks = range(5, len(datasets[0]) + 5)
+
+    fig, ax = box_graph(datasets, labels, colors, x_ticks)
+    ax.set_ylabel("Computation time (ms)")
+    ax.set_xlabel("Number of workers")
+
+    fig.tight_layout()
+    plt.savefig("moreprojects.pdf")
+    plt.close()
+
+
+def plot_morerooms():
+    files = ["morerooms-" + s for s in ("optimizing", "satisfying", "onebyone")]
+    hues = [0, 0.333, 0.666]
+    headers = ["Optimizing solver", "Satisfying solver", "One-by-one solver"]
+    datasets = []
+    labels = []
+    colors = []
+
+    for ifn, hue, header in zip(files, hues, headers):
+        data = read_csv(ifn)
+        subsel = data[~data.failed & (data.hungry <= 25)]
+        subsel = subsel[["hungry", "nsec"]]
+        grouping = subsel.groupby("hungry")["nsec"]
+        series = [s for _, s in grouping]
+
+        color = colorsys.hsv_to_rgb(hue, 0.9, 0.76)
+        datasets.append(series)
+        labels.append(header)
+        colors.append(color)
+
+    maxticks = max(len(d) for d in datasets)
+    x_ticks = range(5, maxticks + 5)
+
+    fig, ax = box_graph(datasets, labels, colors, x_ticks)
+    ax.set_ylabel("Computation time (ms)")
+    ax.set_xlabel("Number of workers")
+
+    fig.tight_layout()
+    plt.savefig("morerooms.pdf")
+    plt.close()
+
+
+
+def main():
+    plot_moreprojects()
+    plot_morerooms()
+
+
+if __name__ == "__main__":
+    main()
