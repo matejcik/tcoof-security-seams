@@ -1,4 +1,4 @@
-package newcase.model
+package scenario.model
 
 import java.time.LocalTime
 

@@ -1,11 +1,11 @@
-package newcase
+package scenario
 
 import java.io.{File, PrintWriter}
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-import newcase.model._
-import newcase.model.ScenarioSpec._
+import scenario.model._
+import scenario.model.ScenarioSpec._
 import org.chocosolver.solver.search.loop.lns.neighbors.Neighbor
 import org.chocosolver.util.tools.TimeUtils
 

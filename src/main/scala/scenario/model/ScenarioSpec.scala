@@ -1,4 +1,4 @@
-package newcase.model
+package scenario.model
 
 object ProjectAssignment extends Enumeration {
   val ROUND_ROBIN, RANDOM = Value
