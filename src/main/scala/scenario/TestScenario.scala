@@ -13,7 +13,7 @@ import scala.util.Random
 import scala.util.control.Breaks._
 
 object TestScenario {
-  val TEST_ROUNDS = 5
+  val TEST_ROUNDS = 50
   val SOLVER_TIME_LIMIT = 30L * 1000
 
   val RESULT_PATH = "results/" + LocalDate.now.format(
@@ -146,18 +146,18 @@ object TestScenario {
           //for (action <- model.problem.actions) println(action)
         }
 
-        if (solutionFitsAllWorkers(model)) {
-          break
-        }
+        if (System.nanoTime() - start > SOLVER_TIME_LIMIT) break
       }
     }
     //    println(model.problem.instance.toStringWithUtility)
     val end = System.nanoTime()
     val time = end - start
 
-    val success = time < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
-
-    Measure(success, time, model.problem.instance.solutionUtility)
+    val success =
+      model.problem.exists &&
+      (time < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS)
+    val utility = if (success) model.problem.instance.solutionUtility else 0
+    Measure(success, time, utility)
   }
 
   def warmup: Unit = {
@@ -167,17 +167,16 @@ object TestScenario {
       workrooms = (3, 10),
       workers = 10,
       hungryWorkers = 10,
-      preassignedRooms = 0,
-      isLunchTime = true
+      fillRooms = false,
+      isLunchTime = true,
     )
     warmup(spec)
   }
 
   def warmup(spec: ScenarioSpec,
-             repeats: Int = 100,
              solverFunc: ScenarioSpec => Measure = solveScenario): Unit = {
     var totalTime: Long = 0
-    for (_ <- 0 until repeats) {
+    while (totalTime < 10L * 1000 * 1000 * 1000) {
       totalTime += solverFunc(spec).time
     }
     log(s"warmup completed in ${formatMs(totalTime)} ms")
@@ -192,14 +191,19 @@ object TestScenario {
           workrooms = (100, 50),
           workers = 50,
           hungryWorkers = 0,
-          preassignedRooms = 0,
+          fillRooms = false,
           isLunchTime = false,
         )
-        warmup(defaultSpec, 100000)
-        breakable {
-          for (workerCount <- 1000.to(30000, 1000)) {
-            val spec = defaultSpec.copy(workers = workerCount)
-            if (!m(spec)) break
+        warmup(defaultSpec)
+        for (projectCount <- Seq(5, 50)) {
+          breakable {
+            for (workerCount <- 100.to(1000, 100)) {
+              val spec = defaultSpec.copy(
+                projects = projectCount,
+                workers = workerCount,
+              )
+              if (!m(spec)) break
+            }
           }
         }
     }
@@ -211,7 +215,7 @@ object TestScenario {
       workrooms = (10, 50),
       workers = 50,
       hungryWorkers = 5,
-      preassignedRooms = 0,
+      fillRooms = false,
       isLunchTime = true,
     )
     val measuringLoop = (m: ScenarioSpec => Boolean) =>
@@ -262,7 +266,7 @@ object TestScenario {
       workrooms = (10, 50),
       workers = 50,
       hungryWorkers = 5,
-      preassignedRooms = 0,
+      fillRooms = false,
       isLunchTime = true,
     )
     val measuringLoop = (m: ScenarioSpec => Boolean) => breakable {
@@ -300,43 +304,6 @@ object TestScenario {
     }
   }
 
-  def measure_allVsOneByOne = {
-    val defaultSpec = ScenarioSpec(
-      projects = 3,
-      lunchrooms = (4, 10),
-      workrooms = (10, 50),
-      workers = 50,
-      hungryWorkers = 5,
-      preassignedRooms = 0,
-      isLunchTime = true,
-    )
-    warmup(defaultSpec)
-    measure(
-      "allone-all",
-      "all-vs-one - place all workers in the same iteration",
-    ) { m =>
-      breakable {
-        for (workerCount <- 5 to 40) {
-          val spec = defaultSpec.copy(hungryWorkers = workerCount)
-          if (!m(spec)) break
-        }
-      }
-    }
-    warmup(defaultSpec, 1000, solveOneByOne)
-    measure(
-      "allone-one",
-      "all-vs-one - place one worker at a time",
-      solverFunc = solveOneByOne,
-    ) { m =>
-      breakable {
-        for (workerCount <- 5 to 40) {
-          val spec = defaultSpec.copy(hungryWorkers = workerCount)
-          if (!m(spec)) break
-        }
-      }
-    }
-  }
-
   def measure_oneByOne_growingNumberOfProjects =
     measure(
       "onebyone-projects",
@@ -344,24 +311,23 @@ object TestScenario {
       solverFunc = solveOneByOne
     ) { m =>
       val defaultSpec = ScenarioSpec(
-        projects = 3,
-        lunchrooms = (15, 20),
+        projects = 10,
+        lunchrooms = (20, 30),
         workrooms = (10, 50),
-        workers = 500,
-        hungryWorkers = 5,
-        preassignedRooms = 0,
+        workers = 1000,
+        hungryWorkers = 1,
+        fillRooms = false,
         isLunchTime = true,
       )
       warmup(defaultSpec, solverFunc = solveOneByOne)
-      for (projectCount <- Seq(5, 15, 25)) {
-        breakable {
-          for (workerCount <- 50.to(500, 50)) {
-            val spec = defaultSpec.copy(
-              hungryWorkers = workerCount,
-              projects = projectCount,
-            )
-            if (!m(spec)) break
-          }
+
+      for (fillRooms <- Seq(false, true)) {
+        for (projectCount <- Seq(10, 20, 30)) {
+          val spec = defaultSpec.copy(
+            projects = projectCount,
+            fillRooms = fillRooms,
+          )
+          m(spec)
         }
       }
     }
@@ -379,12 +345,8 @@ object TestScenario {
 //    warmup(defaultSpec, 10, solveOneByOne)
 //    return
     warmup
-    measure_moreProjectsThanRooms_compareMethods
-    measure_moreRoomsThanProjects_compareMethods
-    return
     measure_oneByOne_growingNumberOfProjects
-    //measure_moreRoomsThanProjects(true)
-    //measure_moreRoomsThanProjects(false)
-    //measure_workerCount_simple
+    measure_workerCount_simple
+    measure_moreRoomsThanProjects_compareMethods
   }
 }

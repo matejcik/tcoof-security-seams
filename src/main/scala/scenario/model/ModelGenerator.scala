@@ -1,6 +1,7 @@
 package scenario.model
 
 import java.time.LocalTime
+import scala.collection.mutable.{Map => MutableMap}
 
 
 object ModelGenerator {
@@ -19,18 +20,31 @@ object ModelGenerator {
       new Project(('A' + i).toChar.toString, selectedWorkrooms)
     }
 
-    val allWorkers = for (i <- 0 until spec.workers) yield {
-      val w = new Worker(i, projects(i % projects.size))
-      if (i < spec.hungryWorkers) w.hungry = true
-      w
+    val workers = for (i <- 0 until spec.workers)
+      yield new Worker(i, projects(i % projects.size))
+
+    val _groupByProject = workers.groupBy(_.project)
+    val workersByProject = MutableMap(
+      projects.map(p => p -> _groupByProject.getOrElse(p, Seq.empty)): _*
+    )
+
+    if (spec.fillRooms) {
+      val loopProjects = Stream.continually(projects).flatten
+      for ((room, project) <- lunchrooms zip loopProjects) {
+        val projectWorkers = workersByProject(project)
+        projectWorkers.take(room.capacity).foreach(
+          _.notify(RoomAssignedNotification(room))
+        )
+        workersByProject(project) = projectWorkers.drop(room.capacity)
+      }
     }
 
-    val roomsToPreassign = lunchrooms.take(spec.preassignedRooms)
-    for ((room, worker) <- roomsToPreassign.zip(allWorkers)) {
-      worker.notify(RoomAssignedNotification(room))
-    }
+    workers
+      .filterNot(_.notified[RoomAssignedNotification])
+      .take(spec.hungryWorkers)
+      .foreach(_.hungry = true)
 
-    val model = new LunchModel(projects, allWorkers, workrooms, lunchrooms)
+    val model = new LunchModel(projects, workers, workrooms, lunchrooms)
     if (spec.isLunchTime) model.now = LocalTime.of(13, 37)
     model
   }

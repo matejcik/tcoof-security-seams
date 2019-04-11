@@ -45,10 +45,9 @@ class LunchModel(val projects: Seq[Project],
     name("assign workers to projects and rooms")
 
     // mapping projects to lists of workers
+    private val _workersGroupByProject = workers.groupBy(_.project)
     val workersByProject =
-      projects.map(p =>
-        p -> workers.groupBy(_.project).getOrElse(p, Seq.empty)
-      ).toMap
+      projects.map(p => p -> _workersGroupByProject.getOrElse(p, Seq.empty)).toMap
 
     // list of all hungry workers waiting for a lunchroom
     val hungryWorkers =
