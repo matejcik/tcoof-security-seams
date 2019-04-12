@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(__file__)
-RESULT_PATH = os.path.abspath(os.path.join(HERE, "..", "results", "2019-04-09"))
+RESULT_PATH = os.path.abspath(os.path.join(HERE, "..", "results", "2019-04-12"))
 
 COLUMNS = {
     "projects": np.int32,
@@ -20,10 +20,10 @@ COLUMNS = {
     "work_cap": np.int32,
     "workers": np.int32,
     "hungry": np.int32,
-    "preassigned": np.int32,
+    "full": str,
     "lunchtime": str,
     "i": np.int32,
-    "time": str,
+    "nsec": np.int64,
 }
 
 NS_TIME = int(30e9)
@@ -39,12 +39,17 @@ def read_csv(label, scaling_factor=1e-6):
         skipinitialspace=True,
     )
 
+    df.full = df.full == "true"
     df.lunchtime = df.lunchtime == "true"
-    df["failed"] = df.time == "FAIL"
-    df["nsec"] = df.time.replace("FAIL", NS_TIME).astype(np.int64)
-    df["nsec"] *= scaling_factor
+    df["failed"] = df.nsec > 30_000_000_000
+    df.nsec *= scaling_factor
 
     return df
+
+
+def make_colors(n):
+    f = 1 / n
+    return [colorsys.hsv_to_rgb(i * f, 0.9, 0.76) for i in range(n)]
 
 
 def box_graph(datasets, labels, colors, x_ticks):
@@ -90,7 +95,9 @@ def box_graph(datasets, labels, colors, x_ticks):
     plt.legend()
     plt.xticks([(x * step_size) + group_size / 2 - 0.5 for x in range(x_size)], x_ticks)
     plt.xlim(-1, step_size * x_size)
-    fig.tight_layout()
+
+    ax.set_ylabel("Computation time (ms)")
+    ax.yaxis.grid(True, linestyle="-", which="major", color="lightgrey", alpha=0.5)
 
     return fig, ax
 
@@ -122,7 +129,6 @@ def plot_moreprojects():
     x_ticks = range(5, len(datasets[0]) + 5)
 
     fig, ax = box_graph(datasets, labels, colors, x_ticks)
-    ax.set_ylabel("Computation time (ms)")
     ax.set_xlabel("Number of workers")
 
     fig.tight_layout()
@@ -132,29 +138,25 @@ def plot_moreprojects():
 
 def plot_morerooms():
     files = ["morerooms-" + s for s in ("optimizing", "satisfying", "onebyone")]
-    hues = [0, 0.333, 0.666]
     headers = ["Optimizing solver", "Satisfying solver", "One-by-one solver"]
     datasets = []
     labels = []
-    colors = []
+    colors = make_colors(len(files))
 
-    for ifn, hue, header in zip(files, hues, headers):
+    for ifn, header in zip(files, headers):
         data = read_csv(ifn)
         subsel = data[~data.failed & (data.hungry <= 25)]
         subsel = subsel[["hungry", "nsec"]]
         grouping = subsel.groupby("hungry")["nsec"]
         series = [s for _, s in grouping]
 
-        color = colorsys.hsv_to_rgb(hue, 0.9, 0.76)
         datasets.append(series)
         labels.append(header)
-        colors.append(color)
 
     maxticks = max(len(d) for d in datasets)
     x_ticks = range(5, maxticks + 5)
 
     fig, ax = box_graph(datasets, labels, colors, x_ticks)
-    ax.set_ylabel("Computation time (ms)")
     ax.set_xlabel("Number of workers")
 
     fig.tight_layout()
@@ -162,9 +164,54 @@ def plot_morerooms():
     plt.close()
 
 
+def plot_simple():
+    data = read_csv("workercount-simple")
+    projects = data.projects.unique()
+    colors = make_colors(len(projects))
+    labels = [f"{n} projects" for n in projects]
+    x_ticks = []
+    datasets = []
+
+    for n in projects:
+        subsel = data[data.projects == n][["workers", "nsec"]]
+        grouping = subsel.groupby("workers")["nsec"]
+        ticks, series = zip(*grouping)
+        if len(ticks) > len(x_ticks):
+            x_ticks = ticks
+        datasets.append(series)
+
+    fig, ax = box_graph(datasets, labels, colors, x_ticks)
+    ax.set_xlabel("Number of workers")
+
+    fig.tight_layout()
+    plt.savefig("simple.pdf")
+    plt.close()
+
+
+def plot_onebyone():
+    data = read_csv("onebyone-projects")
+    x_ticks = data.lunch_n.unique()
+    colors = make_colors(2)
+    labels = ["Seating available", "Seating not available"]
+    datasets = []
+
+    for room_full in (False, True):
+        subsel = data[data.full == room_full][["lunch_n", "nsec"]]
+        grouping = subsel.groupby("lunch_n")["nsec"]
+        series = [s for _, s in grouping]
+        datasets.append(series)
+
+    fig, ax = box_graph(datasets, labels, colors, x_ticks)
+    ax.set_xlabel("Number of lunch rooms")
+
+    fig.tight_layout()
+    plt.savefig("onebyone.pdf")
+    plt.close()
+
 
 def main():
-    plot_moreprojects()
+    plot_simple()
+    plot_onebyone()
     plot_morerooms()
 
 

@@ -13,7 +13,7 @@ import scala.util.Random
 import scala.util.control.Breaks._
 
 object TestScenario {
-  val TEST_ROUNDS = 50
+  val TEST_ROUNDS = 100
   val SOLVER_TIME_LIMIT = 30L * 1000
 
   val RESULT_PATH = "results/" + LocalDate.now.format(
@@ -41,8 +41,7 @@ object TestScenario {
     val perfLogWriter = new PrintWriter(new File(s"$RESULT_PATH/$label.log"))
 
     def perf(spec: ScenarioSpec, runIndex: Int, success: Boolean, time: Long) {
-      val perfOrFail = if (success) time.toString else "FAIL"
-      perfLogWriter.println(s"${spec.toPerfLine}, $runIndex, $perfOrFail")
+      perfLogWriter.println(s"${spec.toPerfLine}, $runIndex, $time")
       perfLogWriter.flush()
     }
 
@@ -195,7 +194,7 @@ object TestScenario {
           isLunchTime = false,
         )
         warmup(defaultSpec)
-        for (projectCount <- Seq(5, 50)) {
+        for (projectCount <- Seq(5, 15, 50)) {
           breakable {
             for (workerCount <- 100.to(1000, 100)) {
               val spec = defaultSpec.copy(
@@ -311,10 +310,10 @@ object TestScenario {
       solverFunc = solveOneByOne
     ) { m =>
       val defaultSpec = ScenarioSpec(
-        projects = 10,
-        lunchrooms = (20, 30),
+        projects = 20,
+        lunchrooms = (20, 100),
         workrooms = (10, 50),
-        workers = 1000,
+        workers = 5000,
         hungryWorkers = 1,
         fillRooms = false,
         isLunchTime = true,
@@ -322,9 +321,9 @@ object TestScenario {
       warmup(defaultSpec, solverFunc = solveOneByOne)
 
       for (fillRooms <- Seq(false, true)) {
-        for (projectCount <- Seq(10, 20, 30)) {
+        for (projectCount <- 20.to(100, 5)) {
           val spec = defaultSpec.copy(
-            projects = projectCount,
+            lunchrooms = (projectCount, 100),
             fillRooms = fillRooms,
           )
           m(spec)
@@ -344,9 +343,8 @@ object TestScenario {
 //    )
 //    warmup(defaultSpec, 10, solveOneByOne)
 //    return
-    warmup
-    measure_oneByOne_growingNumberOfProjects
     measure_workerCount_simple
     measure_moreRoomsThanProjects_compareMethods
+    measure_oneByOne_growingNumberOfProjects
   }
 }
