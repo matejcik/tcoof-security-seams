@@ -15,6 +15,7 @@ import scala.util.control.Breaks._
 object TestScenario {
   val TEST_ROUNDS = 100
   val SOLVER_TIME_LIMIT = 30L * 1000
+  val LIMIT_NANO = SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
 
   val RESULT_PATH = "results/" + LocalDate.now.format(
     DateTimeFormatter.ofPattern("YYYY-MM-dd")
@@ -64,9 +65,7 @@ object TestScenario {
           + s" (min: $min, max: $max, med: $med), utility $utility"
       )
 
-      measurements.exists(
-        _ < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
-      )
+      measurements.exists(_ < LIMIT_NANO)
     }
 
     log(s"===== $description =====")
@@ -120,8 +119,7 @@ object TestScenario {
     val end = System.nanoTime()
     val time = end - start
 
-    val success = time < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
-
+    val success = time < LIMIT_NANO
     Measure(success, time, model.problem.instance.solutionUtility)
   }
 
@@ -145,16 +143,15 @@ object TestScenario {
           //for (action <- model.problem.actions) println(action)
         }
 
-        if (System.nanoTime() - start > SOLVER_TIME_LIMIT) break
+        val currentTime = System.nanoTime() - start
+        if (currentTime > LIMIT_NANO) break
       }
     }
     //    println(model.problem.instance.toStringWithUtility)
     val end = System.nanoTime()
     val time = end - start
 
-    val success =
-      model.problem.exists &&
-      (time < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS)
+    val success = model.problem.exists && time < LIMIT_NANO
     val utility = if (success) model.problem.instance.solutionUtility else 0
     Measure(success, time, utility)
   }
@@ -303,11 +300,10 @@ object TestScenario {
     }
   }
 
-  def measure_oneByOne_growingNumberOfProjects =
+  def measure_oneByOne_growingParams =
     measure(
-      "onebyone-projects",
-      "varying worker count with growing number of projects",
-      solverFunc = solveOneByOne
+      "oneworker-params",
+      "assigning one worker with growing parameters",
     ) { m =>
       val defaultSpec = ScenarioSpec(
         projects = 20,
@@ -318,15 +314,17 @@ object TestScenario {
         fillRooms = false,
         isLunchTime = true,
       )
-      warmup(defaultSpec, solverFunc = solveOneByOne)
+      warmup(defaultSpec)
 
-      for (fillRooms <- Seq(false, true)) {
-        for (projectCount <- 20.to(100, 5)) {
-          val spec = defaultSpec.copy(
-            lunchrooms = (projectCount, 100),
-            fillRooms = fillRooms,
-          )
-          m(spec)
+      for (projectCount <- Seq(5, 10, 20)) {
+        breakable {
+          for (lunchCount <- 10.to(150, 10)) {
+            val spec = defaultSpec.copy(
+              lunchrooms = (lunchCount, 100),
+              projects = projectCount,
+            )
+            if(!m(spec)) break
+          }
         }
       }
     }
@@ -345,6 +343,6 @@ object TestScenario {
 //    return
     measure_workerCount_simple
     measure_moreRoomsThanProjects_compareMethods
-    measure_oneByOne_growingNumberOfProjects
+    measure_oneByOne_growingParams
   }
 }

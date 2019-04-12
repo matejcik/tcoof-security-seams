@@ -55,7 +55,7 @@ def make_colors(n):
 def box_graph(datasets, labels, colors, x_ticks):
     """
     Datasets is a list of lists of series: the outer list is the number of "lines"
-    (i.e., different measure types that will be shown per each tick). 
+    (i.e., different measure types that will be shown per each tick).
     The inner list has an element for each data point (each x-ticks), and is a series
     of values from which a single candlebar is drawn.
 
@@ -102,40 +102,6 @@ def box_graph(datasets, labels, colors, x_ticks):
     return fig, ax
 
 
-def plot_moreprojects():
-    files = ["moreprojects-" + s for s in ("optimizing", "satisfying", "onebyone")]
-    hues = [0, 0.333, 0.666]
-    headers = ["Optimizing solver", "Satisfying solver", "One-by-one solver"]
-    datasets = []
-    labels = []
-    colors = []
-    room_counts = [3, 5]
-
-    for ifn, hue, header in zip(files, hues, headers):
-        data = read_csv(ifn)
-        for i, room_count in enumerate(room_counts):
-            subsel = data[data.lunch_n == room_count]
-            subsel = subsel[~subsel.failed]
-            subsel = subsel[["hungry", "nsec"]]
-            grouping = subsel.groupby("hungry")["nsec"]
-            series = [s for _, s in grouping]
-
-            label = f"{header} - {room_count} rooms"
-            color = colorsys.hsv_to_rgb(hue + 0.15 * i, 0.9, 0.86)
-            datasets.append(series)
-            labels.append(label)
-            colors.append(color)
-
-    x_ticks = range(5, len(datasets[0]) + 5)
-
-    fig, ax = box_graph(datasets, labels, colors, x_ticks)
-    ax.set_xlabel("Number of workers")
-
-    fig.tight_layout()
-    plt.savefig("moreprojects.pdf")
-    plt.close()
-
-
 def plot_morerooms():
     files = ["morerooms-" + s for s in ("optimizing", "satisfying", "onebyone")]
     headers = ["Optimizing solver", "Satisfying solver", "One-by-one solver"]
@@ -160,7 +126,7 @@ def plot_morerooms():
     ax.set_xlabel("Number of workers")
 
     fig.tight_layout()
-    plt.savefig("morerooms.pdf")
+    plt.savefig("2.pdf")
     plt.close()
 
 
@@ -184,19 +150,21 @@ def plot_simple():
     ax.set_xlabel("Number of workers")
 
     fig.tight_layout()
-    plt.savefig("simple.pdf")
+    plt.savefig("1.pdf")
     plt.close()
 
 
 def plot_onebyone():
-    data = read_csv("onebyone-projects")
+    data = read_csv("oneworker-params")
+    data = data[~data.failed]
     x_ticks = data.lunch_n.unique()
-    colors = make_colors(2)
-    labels = ["Seating available", "Seating not available"]
+    project_counts = data.projects.unique()
+    colors = make_colors(len(project_counts))
+    labels = [f"{n} projects" for n in project_counts]
     datasets = []
 
-    for room_full in (False, True):
-        subsel = data[data.full == room_full][["lunch_n", "nsec"]]
+    for n in project_counts:
+        subsel = data[data.projects == n][["lunch_n", "nsec"]]
         grouping = subsel.groupby("lunch_n")["nsec"]
         series = [s for _, s in grouping]
         datasets.append(series)
@@ -204,15 +172,17 @@ def plot_onebyone():
     fig, ax = box_graph(datasets, labels, colors, x_ticks)
     ax.set_xlabel("Number of lunch rooms")
 
+    plt.yticks([0, 1000, 2000, 3000, 4000, 5000, 10000, 15000, 20000, 25000, 30000])
+
     fig.tight_layout()
-    plt.savefig("onebyone.pdf")
+    plt.savefig("3.pdf")
     plt.close()
 
 
 def main():
     plot_simple()
-    plot_onebyone()
     plot_morerooms()
+    plot_onebyone()
 
 
 if __name__ == "__main__":
