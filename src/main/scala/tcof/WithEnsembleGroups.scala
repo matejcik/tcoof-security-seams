@@ -1,6 +1,5 @@
 package tcof
 
-import org.chocosolver.solver.constraints.Constraint
 import tcof.InitStages.InitStages
 import tcof.Utils._
 
@@ -10,11 +9,11 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
   this: WithConfig =>
 
   def rules[EnsembleType <: Ensemble](
-    ensRest: EnsembleType*
+      ensRest: EnsembleType*
   ): EnsembleGroup[EnsembleType] = rules(ensRest)
 
   def rules[EnsembleType <: Ensemble](
-    ens: Iterable[EnsembleType]
+      ens: Iterable[EnsembleType]
   ): EnsembleGroup[EnsembleType] =
     _addEnsembleGroup(
       "rules_" + randomName,
@@ -24,7 +23,7 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
           ensGroup.allMembers
             .map(ens => ens._isInSituation && ensembleGroupActive),
           ensGroup.allMembersVar
-      )
+        )
     )
 
   /** A set of all potential ensembles */
@@ -42,9 +41,13 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
    */
 
   def _addEnsembleGroup[EnsembleType <: Ensemble](
-    name: String,
-    ens: Iterable[EnsembleType],
-    extraRulesFn: (EnsembleGroup[Ensemble], Logical, Iterable[Logical]) => Unit
+      name: String,
+      ens: Iterable[EnsembleType],
+      extraRulesFn: (
+          EnsembleGroup[Ensemble],
+          Logical,
+          Iterable[Logical]
+      ) => Unit
   ): EnsembleGroup[EnsembleType] = {
     val group =
       new EnsembleGroup(name, new EnsembleGroupMembers(ens), extraRulesFn)

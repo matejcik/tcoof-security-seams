@@ -1,15 +1,16 @@
 package tcof
 
-import org.chocosolver.solver.constraints.Constraint
 import tcof.InitStages.InitStages
 import tcof.Utils._
 
 class EnsembleGroup[+EnsembleType <: Ensemble](
-  val name: String,
-  private[tcof] val allMembers: EnsembleGroupMembers[EnsembleType],
-  private[tcof] val extraRulesFn: (EnsembleGroup[Ensemble],
-                                   Logical,
-                                   Iterable[Logical]) => Unit
+    val name: String,
+    private[tcof] val allMembers: EnsembleGroupMembers[EnsembleType],
+    private[tcof] val extraRulesFn: (
+        EnsembleGroup[Ensemble],
+        Logical,
+        Iterable[Logical]
+    ) => Unit
 ) extends WithMembers[EnsembleType]
     with WithConfig
     with CommonImplicits {

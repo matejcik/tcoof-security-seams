@@ -1,8 +1,6 @@
 package tcof
 
 import org.chocosolver.solver.constraints.nary.cnf.LogOp
-import org.chocosolver.solver.constraints.nary.cnf.LogOp.Type
-import org.chocosolver.solver.variables.BoolVar
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 /** And/Or tree of clauses. This is used to represent clauses about membership of a component. */

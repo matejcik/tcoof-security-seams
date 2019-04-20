@@ -12,12 +12,12 @@ trait WithRoles extends Initializable with CommonImplicits {
     mutable.Map.empty[String, Role[Component]]
 
   def oneOf[ComponentType <: Component](
-    items: RoleMembers[ComponentType]
+      items: RoleMembers[ComponentType]
   ): Role[ComponentType] =
     _addRole("oneOf_" + randomName, items, cardinality => cardinality === 1)
 
   def unionOf[ComponentType <: Component](
-    roles: Iterable[Role[ComponentType]]
+      roles: Iterable[Role[ComponentType]]
   ): Role[ComponentType] = {
     val allMembersWithParentIndices = roles
       .flatMap(_.allMembers.values)
@@ -34,26 +34,25 @@ trait WithRoles extends Initializable with CommonImplicits {
 
     val items =
       for (member <- allMembersWithParentIndices.keys)
-        yield
-          new RoleMembersUnionMember(
-            member,
-            allMembersWithParentIndices(member)
-          )
+        yield new RoleMembersUnionMember(
+          member,
+          allMembersWithParentIndices(member)
+        )
 
     _addRole("unionOf_" + randomName, new RoleMembersUnion(items.toList), null)
   }
 
   def subsetOf[ComponentType <: Component](
-    items: RoleMembers[ComponentType],
-    cardinality: Integer => Logical = null
+      items: RoleMembers[ComponentType],
+      cardinality: Integer => Logical = null
   ): Role[ComponentType] = {
     _addRole("subsetOf_" + randomName, items, cardinality)
   }
 
   def _addRole[ComponentType <: Component](
-    name: String,
-    items: RoleMembers[ComponentType],
-    cardinalityConstraints: Integer => Logical
+      name: String,
+      items: RoleMembers[ComponentType],
+      cardinalityConstraints: Integer => Logical
   ): Role[ComponentType] = {
     val role =
       new Role[ComponentType](name, this, items, cardinalityConstraints)

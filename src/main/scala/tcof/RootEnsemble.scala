@@ -1,12 +1,12 @@
 package tcof
 
-import tcof.InitStages.InitStages
 import org.chocosolver.solver.Model
+import tcof.InitStages.InitStages
 
 class RootEnsemble extends Ensemble {
   name("<root>")
 
-  private var _collectedUtility : Option[Integer] = None
+  private var _collectedUtility: Option[Integer] = None
 
   override private[tcof] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
@@ -28,6 +28,6 @@ class RootEnsemble extends Ensemble {
 
   override def solutionUtility: Int = _collectedUtility match {
     case Some(v) => v.solutionValue
-    case _ => 0
+    case _       => 0
   }
 }

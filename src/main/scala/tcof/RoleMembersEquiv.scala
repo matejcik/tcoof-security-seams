@@ -2,15 +2,17 @@ package tcof
 
 import scala.reflect.ClassTag
 
-case class RoleMembersEquivMember[+MemberType](value: MemberType,
-                                               parent: WithMembers[_],
-                                               indexInParent: Int)
+case class RoleMembersEquivMember[+MemberType](
+    value: MemberType,
+    parent: WithMembers[_],
+    indexInParent: Int
+)
 
 /**
   * Collection of members that stems from another parent role. A member in this collection can be selected if and only if it is selected in the parent role.
   */
 class RoleMembersEquiv[+ComponentType <: Component](
-  val linkedMembers: Iterable[RoleMembersEquivMember[ComponentType]]
+    val linkedMembers: Iterable[RoleMembersEquivMember[ComponentType]]
 ) extends RoleMembers(linkedMembers.map(_.value)) {
 
   /** Creates members from existing parent without any filtering. */
@@ -20,7 +22,7 @@ class RoleMembersEquiv[+ComponentType <: Component](
     })
 
   private[tcof] override def mapChildToParent(
-    membersContainer: WithMembers[Component]
+      membersContainer: WithMembers[Component]
   ): Unit = {
     val members = linkedMembers.zipWithIndex
     for ((member, idx) <- members) {
@@ -46,7 +48,7 @@ class RoleMembersEquiv[+ComponentType <: Component](
     })
 
   def ++[B >: ComponentType <: Component](
-    other: RoleMembersEquiv[B]
+      other: RoleMembersEquiv[B]
   ): RoleMembersEquiv[B] = {
     val members = linkedMembers ++ other.linkedMembers
     new RoleMembersEquiv(members)

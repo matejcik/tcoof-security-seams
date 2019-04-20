@@ -1,6 +1,7 @@
 package tcof
 
 object Utils {
+
   /** Internal method used in pretty-printing solving results */
   private[tcof] def indent(str: String, level: Int) = {
     val indented = str.lines.map("  " * level + _)

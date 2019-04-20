@@ -1,7 +1,8 @@
 package tcof
 
-
-class RootEnsembleAnchor[EnsembleType <: RootEnsemble] private[tcof](val builder: () => EnsembleType) {
+class RootEnsembleAnchor[EnsembleType <: RootEnsemble] private[tcof] (
+    val builder: () => EnsembleType
+) {
   private var _solution: EnsembleType = _
 
   def instance: EnsembleType = _solution
@@ -19,7 +20,8 @@ class RootEnsembleAnchor[EnsembleType <: RootEnsemble] private[tcof](val builder
     solverModel.init()
   }
 
-  def solverLimitTime(limit: Long) = _solution._solverModel.getSolver.limitTime(limit)
+  def solverLimitTime(limit: Long) =
+    _solution._solverModel.getSolver.limitTime(limit)
 
   def solve(): Boolean = _solution._solverModel.solveAndRecord()
 
@@ -33,4 +35,3 @@ class RootEnsembleAnchor[EnsembleType <: RootEnsemble] private[tcof](val builder
 
   def actions: Iterable[Action] = _actions
 }
-

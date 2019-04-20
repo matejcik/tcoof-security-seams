@@ -1,3 +1,5 @@
 package tcof
 
-class EnsembleGroupMembers[+EnsembleType <: Ensemble](values: Iterable[EnsembleType]) extends Members(values)
+class EnsembleGroupMembers[+EnsembleType <: Ensemble](
+    values: Iterable[EnsembleType]
+) extends Members(values)
