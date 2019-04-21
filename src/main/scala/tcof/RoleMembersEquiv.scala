@@ -8,16 +8,19 @@ case class RoleMembersEquivMember[+MemberType](
     indexInParent: Int
 )
 
-/**
-  * Collection of members that stems from another parent role. A member in this collection can be selected if and only if it is selected in the parent role.
+/** Collection of members that stems from another parent role.
+  *
+  * A member in this collection can be selected if and only if
+  * it is selected in the parent role.
   */
 class RoleMembersEquiv[+ComponentType <: Component](
+    name: String,
     val linkedMembers: Iterable[RoleMembersEquivMember[ComponentType]]
-) extends RoleMembers(linkedMembers.map(_.value)) {
+) extends RoleMembers(name, linkedMembers.map(_.value)) {
 
   /** Creates members from existing parent without any filtering. */
-  def this(parent: WithMembers[ComponentType]) =
-    this(parent.allMembers.values.zipWithIndex.map {
+  def this(name: String, parent: WithMembers[ComponentType]) =
+    this(name, parent.allMembers.zipWithIndex.map {
       case (member, idx) => RoleMembersEquivMember(member, parent, idx)
     })
 
@@ -34,7 +37,7 @@ class RoleMembersEquiv[+ComponentType <: Component](
   }
 
   def selectEquiv[RoleType <: Component: ClassTag]: RoleMembersEquiv[RoleType] =
-    new RoleMembersEquiv(linkedMembers.collect {
+    new RoleMembersEquiv(name, linkedMembers.collect {
       case member @ RoleMembersEquivMember(
             value: RoleType,
             parent,
@@ -51,7 +54,7 @@ class RoleMembersEquiv[+ComponentType <: Component](
       other: RoleMembersEquiv[B]
   ): RoleMembersEquiv[B] = {
     val members = linkedMembers ++ other.linkedMembers
-    new RoleMembersEquiv(members)
+    new RoleMembersEquiv(name, members)
   }
 
 }

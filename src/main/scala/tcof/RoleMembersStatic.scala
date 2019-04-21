@@ -4,8 +4,9 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 
 class RoleMembersStatic[+ComponentType <: Component](
+    name: String,
     values: Iterable[ComponentType]
-) extends RoleMembers(values) {
+) extends RoleMembers(name, values) {
   private[tcof] override def mapChildToParent(
       membersContainer: WithMembers[Component]
   ): Unit = {}
@@ -20,7 +21,7 @@ class RoleMembersStatic[+ComponentType <: Component](
       }
     }
 
-    new RoleMembersStatic[RoleType](comps)
+    new RoleMembersStatic[RoleType](name, comps)
   }
 
   def filter(
@@ -34,12 +35,12 @@ class RoleMembersStatic[+ComponentType <: Component](
       }
     }
 
-    new RoleMembersStatic[ComponentType](comps)
+    new RoleMembersStatic(name, comps)
   }
 
   def ++[B >: ComponentType <: Component](
       other: RoleMembersStatic[B]
   ): RoleMembersStatic[B] =
-    new RoleMembersStatic(values ++ other.values)
+    new RoleMembersStatic(name, values ++ other.values)
 
 }

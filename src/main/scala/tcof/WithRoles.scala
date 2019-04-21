@@ -22,13 +22,13 @@ trait WithRoles extends Initializable with CommonImplicits {
     val allMembersWithParentIndices = roles
       .flatMap(_.allMembers.values)
       .toSet
-      .map((x: ComponentType) => (x, mutable.ListBuffer.empty[(Role[_], Int)]))
+      .map((x: ComponentType) => (x, mutable.ListBuffer.empty[(RoleMembers[ComponentType], Int)]))
       .toMap
 
     for (role <- roles) {
       for ((member, idx) <- role.allMembers.values.zipWithIndex) {
-        val entry = (role, idx)
-        allMembersWithParentIndices(member) += entry
+        val entry = (role.allMembers, idx)
+        allMembersWithParentIndices(member.asInstanceOf[ComponentType]) += entry
       }
     }
 
@@ -39,7 +39,7 @@ trait WithRoles extends Initializable with CommonImplicits {
           allMembersWithParentIndices(member)
         )
 
-    _addRole("unionOf_" + randomName, new RoleMembersUnion(items.toList), null)
+    _addRole("unionOf_" + randomName, new RoleMembersUnion(randomName, items.toList), null)
   }
 
   def subsetOf[ComponentType <: Component](

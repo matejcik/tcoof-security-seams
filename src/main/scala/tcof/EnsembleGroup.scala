@@ -5,13 +5,13 @@ import tcof.Utils._
 
 class EnsembleGroup[+EnsembleType <: Ensemble](
     val name: String,
-    private[tcof] val allMembers: EnsembleGroupMembers[EnsembleType],
+    values: Iterable[EnsembleType],
     private[tcof] val extraRulesFn: (
         EnsembleGroup[Ensemble],
         Logical,
         Iterable[Logical]
     ) => Unit
-) extends WithMembers[EnsembleType]
+) extends WithMembers(values)
     with WithConfig
     with CommonImplicits {
 
@@ -22,11 +22,11 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
 
   override private[tcof] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
-    allMembers.values.foreach(_._init(stage, config))
+    allMembers.foreach(_._init(stage, config))
 
     stage match {
       case InitStages.ConfigPropagation =>
-        for ((ensemble, idx) <- allMembers.values.zipWithIndex) {
+        for ((ensemble, idx) <- allMembers.zipWithIndex) {
           for (group <- ensemble._ensembleGroups.values) {
             group.parentGroup = this
             group.indexInParentGroup = idx
@@ -71,7 +71,7 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
       s"""Ensemble group "$name":\n${indent(selectedMembers.mkString(""), 1)}"""
     } else {
       s"""Ensemble group "$name" (unconfigured):\n${indent(
-        allMembers.values.mkString(""),
+        allMembers.mkString(""),
         1
       )}"""
     }

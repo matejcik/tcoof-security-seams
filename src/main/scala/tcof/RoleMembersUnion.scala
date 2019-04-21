@@ -5,12 +5,15 @@ case class RoleMembersUnionMember[+MemberType](
     indicesInParents: Iterable[(WithMembers[_], Int)]
 )
 
-/**
-  * Collection of members that stems from another parent role. A member in this collection can be selected if and only if it is selected in the parent role.
+/** Collection of members that stems from another parent role.
+  *
+  * A member in this collection can be selected if and only if
+  * it is selected in the parent role.
   */
 class RoleMembersUnion[+ComponentType <: Component](
+    name: String,
     val linkedMembers: Seq[RoleMembersUnionMember[ComponentType]]
-) extends RoleMembers(linkedMembers.map(_.value)) {
+) extends RoleMembers(name, linkedMembers.map(_.value)) {
 
   private[tcof] override def mapChildToParent(
       membersContainer: WithMembers[Component]

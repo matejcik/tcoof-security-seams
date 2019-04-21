@@ -72,9 +72,9 @@ trait Ensemble
 
   implicit def iterableToMembersStatic[ComponentType <: Component](
       components: Iterable[ComponentType]
-  ): RoleMembersStatic[ComponentType] = new RoleMembersStatic(components)
+  ): RoleMembersStatic[ComponentType] = new RoleMembersStatic(name, components)
 
   implicit def ensembleGroupToMembers[EnsembleType <: Ensemble](
       group: EnsembleGroup[EnsembleType]
-  ): EnsembleGroupMembers[EnsembleType] = group.allMembers
+  ): Iterable[EnsembleType] = group.allMembers
 }

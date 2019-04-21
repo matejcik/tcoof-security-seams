@@ -9,12 +9,10 @@ class Role[+ComponentType <: Component](
     private[tcof] val parent: WithRoles,
     private[tcof] val allMembers: RoleMembers[ComponentType],
     cardinalityConstraints: Integer => Logical
-) extends WithMembers[ComponentType]
-    with Initializable {
+) extends Initializable
+    with WithConfig {
 
-  private[tcof] def allMembersVarName: String = "R_" + name
-
-  def cloneEquiv = new RoleMembersEquiv(this)
+  def cloneEquiv = new RoleMembersEquiv(name, allMembers)
 
   def ++[OtherType >: ComponentType <: Component](
       other: Role[OtherType]
@@ -36,9 +34,15 @@ class Role[+ComponentType <: Component](
         allMembers.mapChildToParent(this)
 
         if (cardinalityConstraints != null) {
-          _solverModel.post(cardinalityConstraints(cardinality))
+          _solverModel.post(cardinalityConstraints(allMembers.cardinality))
         }
       case _ =>
     }
   }
+}
+
+object Role {
+  implicit def roleToMembers[ComponentType <: Component](
+      role: Role[ComponentType],
+  ): RoleMembers[ComponentType] = role.allMembers
 }

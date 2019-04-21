@@ -15,7 +15,7 @@ trait CommonImplicits {
         LogicalBoolean(true)
       else {
         val allMembersIndices =
-          memberGroups.flatMap(_.allMembers.values).toSet.zipWithIndex.toMap
+          memberGroups.flatMap(_.allMembers).toSet.zipWithIndex.toMap
         val allMembersVars = mutable.ListBuffer.empty[SetVar]
 
         for (group <- memberGroups) {
@@ -26,7 +26,7 @@ trait CommonImplicits {
           )
           allMembersVars += allMembersVar
 
-          for ((member, memberIdx) <- group.allMembers.values.zipWithIndex) {
+          for ((member, memberIdx) <- group.allMembers.zipWithIndex) {
             val idxInAllMembersVar = allMembersIndices(member)
             _solverModel.ifOnlyIf(
               _solverModel.member(memberIdx, group.allMembersVar),

@@ -50,7 +50,7 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
       ) => Unit
   ): EnsembleGroup[EnsembleType] = {
     val group =
-      new EnsembleGroup(name, new EnsembleGroupMembers(ens), extraRulesFn)
+      new EnsembleGroup(name, ens, extraRulesFn)
     _ensembleGroups += name -> group
     group
   }

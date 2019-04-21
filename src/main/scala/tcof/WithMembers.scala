@@ -5,11 +5,13 @@ import tcof.InitStages.InitStages
 
 import scala.reflect.ClassTag
 
-trait WithMembers[+MemberType] extends WithConfig {
+abstract class WithMembers[+MemberType](
+    val values: Iterable[MemberType]
+) extends WithConfig {
 
   private[tcof] def allMembersVarName: String
 
-  private[tcof] def allMembers: Members[MemberType]
+  private[tcof] val allMembers: Iterable[MemberType] = values
 
   private[tcof] var allMembersVar: SetVar = null
 
@@ -35,13 +37,13 @@ trait WithMembers[+MemberType] extends WithConfig {
   def containsOnly(member: Any): Logical = all(x => LogicalBoolean(x == member))
 
   def sum(fun: MemberType => Integer): Integer =
-    _solverModel.sumBasedOnMembership(allMembersVar, allMembers.values.map(fun))
+    _solverModel.sumBasedOnMembership(allMembersVar, allMembers.map(fun))
 
   def all(fun: MemberType => Logical): Logical =
-    _solverModel.forAllSelected(allMembers.values.map(fun), allMembersVar)
+    _solverModel.forAllSelected(allMembers.map(fun), allMembersVar)
 
   def some(fun: MemberType => Logical): Logical =
-    _solverModel.existsSelected(allMembers.values.map(fun), allMembersVar)
+    _solverModel.existsSelected(allMembers.map(fun), allMembersVar)
 
   def disjointAfterMap[OtherMemberType, T: ClassTag](
       funThis: MemberType => T,
@@ -82,7 +84,7 @@ trait WithMembers[+MemberType] extends WithConfig {
       forNotSelected: MemberType => Unit
   ): Unit = {
     val selection = _solverModel.solution.getSetVal(allMembersVar)
-    for ((member, idx) <- allMembers.values.zipWithIndex) {
+    for ((member, idx) <- allMembers.zipWithIndex) {
       if (selection.contains(idx))
         forSelected(member)
       else
@@ -92,13 +94,13 @@ trait WithMembers[+MemberType] extends WithConfig {
 
   def membersWithSelectionIndicator: Iterable[(Boolean, MemberType)] = {
     val selection = _solverModel.solution.getSetVal(allMembersVar)
-    allMembers.values.zipWithIndex.map {
+    allMembers.zipWithIndex.map {
       case (member, idx) => (selection.contains(idx), member)
     }
   }
 
   def selectedMembers: Iterable[MemberType] = {
-    val values = allMembers.values.toIndexedSeq
+    val values = allMembers.toIndexedSeq
     for (idx <- _solverModel.solution.getSetVal(allMembersVar))
       yield values(idx)
   }
