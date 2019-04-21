@@ -70,10 +70,6 @@ trait Ensemble
     )}${indent(_ensembleGroups.mapValues(_.toStringWithUtility).mkString(""), 1)}\n"""
   }
 
-  implicit def iterableToMembersStatic[ComponentType <: Component](
-      components: Iterable[ComponentType]
-  ): RoleMembersStatic[ComponentType] = new RoleMembersStatic(name, components)
-
   implicit def ensembleGroupToMembers[EnsembleType <: Ensemble](
       group: EnsembleGroup[EnsembleType]
   ): Iterable[EnsembleType] = group.allMembers

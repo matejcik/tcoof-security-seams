@@ -108,7 +108,7 @@ class LunchModel(val projects: Seq[Project],
     val lunchroomAssignments = rules(lunchrooms.map(new LunchroomAssignment(_)))
 
     // ensure that a worker is not assigned to more than one lunchroom
-    //constraints(lunchroomAssignments.map(_.assignees).allDisjoint)
+    constraints(lunchroomAssignments.map(_.assignees).allDisjoint)
   }
 
   val problem = root(new RoomAssignment)

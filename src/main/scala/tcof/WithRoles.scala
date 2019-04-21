@@ -8,55 +8,28 @@ import scala.collection.mutable
 trait WithRoles extends Initializable with CommonImplicits {
   this: WithConfig =>
 
-  private[tcof] val _roles: mutable.Map[String, Role[Component]] =
-    mutable.Map.empty[String, Role[Component]]
+  private[tcof] val _roles = mutable.Map.empty[String, Role[Component]]
 
-  def oneOf[ComponentType <: Component](
-      items: RoleMembers[ComponentType]
-  ): Role[ComponentType] =
-    _addRole("oneOf_" + randomName, items, cardinality => cardinality === 1)
+  def oneOf[C <: Component](items: Iterable[C]): Role[C] =
+    _addRole("oneOf_" + randomName, items, card => card === 1)
 
-  def unionOf[ComponentType <: Component](
-      roles: Iterable[Role[ComponentType]]
-  ): Role[ComponentType] = {
-    val allMembersWithParentIndices = roles
-      .flatMap(_.allMembers.values)
-      .toSet
-      .map((x: ComponentType) => (x, mutable.ListBuffer.empty[(RoleMembers[ComponentType], Int)]))
-      .toMap
+  def unionOf[C <: Component](roles: Iterable[Role[C]]): Role[C] =
+    _addRole(new UnionRole("unionOf_" + randomName, roles))
 
-    for (role <- roles) {
-      for ((member, idx) <- role.allMembers.values.zipWithIndex) {
-        val entry = (role.allMembers, idx)
-        allMembersWithParentIndices(member.asInstanceOf[ComponentType]) += entry
-      }
-    }
-
-    val items =
-      for (member <- allMembersWithParentIndices.keys)
-        yield new RoleMembersUnionMember(
-          member,
-          allMembersWithParentIndices(member)
-        )
-
-    _addRole("unionOf_" + randomName, new RoleMembersUnion(randomName, items.toList), null)
-  }
-
-  def subsetOf[ComponentType <: Component](
-      items: RoleMembers[ComponentType],
-      cardinality: Integer => Logical = null
-  ): Role[ComponentType] = {
+  def subsetOf[C <: Component](
+      items: Iterable[C],
+      cardinality: Integer => Logical = null,
+  ): Role[C] =
     _addRole("subsetOf_" + randomName, items, cardinality)
-  }
 
-  def _addRole[ComponentType <: Component](
+  def _addRole[C <: Component](
       name: String,
-      items: RoleMembers[ComponentType],
-      cardinalityConstraints: Integer => Logical
-  ): Role[ComponentType] = {
-    val role =
-      new Role[ComponentType](name, this, items, cardinalityConstraints)
-    _roles += name -> role
+      items: Iterable[C],
+      cardinality: Integer => Logical,
+  ): Role[C] = _addRole(new Role(name, items, cardinality))
+
+  def _addRole[C <: Component](role: Role[C]): Role[C] = {
+    _roles += role.name -> role
     role
   }
 

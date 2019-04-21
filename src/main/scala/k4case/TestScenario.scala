@@ -281,9 +281,9 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
           (now isBefore shift.endTime)
         }
 
-//        constraints {
-//          standbyAssignments.map(_.standby).allDisjoint
-//        }
+        constraints {
+          standbyAssignments.map(_.standby).allDisjoint
+        }
 
         notify(selectedStandbys.selectedMembers, StandbyNotification(shift))
         canceledWorkersWithoutStandby.foreach(wrk => notify(shift.foreman, WorkerReplacedNotification(shift, wrk)))
@@ -320,9 +320,9 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGen
 
     val shiftTeams = rules(shiftsMap.values.filter(shift => shift.workPlace.factory == factory).map(shift => new ShiftTeam(shift)))
 
-//    constraints {
-//      shiftTeams.map(shift => shift.AssignmentOfStandbys.selectedStandbys).allDisjoint
-//    }
+    constraints {
+      shiftTeams.map(_.AssignmentOfStandbys.selectedStandbys).allDisjoint
+    }
   }
 
   val factoryTeams = factoriesMap.values.map(factory => root(new FactoryTeam(factory)))

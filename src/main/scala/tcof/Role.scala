@@ -6,20 +6,12 @@ import tcof.Utils._
 /** Represents a role in an ensemble. Implements methods to build membership over components contained in a role. */
 class Role[+ComponentType <: Component](
     val name: String,
-    private[tcof] val parent: WithRoles,
-    private[tcof] val allMembers: RoleMembers[ComponentType],
+    values: Iterable[ComponentType],
     cardinalityConstraints: Integer => Logical
-) extends Initializable
+) extends WithMembers(values)
     with WithConfig {
 
-  def cloneEquiv = new RoleMembersEquiv(name, allMembers)
-
-  def ++[OtherType >: ComponentType <: Component](
-      other: Role[OtherType]
-  ): Role[OtherType] = {
-    require(parent == other.parent)
-    parent._addRole(randomName, cloneEquiv ++ other.cloneEquiv, null)
-  }
+  override def allMembersVarName: String = "R_" + name
 
   override def toString: String =
     s"""Role "$name""""
@@ -27,22 +19,12 @@ class Role[+ComponentType <: Component](
 
   override private[tcof] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
-    allMembers._init(stage, config)
 
     stage match {
       case InitStages.RulesCreation =>
-        allMembers.mapChildToParent(this)
-
         if (cardinalityConstraints != null) {
-          _solverModel.post(cardinalityConstraints(allMembers.cardinality))
+          _solverModel.post(cardinalityConstraints(cardinality))
         }
-      case _ =>
     }
   }
-}
-
-object Role {
-  implicit def roleToMembers[ComponentType <: Component](
-      role: Role[ComponentType],
-  ): RoleMembers[ComponentType] = role.allMembers
 }
