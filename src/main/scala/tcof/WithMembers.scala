@@ -11,7 +11,8 @@ abstract class WithMembers[+MemberType](
 
   private[tcof] def allMembersVarName: String
 
-  private[tcof] val allMembers: Iterable[MemberType] = values
+  // XXX this must be a Seq because we require unchanging order
+  private[tcof] val allMembers: Seq[MemberType] = values.toSeq
 
   private[tcof] var allMembersVar: SetVar = null
 

@@ -12,9 +12,9 @@ case class UnionRoleMember[+MemberType](
 class UnionRole[+ComponentType <: Component](
     name: String,
     roles: Iterable[Role[ComponentType]],
-    linkedMembers: Iterable[UnionRoleMember[ComponentType]],
+    linkedMembers: Map[ComponentType, Iterable[(Role[_], Int)]],
     cardinalityConstraint: Integer => Logical,
-) extends Role(name, linkedMembers.map(_.value), cardinalityConstraint) {
+) extends Role(name, linkedMembers.keys, cardinalityConstraint) {
 
   def this(
       name: String,
@@ -27,7 +27,8 @@ class UnionRole[+ComponentType <: Component](
         val linkedMembers = roles
           .flatMap(_.allMembers)
           .toSet
-          .map((x: ComponentType) => x -> mutable.ListBuffer.empty[(Role[_], Int)])
+          .map((x: ComponentType) =>
+            x -> mutable.ListBuffer.empty[(Role[_], Int)])
           .toMap
 
         for (role <- roles) {
@@ -37,30 +38,30 @@ class UnionRole[+ComponentType <: Component](
           }
         }
 
-        for (member <- linkedMembers.keys)
-          yield
-            UnionRoleMember(
-              member,
-              linkedMembers(member).toIterable
-            )
+        linkedMembers
       },
       cardinalityConstraint
     )
 
   override def _init(
-    stage: InitStages, config: Config
+      stage: InitStages,
+      config: Config
   ): Unit = {
-    val members = linkedMembers.zipWithIndex
+    super._init(stage, config)
 
-    for ((member, idx) <- members) {
-      val vrs =
-        for ((parent, pidx) <- member.indicesInParents)
-          yield _solverModel.member(pidx, parent.allMembersVar).reify()
+    stage match {
+      case InitStages.RulesCreation =>
+        val members = allMembers.zipWithIndex
 
-      _solverModel.ifOnlyIf(
-        _solverModel.member(idx, allMembersVar),
-        _solverModel.or(vrs.toArray: _*)
-      )
+        for ((member, idx) <- members) {
+          val vrs = for ((parent, pidx) <- linkedMembers(member))
+            yield _solverModel.member(pidx, parent.allMembersVar).reify()
+
+          _solverModel.ifOnlyIf(
+            _solverModel.member(idx, allMembersVar),
+            _solverModel.or(vrs.toSeq: _*))
+        }
+      case _ =>
     }
   }
 }
