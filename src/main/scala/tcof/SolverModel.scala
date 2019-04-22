@@ -31,7 +31,7 @@ class SolverModel extends ChocoModel {
         case LogicalBoolVar(value) => value
       }
 
-      LogicalLogOp(LogOp.and(ilogs toArray: _*))
+      LogicalLogOp(LogOp.and(ilogs.toArray: _*))
     }
   }
 
@@ -50,7 +50,7 @@ class SolverModel extends ChocoModel {
         case LogicalBoolVar(value) => value
       }
 
-      LogicalLogOp(LogOp.or(ilogs toArray: _*))
+      LogicalLogOp(LogOp.or(ilogs.toArray: _*))
     }
   }
 
@@ -154,7 +154,7 @@ class SolverModel extends ChocoModel {
           intVars.head
         else {
           val sumVar = newIntVar
-          sum(intVars toArray, "=", sumVar).post()
+          sum(intVars.toArray, "=", sumVar).post()
           sumVar
         }
 
@@ -184,7 +184,7 @@ class SolverModel extends ChocoModel {
     val sumVar = newIntVar
     sumElements(
       membersVar,
-      values.map(_.asInstanceOf[IntegerInt].value) toArray,
+      values.map(_.asInstanceOf[IntegerInt].value).toArray,
       sumVar
     ).post()
     sumVar

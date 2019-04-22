@@ -23,7 +23,7 @@ abstract class WithMembers[+MemberType](
         allMembersVar = _solverModel.setVar(
           allMembersVarName,
           Array.empty[Int],
-          0 until allMembers.size toArray
+          (0 until allMembers.size).toArray
         )
       case _ =>
     }

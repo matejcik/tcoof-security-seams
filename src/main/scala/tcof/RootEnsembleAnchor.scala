@@ -1,6 +1,6 @@
 package tcof
 
-class RootEnsembleAnchor[EnsembleType <: RootEnsemble] private[tcof] (
+class RootEnsembleAnchor[EnsembleType <: RootEnsemble](
     val builder: () => EnsembleType
 ) {
   private var _solution: EnsembleType = _
@@ -34,4 +34,11 @@ class RootEnsembleAnchor[EnsembleType <: RootEnsemble] private[tcof] (
   }
 
   def actions: Iterable[Action] = _actions
+
+  def resolve(): Boolean = {
+    init()
+    solve()
+    if (exists()) commit()
+    return exists()
+  }
 }

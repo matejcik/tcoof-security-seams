@@ -1,5 +1,7 @@
 package tcof
 
+import tcof.InitStages.InitStages
+
 import scala.collection.mutable
 
 case class UnionRoleMember[+MemberType](
@@ -44,4 +46,21 @@ class UnionRole[+ComponentType <: Component](
       },
       cardinalityConstraint
     )
+
+  override def _init(
+    stage: InitStages, config: Config
+  ): Unit = {
+    val members = linkedMembers.zipWithIndex
+
+    for ((member, idx) <- members) {
+      val vrs =
+        for ((parent, pidx) <- member.indicesInParents)
+          yield _solverModel.member(pidx, parent.allMembersVar).reify()
+
+      _solverModel.ifOnlyIf(
+        _solverModel.member(idx, allMembersVar),
+        _solverModel.or(vrs.toArray: _*)
+      )
+    }
+  }
 }

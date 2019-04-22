@@ -1,7 +1,6 @@
 package tcof
 
 import tcof.InitStages.InitStages
-import tcof.Utils._
 
 /** Represents a role in an ensemble. Implements methods to build membership over components contained in a role. */
 class Role[+ComponentType <: Component](
@@ -25,6 +24,7 @@ class Role[+ComponentType <: Component](
         if (cardinalityConstraints != null) {
           _solverModel.post(cardinalityConstraints(cardinality))
         }
+      case _ =>
     }
   }
 }
