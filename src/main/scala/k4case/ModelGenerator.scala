@@ -2,6 +2,7 @@ package k4case
 
 import java.time.{Duration, LocalDateTime}
 
+import scala.language.postfixOps
 import scala.collection.mutable
 import scala.util.Random
 
