@@ -4,11 +4,6 @@ import tcof.InitStages.InitStages
 
 import scala.collection.mutable
 
-case class UnionRoleMember[+MemberType](
-    value: MemberType,
-    indicesInParents: Iterable[(Role[_], Int)],
-)
-
 class UnionRole[+ComponentType <: Component](
     name: String,
     roles: Iterable[Role[ComponentType]],

@@ -11,8 +11,7 @@ abstract class WithMembers[+MemberType](
 
   private[tcof] def allMembersVarName: String
 
-  // XXX this must be a Seq because we require unchanging order
-  private[tcof] val allMembers: Seq[MemberType] = values.toSeq
+  private[tcof] val allMembers: IndexedSeq[MemberType] = values.toIndexedSeq
 
   private[tcof] var allMembersVar: SetVar = null
 
@@ -24,7 +23,7 @@ abstract class WithMembers[+MemberType](
         allMembersVar = _solverModel.setVar(
           allMembersVarName,
           Array.empty[Int],
-          (0 until allMembers.size).toArray
+          allMembers.indices.toArray,
         )
       case _ =>
     }
@@ -101,8 +100,7 @@ abstract class WithMembers[+MemberType](
   }
 
   def selectedMembers: Iterable[MemberType] = {
-    val values = allMembers.toIndexedSeq
     for (idx <- _solverModel.solution.getSetVal(allMembersVar))
-      yield values(idx)
+      yield allMembers(idx)
   }
 }
