@@ -4,9 +4,13 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import tcof._
 
+import scala.collection.mutable
+
 // Different types of rooms
 abstract class Room(name: String, val capacity: Int) extends Component {
   name(s"Room:$name")
+
+  val occupants = mutable.Set[Worker]()
 }
 
 class LunchRoom(name: String, capacity: Int) extends Room("Lunch" + name, capacity)
@@ -77,7 +81,8 @@ class LunchModel(val projects: Seq[Project],
       }
 
       // list of previously assigned workers
-      val occupants = workers.filter(_.notified(RoomAssignedNotification(room)))
+      val occupants = room.occupants
+        .union(workers.filter(_.notified(RoomAssignedNotification(room))).toSet)
 
       // newly-assigned hungry workers must fit into free space
       val freeSpaces = room.capacity - occupants.size
