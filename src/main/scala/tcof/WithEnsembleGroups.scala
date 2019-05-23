@@ -8,13 +8,9 @@ import scala.collection.mutable
 trait WithEnsembleGroups extends Initializable with CommonImplicits {
   this: WithConfig =>
 
-  def rules[EnsembleType <: Ensemble](
-      ensRest: EnsembleType*
-  ): EnsembleGroup[EnsembleType] = rules(ensRest)
+  def rules[E <: Ensemble](ensRest: E*): EnsembleGroup[E] = rules(ensRest)
 
-  def rules[EnsembleType <: Ensemble](
-      ens: Iterable[EnsembleType]
-  ): EnsembleGroup[EnsembleType] =
+  def rules[E <: Ensemble](ens: Iterable[E]): EnsembleGroup[E] =
     _addEnsembleGroup(
       "rules_" + randomName,
       ens,

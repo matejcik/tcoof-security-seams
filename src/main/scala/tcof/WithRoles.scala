@@ -10,6 +10,9 @@ trait WithRoles extends Initializable with CommonImplicits {
 
   private[tcof] val _roles = mutable.Map.empty[String, Role[Component]]
 
+  implicit def roleToComponents[C <: Component](role: Role[C]): Iterable[C] =
+    role.selectedMembers
+
   def oneOf[C <: Component](items: Iterable[C]): Role[C] =
     _addRole("oneOf_" + randomName, items, card => card === 1)
 
