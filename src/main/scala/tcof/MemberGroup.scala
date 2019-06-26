@@ -5,7 +5,7 @@ import tcof.InitStages.InitStages
 
 import scala.reflect.ClassTag
 
-abstract class WithMembers[+MemberType](
+abstract class MemberGroup[+MemberType](
     val values: Iterable[MemberType]
 ) extends WithConfig {
 
@@ -47,7 +47,7 @@ abstract class WithMembers[+MemberType](
 
   def disjointAfterMap[OtherMemberType, T: ClassTag](
       funThis: MemberType => T,
-      other: WithMembers[OtherMemberType],
+      other: MemberGroup[OtherMemberType],
       funOther: OtherMemberType => T
   ): Logical = {
     val thisValues = allMembers.map(funThis)

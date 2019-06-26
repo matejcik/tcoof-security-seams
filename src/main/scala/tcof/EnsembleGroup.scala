@@ -11,7 +11,7 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
         Logical,
         Iterable[Logical]
     ) => Unit
-) extends WithMembers(values)
+) extends MemberGroup(values)
     with WithConfig
     with CommonImplicits {
 

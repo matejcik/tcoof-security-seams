@@ -8,7 +8,7 @@ trait CommonImplicits {
   this: WithConfig =>
 
   implicit class WithMembersIterable[MemberType](
-      memberGroups: Iterable[WithMembers[MemberType]]
+      memberGroups: Iterable[MemberGroup[MemberType]]
   ) {
     def allDisjoint: Logical =
       if (memberGroups.isEmpty)
