@@ -11,30 +11,23 @@ trait WithUtility extends Initializable {
     _utilityFun = Some(util _)
   }
 
-  private var _utility: Option[Integer] = null
+  private var _utility: Option[Integer] = None
 
-  private[tcof] def _getUtility: Option[Integer] = {
-    if (_utility == null) {
-      _utility = _utilityFun.map(_.apply())
-    }
-
-    _utility
-  }
+  private[tcof] def _getUtility: Option[Integer] = _utility
 
   def utility: Integer = _getUtility.getOrElse(_solverModel.IntegerInt(0))
 
   def solutionUtility: Int = _utility match {
     case Some(value) => value.asInt
     case None        => 0
-    case null        => 0
   }
 
   override private[tcof] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
 
     stage match {
-      case InitStages.VarsCreation =>
-        _utility = null
+      case InitStages.RulesCreation =>
+        _utility = _utilityFun.map(_.apply())
       case _ =>
     }
   }

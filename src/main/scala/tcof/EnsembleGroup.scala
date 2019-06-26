@@ -74,10 +74,10 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
   }
 
   override def toString: String =
-    if (_config != null) {
+    if (_config != null && _solverModel.exists) {
       s"""Ensemble group "$name":\n${indent(selectedMembers.mkString(""), 1)}"""
     } else {
-      s"""Ensemble group "$name" (unconfigured):\n${indent(
+      s"""Ensemble group "$name" (unsolved):\n${indent(
         allMembers.mkString(""),
         1
       )}"""

@@ -4,7 +4,7 @@ import org.chocosolver.solver.Model
 
 class Scenario[EnsembleType <: Ensemble](builder: () => EnsembleType) {
   private var _solution: EnsembleType = _
-  private var _hasUtility = false
+  private var _utility: Option[Integer] = None
   private var _actions: Iterable[Action] = List()
 
   private val _solverModel = new SolverModel
@@ -24,16 +24,17 @@ class Scenario[EnsembleType <: Ensemble](builder: () => EnsembleType) {
     _solverModel.post(_solution._buildConstraintsClause)
 
     // configure utility
-    _solution._collectUtility match {
+    _utility = _solution._collectUtility
+    _utility match {
       case Some(_solverModel.IntegerIntVar(utility)) =>
-        _hasUtility = true
         _solverModel.setObjective(Model.MAXIMIZE, utility)
-      case _ =>
-        _hasUtility = false
+      case _ => // utility is constant or unset, so we ignore it
     }
 
     config.solverModel.init()
   }
+
+  def solutionUtility: Int = _utility.map(_.asInt).getOrElse(0)
 
   def solverLimitTime(limit: Long) =
     _solverModel.getSolver.limitTime(limit)
@@ -51,12 +52,11 @@ class Scenario[EnsembleType <: Ensemble](builder: () => EnsembleType) {
 
   def resolve(): Boolean = {
     init()
-    if (_hasUtility) {
+    _utility match {
       // repeatedly solve to optimize objective
-      while (solve()) {}
-    } else {
+      case Some(u) => while (solve()) {}
       // solve and record first solution
-      solve()
+      case None    => solve()
     }
     if (exists) commit()
     return exists
