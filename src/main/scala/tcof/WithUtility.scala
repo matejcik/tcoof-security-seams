@@ -24,7 +24,7 @@ trait WithUtility extends Initializable {
   def utility: Integer = _getUtility.getOrElse(_solverModel.IntegerInt(0))
 
   def solutionUtility: Int = _utility match {
-    case Some(value) => value.solutionValue
+    case Some(value) => value.asInt
     case None        => 0
     case null        => 0
   }

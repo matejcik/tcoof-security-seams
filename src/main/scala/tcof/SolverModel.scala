@@ -281,7 +281,7 @@ class SolverModel extends ChocoModel {
   private[tcof] case class IntegerInt(value: Int) extends Integer {
     protected type ValueType = Int
 
-    override def solutionValue: Int = value
+    override def asInt: Int = value
 
     override def +(other: Integer): Integer = other match {
       case IntegerInt(otherValue)    => IntegerInt(value + otherValue)
@@ -330,7 +330,7 @@ class SolverModel extends ChocoModel {
   private[tcof] case class IntegerIntVar(value: IntVar) extends Integer {
     protected type ValueType = IntVar
 
-    override def solutionValue: Int = solution.getIntVal(value)
+    override def asInt: Int = solution.getIntVal(value)
 
     override def +(other: Integer): Integer = other match {
       case IntegerInt(otherValue)    => addIntAndIntVar(otherValue, value)

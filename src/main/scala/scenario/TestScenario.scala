@@ -79,7 +79,7 @@ object TestScenario {
       hungryWorkers.count(_.notified[RoomAssignedNotification])
     val selectCardinalities =
       model.problem.instance.lunchroomAssignments.selectedMembers
-        .map(_.assignees.cardinality.solutionValue)
+        .map(_.assignees.cardinality.asInt)
         .sum
     alreadyNotified + selectCardinalities == hungryWorkers.length
   }
