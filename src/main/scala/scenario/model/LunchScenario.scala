@@ -83,13 +83,8 @@ class LunchScenario(val projects: Seq[Project],
       val freeSpaces = room.capacity - occupants.size
       val assignees = subsetOf(hungryWorkers, _ <= freeSpaces)
 
-      val project = oneOf(projects)
-
-      // all selected workers must belong to the selected project
-      constraint {
-        project.all(p => assignees.all(_.project == p)) &&
-          project.all(p => occupants.forall(_.project == p))
-      }
+      val eaters = unionOf(occupants, assignees)
+      constraint { eaters.allEqual(_.project) }
 
       // Set the solution utility to square of the number of occupants,
       // i.e., prefer many workers in one room over few workers in many rooms
@@ -99,8 +94,8 @@ class LunchScenario(val projects: Seq[Project],
       }
 
       // grant access rights and notify newly selected hungry workers
-      notify(assignees.selectedMembers, RoomAssignedNotification(room))
-      allow(assignees.selectedMembers, "enter", room)
+      notify(assignees, RoomAssignedNotification(room))
+      allow(assignees, "enter", room)
       allow(occupants, "enter", room)
     }
 
