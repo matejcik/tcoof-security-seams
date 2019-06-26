@@ -16,7 +16,7 @@ trait Ensemble
     mutable.ListBuffer.empty[() => Logical]
   private[tcof] var _situationFun: () => Boolean = null
 
-  def constraints(clause: => Logical): Unit = {
+  def constraint(clause: => Logical): Unit = {
     _constraintsClauseFuns += clause _
   }
 

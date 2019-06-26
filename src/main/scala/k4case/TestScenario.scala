@@ -267,7 +267,7 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Scenario with Model
 
           val standby = oneOf(availableStandbys)
 
-          constraints {
+          constraint {
             standby.all(_.capabilities contains shift.assignments(canceledWorker))
           }
         }
@@ -281,7 +281,7 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Scenario with Model
           (now isBefore shift.endTime)
         }
 
-        constraints {
+        constraint {
           standbyAssignments.map(_.standby).allDisjoint
         }
 
@@ -320,7 +320,7 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Scenario with Model
 
     val shiftTeams = rules(shiftsMap.values.filter(shift => shift.workPlace.factory == factory).map(shift => new ShiftTeam(shift)))
 
-    constraints {
+    constraint {
       shiftTeams.map(_.AssignmentOfStandbys.selectedStandbys).allDisjoint
     }
   }

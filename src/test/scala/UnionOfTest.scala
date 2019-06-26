@@ -29,7 +29,7 @@ class UnionOfTest extends ModelSolver {
       val b = oneOf(members)
       val union = unionOf(a, b)
 
-      constraints { a.all(b.contains(_)) }
+      constraint { a.all(b.contains(_)) }
     })
 
     assert(problem.resolve())
@@ -50,7 +50,7 @@ class UnionOfTest extends ModelSolver {
       val b = oneOf(members)
       val union = unionOf(a, b)
 
-      constraints { union.cardinality === 2 }
+      constraint { union.cardinality === 2 }
     })
 
     problem.init()

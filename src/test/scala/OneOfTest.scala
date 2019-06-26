@@ -18,7 +18,7 @@ class OneOfTest extends ModelSolver {
       val problem = root(new RootEnsemble {
         val selectedMember = oneOf(members)
 
-        constraints(selectedMember.contains(Member(sel)))
+        constraint(selectedMember.contains(Member(sel)))
       })
 
       assert(problem.resolve())
