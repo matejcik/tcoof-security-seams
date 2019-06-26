@@ -18,18 +18,19 @@ class SolverModel extends ChocoModel {
   // Logical utils
   def and(clauses: Iterable[Logical]): Logical = {
     if (clauses.exists {
-          case LogicalBoolean(value) if !value => true
-          case _                               => false
+          case LogicalBoolean(false) => true
+          case _                     => false
         }) {
       LogicalBoolean(false)
     } else {
       val ilogs = for {
         clause <- clauses
         if !clause.isInstanceOf[LogicalBoolean]
-      } yield clause match {
-        case LogicalLogOp(value)   => value
-        case LogicalBoolVar(value) => value
-      }
+      } yield
+        clause match {
+          case LogicalLogOp(value)   => value
+          case LogicalBoolVar(value) => value
+        }
 
       LogicalLogOp(LogOp.and(ilogs.toArray: _*))
     }
@@ -45,10 +46,11 @@ class SolverModel extends ChocoModel {
       val ilogs = for {
         clause <- clauses
         if !clause.isInstanceOf[LogicalBoolean]
-      } yield clause match {
-        case LogicalLogOp(value)   => value
-        case LogicalBoolVar(value) => value
-      }
+      } yield
+        clause match {
+          case LogicalLogOp(value)   => value
+          case LogicalBoolVar(value) => value
+        }
 
       LogicalLogOp(LogOp.or(ilogs.toArray: _*))
     }
@@ -238,6 +240,14 @@ class SolverModel extends ChocoModel {
     IntegerIntVar(productVar)
   }
 
+  private def divideIntAndIntVar(left: Int, right: IntVar): IntegerIntVar = {
+    val leftVar = newIntVar
+    arithm(leftVar, "=", left).post()
+    val result = newIntVar
+    div(leftVar, right, result).post()
+    IntegerIntVar(result)
+  }
+
   private def addIntVarAndIntVar(left: IntVar, right: IntVar): IntegerIntVar = {
     val sum = newIntVar
     arithm(left, "+", right, "=", sum).post()
@@ -259,6 +269,15 @@ class SolverModel extends ChocoModel {
     IntegerIntVar(productVar)
   }
 
+  private def divideIntVarAndIntVar(
+      left: IntVar,
+      right: IntVar
+  ): IntegerIntVar = {
+    val result = newIntVar
+    div(left, right, result).post()
+    IntegerIntVar(result)
+  }
+
   private[tcof] case class IntegerInt(value: Int) extends Integer {
     protected type ValueType = Int
 
@@ -277,6 +296,11 @@ class SolverModel extends ChocoModel {
     override def *(other: Integer): Integer = other match {
       case IntegerInt(otherValue)    => IntegerInt(value * otherValue)
       case IntegerIntVar(otherValue) => multiplyIntAndIntVar(value, otherValue)
+    }
+
+    override def /(other: Integer): Integer = other match {
+      case IntegerInt(otherValue)    => IntegerInt(value / otherValue)
+      case IntegerIntVar(otherValue) => divideIntAndIntVar(value, otherValue)
     }
 
     private def revRelOp(
@@ -322,6 +346,12 @@ class SolverModel extends ChocoModel {
       case IntegerInt(otherValue) => multiplyIntAndIntVar(otherValue, value)
       case IntegerIntVar(otherValue) =>
         multiplyIntVarAndIntVar(value, otherValue)
+    }
+
+    override def /(other: Integer): Integer = other match {
+      case IntegerInt(otherValue) => divideIntAndIntVar(otherValue, value)
+      case IntegerIntVar(otherValue) =>
+        divideIntVarAndIntVar(value, otherValue)
     }
 
     private def relOp(num: Integer, op: String) = {
