@@ -92,6 +92,26 @@ abstract class MemberGroup[+MemberType](
     }
   }
 
+  def allEqual(fun: MemberType => Any): Logical = {
+    val values = allMembers.map(fun).toIndexedSeq
+    val valueIndexMap = values.toSet.zipWithIndex.toMap
+    val valueIntVars = values.map(v => _solverModel.intVar(valueIndexMap(v)))
+    val namePrefix = "Ch_" + Utils.randomName + "_"
+
+    val sets = for (i <- valueIndexMap.values)
+      yield
+        _solverModel.setVar(
+          namePrefix + i,
+          Array.emptyIntArray,
+          allMembers.indices.toArray
+        )
+
+    _solverModel.setsIntsChanneling(sets.toArray, valueIntVars.toArray).post
+    val subsetConstraints = for (set <- sets)
+      yield _solverModel.subsetEq(allMembersVar, set)
+    LogicalBoolVar(_solverModel.or(subsetConstraints.toSeq: _*).reify())
+  }
+
   def membersWithSelectionIndicator: Iterable[(Boolean, MemberType)] = {
     val selection = _solverModel.solution.getSetVal(allMembersVar)
     allMembers.zipWithIndex.map {
