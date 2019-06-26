@@ -6,15 +6,15 @@ class Person(name: String) extends Component {
   name(name)
 }
 
-class SimpleScenario(val people: Seq[Person]) extends Scenario {
+class SimpleScenario(val people: Seq[Person]) {
 
-  class HelloWorld extends RootEnsemble {
+  class HelloWorld extends Ensemble {
     val greeter = oneOf(people)
 
     allow(greeter, "greet", people)
   }
 
-  val problem = root(new HelloWorld)
+  val problem = Scenario.root(new HelloWorld)
 }
 
 object SimpleScenario {

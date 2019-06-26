@@ -30,7 +30,7 @@ class LunchScenario(val projects: Seq[Project],
                     val workers: Seq[Worker],
                     val workrooms: Seq[WorkRoom],
                     val lunchrooms: Seq[LunchRoom],
-) extends Scenario {
+) {
 
   // Opening times of the building and of the lunchrooms
   val BUILDING_OPEN_TIME = LocalTime.of(7, 30)
@@ -41,7 +41,7 @@ class LunchScenario(val projects: Seq[Project],
   val DEFAULT_NOW = LocalTime.of(8, 42)
   var now = DEFAULT_NOW
 
-  class RoomAssignment extends RootEnsemble {
+  class RoomAssignment extends Ensemble {
     name("assign workers to projects and rooms")
 
     // mapping projects to lists of workers
@@ -111,5 +111,5 @@ class LunchScenario(val projects: Seq[Project],
     constraint(lunchroomAssignments.map(_.assignees).allDisjoint)
   }
 
-  val problem = root(new RoomAssignment)
+  val problem = Scenario.root(new RoomAssignment)
 }

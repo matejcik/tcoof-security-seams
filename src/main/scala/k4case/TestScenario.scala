@@ -18,7 +18,7 @@ case class TestScenarioSpec(
 case class Position(x: Double, y: Double)
 
 
-class TestScenario(scenarioParams: TestScenarioSpec) extends Scenario with ModelGenerator {
+class TestScenario(scenarioParams: TestScenarioSpec) extends ModelGenerator {
 
   val startTimestamp = LocalDateTime.parse("2018-12-03T08:00:00")
   var now = startTimestamp
@@ -177,7 +177,7 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Scenario with Model
   }
 
 
-  class FactoryTeam(factory: Factory) extends RootEnsemble {
+  class FactoryTeam(factory: Factory) extends Ensemble {
     name(s"Factory team ${factory.id}")
 
     class ShiftTeam(shift: Shift) extends Ensemble {
@@ -325,7 +325,7 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends Scenario with Model
     }
   }
 
-  val factoryTeams = factoriesMap.values.map(factory => root(new FactoryTeam(factory)))
+  val factoryTeams = factoriesMap.values.map(factory => Scenario.root(new FactoryTeam(factory)))
 }
 
 

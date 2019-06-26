@@ -6,6 +6,6 @@ trait ModelSolver extends FlatSpec with Matchers {
     override def toString: String = s"Member:$id"
   }
 
-  def root[T <: RootEnsemble](builder: => T): RootEnsembleAnchor[T] =
-    new RootEnsembleAnchor(builder _)
+  def root[T <: Ensemble](builder: => T): Scenario[T] =
+    Scenario.root(builder)
 }

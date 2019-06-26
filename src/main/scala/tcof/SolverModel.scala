@@ -373,9 +373,7 @@ class SolverModel extends ChocoModel {
   private[tcof] var solution = new Solution(this)
   private[tcof] var solutionExists = false
 
-  def init(): Unit = {
-    val solver = getSolver
-  }
+  def init(): Unit = {}
 
   def solveAndRecord(): Boolean = {
     val variables = getVars

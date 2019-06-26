@@ -4,7 +4,7 @@ import tcof._
 class OneOfTest extends ModelSolver {
   "problem" should "contain one member" in {
     val members = for (i <- 1 to 5) yield Member(i)
-    val problem = root(new RootEnsemble {
+    val problem = root(new Ensemble {
       val selectedMember = oneOf(members)
     })
 
@@ -15,7 +15,7 @@ class OneOfTest extends ModelSolver {
   it should "contain selected member" in {
     for (sel <- 1 to 5) {
       val members = for (i <- 1 to 5) yield Member(i)
-      val problem = root(new RootEnsemble {
+      val problem = root(new Ensemble {
         val selectedMember = oneOf(members)
 
         constraint(selectedMember.contains(Member(sel)))
@@ -30,7 +30,7 @@ class OneOfTest extends ModelSolver {
   it should "have as many solutions as there are members" in {
     for (n <- 1 to 20) {
       val members = for (i <- 1 to n) yield Member(i)
-      val problem = root(new RootEnsemble {
+      val problem = root(new Ensemble {
         val selectedMember = oneOf(members)
       })
 
@@ -42,7 +42,7 @@ class OneOfTest extends ModelSolver {
 
   "unsolvable problem" should "have no solution" in {
     val members = Seq.empty[Member]
-    val problem = root(new RootEnsemble {
+    val problem = root(new Ensemble {
       val selectedMember = oneOf(members)
     })
 
