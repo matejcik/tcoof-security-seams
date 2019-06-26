@@ -1,8 +1,7 @@
 import scala.language.reflectiveCalls
-import org.scalatest.{FlatSpec, Matchers}
 import tcof.RootEnsemble
 
-class UnionOfTest extends FlatSpec with ModelSolver with Matchers {
+class UnionOfTest extends ModelSolver {
   "union" should "contain same members as its parents" in {
     val membersA = for (i <- 1 to 10) yield Member(i)
     val membersB = for (i <- 101 to 110) yield Member(i)

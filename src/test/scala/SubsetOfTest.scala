@@ -1,8 +1,7 @@
 import scala.language.reflectiveCalls
-import org.scalatest.FlatSpec
 import tcof.RootEnsemble
 
-class SubsetOfTest extends FlatSpec with ModelSolver {
+class SubsetOfTest extends ModelSolver {
   "problem" should "contain given number of members" in {
     for (n <- 3 to 10) {
       val members = for (i <- 1 to 10) yield Member(i)

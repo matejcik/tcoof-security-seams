@@ -1,8 +1,7 @@
 import scala.language.reflectiveCalls
-import org.scalatest.FlatSpec
 import tcof._
 
-class OneOfTest extends FlatSpec with ModelSolver {
+class OneOfTest extends ModelSolver {
   "problem" should "contain one member" in {
     val members = for (i <- 1 to 5) yield Member(i)
     val problem = root(new RootEnsemble {
