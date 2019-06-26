@@ -47,6 +47,13 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
               ensembleGroupActiveCond
             )
           }
+          // TODO skoro by se chtělo říct že tohle by šlo nahradit:
+          /*
+          _solverModel.ifThen(
+            _solverModel.arithm(allMembersVar.getCard, ">", 0),
+            ensembleGroupActiveCond
+          )
+          */
         }
 
         val constraintsClauses = allMembers.map(

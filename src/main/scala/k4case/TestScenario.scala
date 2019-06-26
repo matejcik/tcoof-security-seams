@@ -18,7 +18,7 @@ case class TestScenarioSpec(
 case class Position(x: Double, y: Double)
 
 
-class TestScenario(scenarioParams: TestScenarioSpec) extends Model with ModelGenerator {
+class TestScenario(scenarioParams: TestScenarioSpec) extends Scenario with ModelGenerator {
 
   val startTimestamp = LocalDateTime.parse("2018-12-03T08:00:00")
   var now = startTimestamp

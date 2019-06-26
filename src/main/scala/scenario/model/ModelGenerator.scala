@@ -5,7 +5,7 @@ import scala.collection.mutable.{Map => MutableMap}
 
 
 object ModelGenerator {
-  def modelFromSpec(spec: ScenarioSpec): LunchModel = {
+  def modelFromSpec(spec: ScenarioSpec): LunchScenario = {
     val lunchrooms = for (i <- 0 until spec.lunchrooms.n)
       yield new LunchRoom(i.toString, spec.lunchrooms.capacity)
 
@@ -44,7 +44,7 @@ object ModelGenerator {
       .take(spec.hungryWorkers)
       .foreach(_.hungry = true)
 
-    val model = new LunchModel(projects, workers, workrooms, lunchrooms)
+    val model = new LunchScenario(projects, workers, workrooms, lunchrooms)
     if (spec.isLunchTime) model.now = LocalTime.of(13, 37)
     model
   }

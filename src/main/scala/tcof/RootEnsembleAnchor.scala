@@ -38,6 +38,7 @@ class RootEnsembleAnchor[EnsembleType <: RootEnsemble](
   def resolve(): Boolean = {
     init()
     solve()
+    // TODO detect utility and auto-optimize
     if (exists()) commit()
     return exists()
   }

@@ -73,7 +73,7 @@ object TestScenario {
     perfLogWriter.close()
   }
 
-  def solutionFitsAllWorkers(model: LunchModel): Boolean = {
+  def solutionFitsAllWorkers(model: LunchScenario): Boolean = {
     val hungryWorkers = model.workers.filter(_.hungry)
     val alreadyNotified =
       hungryWorkers.count(_.notified[RoomAssignedNotification])

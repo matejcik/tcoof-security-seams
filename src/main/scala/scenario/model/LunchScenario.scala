@@ -26,11 +26,11 @@ class Worker(id: Int, val project: Project) extends Component {
 // Notification for lunchroom assignment
 case class RoomAssignedNotification(room: Room) extends Notification
 
-class LunchModel(val projects: Seq[Project],
-                 val workers: Seq[Worker],
-                 val workrooms: Seq[WorkRoom],
-                 val lunchrooms: Seq[LunchRoom],
-) extends Model {
+class LunchScenario(val projects: Seq[Project],
+                    val workers: Seq[Worker],
+                    val workrooms: Seq[WorkRoom],
+                    val lunchrooms: Seq[LunchRoom],
+) extends Scenario {
 
   // Opening times of the building and of the lunchrooms
   val BUILDING_OPEN_TIME = LocalTime.of(7, 30)

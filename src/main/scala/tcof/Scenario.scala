@@ -1,6 +1,6 @@
 package tcof
 
-abstract class Model {
+abstract class Scenario {
   private var _universe = Seq.empty[Component]
   def components_=(univ: Seq[Component]): Unit = _universe = univ
   def components: Seq[Component] = _universe

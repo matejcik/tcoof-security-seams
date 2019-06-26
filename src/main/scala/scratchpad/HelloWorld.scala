@@ -6,7 +6,7 @@ class Person(name: String) extends Component {
   name(name)
 }
 
-class SimpleScenario(val people: Seq[Person]) extends Model {
+class SimpleScenario(val people: Seq[Person]) extends Scenario {
 
   class HelloWorld extends RootEnsemble {
     val greeter = oneOf(people)
