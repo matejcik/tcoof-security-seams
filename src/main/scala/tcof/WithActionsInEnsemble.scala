@@ -2,21 +2,11 @@ package tcof
 
 import scala.collection.mutable
 
-object PrivacyLevel extends Enumeration {
-  val ANY = Value("any")
-  val SENSITIVE = Value("sensitive")
-  type PrivacyLevel = Value
-}
-
 abstract class Action
 case class AllowAction(subj: Component, action: String, obj: Component)
     extends Action
-case class DenyAction(
-    subj: Component,
-    action: String,
-    obj: Component,
-    privacyLevel: PrivacyLevel.PrivacyLevel
-) extends Action
+case class DenyAction(subj: Component, action: String, obj: Component)
+    extends Action
 case class NotifyAction(subj: Component, notification: Notification)
     extends Action
 
@@ -60,39 +50,31 @@ trait WithActionsInEnsemble {
     })
   }
 
-  def deny(
-      subject: Component,
-      action: String,
-      objct: Component,
-      privacyLevel: PrivacyLevel.PrivacyLevel
-  ): Unit =
-    deny(List(subject), action, List(objct), privacyLevel)
+  def deny(subject: Component, action: String, objct: Component): Unit =
+    deny(List(subject), action, List(objct))
   def deny(
       subjects: => Iterable[Component],
       action: String,
       objct: Component,
-      privacyLevel: PrivacyLevel.PrivacyLevel
   ): Unit =
-    deny(subjects, action, List(objct), privacyLevel)
+    deny(subjects, action, List(objct))
   def deny(
       subject: Component,
       action: String,
       objects: => Iterable[Component],
-      privacyLevel: PrivacyLevel.PrivacyLevel
   ): Unit =
-    deny(List(subject), action, objects, privacyLevel)
+    deny(List(subject), action, objects)
 
   def deny(
       subjects: => Iterable[Component],
       action: String,
       objects: => Iterable[Component],
-      privacyLevel: PrivacyLevel.PrivacyLevel
   ): Unit = {
     _actions += (() => {
       for {
         objct <- objects
         subject <- subjects
-      } yield DenyAction(subject, action, objct, privacyLevel)
+      } yield DenyAction(subject, action, objct)
     })
   }
 

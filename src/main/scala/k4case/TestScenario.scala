@@ -300,8 +300,8 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends ModelGenerator {
 
           val workers = shift.workers diff workersPotentiallyLate
 
-          deny(shift.foreman, "read.personalData", workers, PrivacyLevel.ANY)
-          deny(shift.foreman, "read.personalData", workersPotentiallyLate, PrivacyLevel.SENSITIVE)
+          deny(shift.foreman, "read.personalData", workers)
+          deny(shift.foreman, "read.personalData", workersPotentiallyLate)
       }
 
       rules(
