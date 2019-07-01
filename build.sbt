@@ -1,4 +1,4 @@
-name := "tcof-security-seams"
+name := "EnACT - Ensemble-based Access Control Toolkit"
 
 version := "1.0"
 
