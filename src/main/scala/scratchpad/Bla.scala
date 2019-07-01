@@ -1,5 +1,6 @@
 package scratchpad
 import scala.collection.mutable.ListBuffer
+import scala.language.implicitConversions
 
 class DelayedInt(val value: Int) {
   var locked = true

@@ -1,7 +1,7 @@
 package tcof
+import scala.language.implicitConversions
 
 import org.chocosolver.solver.variables.SetVar
-
 import scala.collection.mutable
 
 trait CommonImplicits {

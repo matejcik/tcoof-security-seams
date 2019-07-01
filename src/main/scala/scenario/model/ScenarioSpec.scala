@@ -1,5 +1,7 @@
 package scenario.model
 
+import scala.language.implicitConversions
+
 object ProjectAssignment extends Enumeration {
   val ROUND_ROBIN, RANDOM = Value
 }

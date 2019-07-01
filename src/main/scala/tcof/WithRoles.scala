@@ -1,5 +1,7 @@
 package tcof
 
+import scala.language.implicitConversions
+
 import tcof.InitStages.InitStages
 import tcof.Utils._
 
