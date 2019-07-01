@@ -8,8 +8,7 @@ class UnionRole[+ComponentType <: Component](
     name: String,
     roles: Iterable[Role[ComponentType]],
     linkedMembers: Map[ComponentType, Iterable[(Role[_], Int)]],
-    cardinalityConstraint: Integer => Logical,
-) extends Role(name, linkedMembers.keys, cardinalityConstraint) {
+) extends Role(name, linkedMembers.keys) {
 
   def this(
       name: String,
@@ -34,8 +33,7 @@ class UnionRole[+ComponentType <: Component](
         }
 
         linkedMembers
-      },
-      cardinalityConstraint
+      }
     )
 
   override def _init(

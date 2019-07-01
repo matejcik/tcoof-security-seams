@@ -13,24 +13,14 @@ trait Ensemble
     with WithEnsembleGroups
     with WithRoles
     with WithActionsInEnsemble
+    with WithConstraints
     with CommonImplicits {
-  private[tcof] val _constraintsClauseFuns =
-    mutable.ListBuffer.empty[() => Logical]
+
   private[tcof] var _situationFun: () => Boolean = null
 
-  def constraint(clause: => Logical): Unit = {
-    _constraintsClauseFuns += clause _
-  }
 
   def situation(cond: => Boolean): Unit = {
     _situationFun = cond _
-  }
-
-  private[tcof] def _buildConstraintsClause: Logical = {
-    if (_constraintsClauseFuns.nonEmpty)
-      _solverModel.and(_constraintsClauseFuns.map(_.apply()))
-    else
-      LogicalBoolean(true)
   }
 
   private[tcof] def _isInSituation: Boolean = {

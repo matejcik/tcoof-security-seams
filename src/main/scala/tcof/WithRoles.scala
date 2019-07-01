@@ -8,6 +8,7 @@ import tcof.Utils._
 import scala.collection.mutable
 
 trait WithRoles extends Initializable with CommonImplicits {
+  this: WithConstraints =>
 
   private[tcof] val _roles = mutable.Map.empty[String, Role[Component]]
 
@@ -21,7 +22,7 @@ trait WithRoles extends Initializable with CommonImplicits {
     unionOf(roleFirst +: roleRest)
 
   def unionOf[C <: Component](roles: Iterable[Role[C]]): Role[C] =
-    _addRole(new UnionRole("unionOf_" + randomName, roles))
+    _addRole(new UnionRole("unionOf_" + randomName, roles), null)
 
   def subsetOf[C <: Component](
       items: Iterable[C],
@@ -36,10 +37,12 @@ trait WithRoles extends Initializable with CommonImplicits {
       name: String,
       items: Iterable[C],
       cardinality: Integer => Logical,
-  ): Role[C] = _addRole(new Role(name, items, cardinality))
+  ): Role[C] = _addRole(new Role(name, items), cardinality)
 
-  def _addRole[C <: Component](role: Role[C]): Role[C] = {
+  def _addRole[C <: Component](role: Role[C], cardinality: Integer => Logical): Role[C] = {
     _roles += role.name -> role
+    if (cardinality != null)
+      constraint(cardinality.apply(role.cardinality))
     role
   }
 
