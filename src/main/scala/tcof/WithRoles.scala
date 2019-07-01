@@ -6,7 +6,6 @@ import tcof.Utils._
 import scala.collection.mutable
 
 trait WithRoles extends Initializable with CommonImplicits {
-  this: WithConfig =>
 
   private[tcof] val _roles = mutable.Map.empty[String, Role[Component]]
 

@@ -12,7 +12,7 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
         Iterable[Logical]
     ) => Unit
 ) extends MemberGroup(values)
-    with WithConfig
+    with Initializable
     with CommonImplicits {
 
   private[tcof] def allMembersVarName: String = "EG_" + name

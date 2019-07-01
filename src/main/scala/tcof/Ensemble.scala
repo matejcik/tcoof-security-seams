@@ -5,7 +5,7 @@ import tcof.Utils._
 import scala.collection.mutable
 
 trait Ensemble
-    extends WithConfig
+    extends Initializable
     with WithName
     with WithUtility
     with WithEnsembleGroups

@@ -8,7 +8,7 @@ class Role[+ComponentType <: Component](
     values: Iterable[ComponentType],
     cardinalityConstraints: Integer => Logical
 ) extends MemberGroup(values)
-    with WithConfig {
+    with Initializable {
 
   override def allMembersVarName: String = "R_" + name
 

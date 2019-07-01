@@ -5,7 +5,7 @@ import org.chocosolver.solver.variables.SetVar
 import scala.collection.mutable
 
 trait CommonImplicits {
-  this: WithConfig =>
+  this: Initializable =>
 
   implicit class WithMembersIterable[MemberType](
       memberGroups: Iterable[MemberGroup[MemberType]]

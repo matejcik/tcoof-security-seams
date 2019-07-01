@@ -7,7 +7,7 @@ import scala.reflect.ClassTag
 
 abstract class MemberGroup[+MemberType](
     val values: Iterable[MemberType]
-) extends WithConfig
+) extends Initializable
     with CommonImplicits {
 
   private[tcof] def allMembersVarName: String

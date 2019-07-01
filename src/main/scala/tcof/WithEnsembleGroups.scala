@@ -6,7 +6,6 @@ import tcof.Utils._
 import scala.collection.mutable
 
 trait WithEnsembleGroups extends Initializable with CommonImplicits {
-  this: WithConfig =>
 
   def rules[E <: Ensemble](ensRest: E*): EnsembleGroup[E] = rules(ensRest)
 

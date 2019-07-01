@@ -3,7 +3,6 @@ package tcof
 import tcof.InitStages.InitStages
 
 trait WithUtility extends Initializable {
-  this: WithConfig =>
 
   private var _utilityFun: Option[() => Integer] = None
 
