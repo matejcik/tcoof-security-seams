@@ -7,7 +7,8 @@ import scala.reflect.ClassTag
 
 abstract class MemberGroup[+MemberType](
     val values: Iterable[MemberType]
-) extends WithConfig {
+) extends WithConfig
+    with CommonImplicits {
 
   private[tcof] def allMembersVarName: String
 
@@ -79,6 +80,34 @@ abstract class MemberGroup[+MemberType](
     LogicalBoolVar(_solverModel.disjoint(thisVar, otherVar).reify())
   }
 
+  def _channelMapResults[T](fun: MemberType => T,
+                            valMap: Map[T, Int]): SetVar = {
+    val memberMap = allMembers.indices.groupBy(idx => fun(allMembers(idx)))
+    val channelVar = _solverModel.setVar(
+      Array.empty[Int],
+      memberMap.keys.map(valMap(_)).toArray)
+    for ((value, indices) <- memberMap) {
+      val memberships = for (idx <- indices)
+        yield _solverModel.member(idx, allMembersVar)
+      val or = _solverModel.or(memberships: _*)
+      _solverModel.ifOnlyIf(or, _solverModel.member(valMap(value), channelVar))
+    }
+    channelVar
+  }
+
+  def allEqual[T](fun: MemberType => T): Logical = {
+    val values = allMembers.map(fun).toSet.zipWithIndex.toMap
+    val channelVar = _channelMapResults(fun, values)
+    _solverModel.IntegerIntVar(channelVar.getCard) === 1
+  }
+
+  def allDifferent[T](fun: MemberType => T): Logical = {
+    val values = allMembers.map(fun).toSet.zipWithIndex.toMap
+    val channelVar = _channelMapResults(fun, values)
+    _solverModel.IntegerIntVar(channelVar.getCard) === cardinality
+  }
+
+  /* TODO remove this?
   def foreachBySelection(
       forSelected: MemberType => Unit,
       forNotSelected: MemberType => Unit
@@ -92,32 +121,12 @@ abstract class MemberGroup[+MemberType](
     }
   }
 
-  def allEqual(fun: MemberType => Any): Logical = {
-    val values = allMembers.map(fun).toIndexedSeq
-    val valueIndexMap = values.toSet.zipWithIndex.toMap
-    val valueIntVars = values.map(v => _solverModel.intVar(valueIndexMap(v)))
-    val namePrefix = "Ch_" + Utils.randomName + "_"
-
-    val sets = for (i <- valueIndexMap.values)
-      yield
-        _solverModel.setVar(
-          namePrefix + i,
-          Array.emptyIntArray,
-          allMembers.indices.toArray
-        )
-
-    _solverModel.setsIntsChanneling(sets.toArray, valueIntVars.toArray).post
-    val subsetConstraints = for (set <- sets)
-      yield _solverModel.subsetEq(allMembersVar, set)
-    LogicalBoolVar(_solverModel.or(subsetConstraints.toSeq: _*).reify())
-  }
-
   def membersWithSelectionIndicator: Iterable[(Boolean, MemberType)] = {
     val selection = _solverModel.solution.getSetVal(allMembersVar)
     allMembers.zipWithIndex.map {
       case (member, idx) => (selection.contains(idx), member)
     }
-  }
+  }*/
 
   def selectedMembers: Iterable[MemberType] = {
     for (idx <- _solverModel.solution.getSetVal(allMembersVar))
