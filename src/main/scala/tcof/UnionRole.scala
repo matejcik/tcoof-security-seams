@@ -13,7 +13,6 @@ class UnionRole[+ComponentType <: Component](
   def this(
       name: String,
       roles: Iterable[Role[ComponentType]],
-      cardinalityConstraint: Integer => Logical = null,
   ) =
     this(
       name,
