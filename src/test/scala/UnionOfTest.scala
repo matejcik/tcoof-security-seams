@@ -50,7 +50,7 @@ class UnionOfTest extends ModelSolver {
       val b = oneOf(members)
       val union = unionOf(a, b)
 
-      constraint { union.cardinality == 2 }
+      constraint { union.cardinality === 2 }
     })
 
     problem.init()

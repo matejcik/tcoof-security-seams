@@ -315,8 +315,7 @@ class SolverModel extends ChocoModel {
       }
     }
 
-    override def ==(num: Int): Logical = LogicalBoolean(value == num)
-    override def ==(num: Integer): Logical =
+    override def ===(num: Integer): Logical =
       revRelOp(num, "=", (x, y) => x == y)
     override def !=(num: Integer): Logical =
       revRelOp(num, "!=", (x, y) => x != y)
@@ -363,8 +362,7 @@ class SolverModel extends ChocoModel {
       }
     }
 
-    override def ==(num: Int): Logical = relOp(IntegerInt(num), "=")
-    override def ==(num: Integer): Logical = relOp(num, "=")
+    override def ===(num: Integer): Logical = relOp(num, "=")
     override def !=(num: Integer): Logical = relOp(num, "!=")
     override def <(num: Integer): Logical = relOp(num, "<")
     override def >(num: Integer): Logical = relOp(num, ">")

@@ -19,7 +19,7 @@ class SubensembleTest extends ModelSolver {
 
         val x = subsetOf(members, _ > 1)
 
-        constraint { x.cardinality == 2 }
+        constraint { x.cardinality === 2 }
 
         allow(x, "open", door)
 

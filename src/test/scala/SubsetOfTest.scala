@@ -6,7 +6,7 @@ class SubsetOfTest extends ModelSolver {
     for (n <- 3 to 10) {
       val members = for (i <- 1 to 10) yield Member(i)
       val problem = Scenario.root(new Ensemble {
-        val selection = subsetOf(members, _ == n)
+        val selection = subsetOf(members, _ === n)
       })
 
       assert(problem.resolve())
@@ -22,7 +22,7 @@ class SubsetOfTest extends ModelSolver {
 
     val members = for (i <- 1 to N) yield Member(i)
     val problem = Scenario.root(new Ensemble {
-      val selection = subsetOf(members, _ == K)
+      val selection = subsetOf(members, _ === K)
     })
 
     problem.init()

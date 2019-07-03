@@ -6,7 +6,7 @@ class ConstraintTest extends ModelSolver {
     val members = for (_ <- 1 to 5; i <- 1 to 5) yield Member(i)
 
     val problem = Scenario.root(new Ensemble {
-      val selected = subsetOf(members, _ == 5)
+      val selected = subsetOf(members, _ === 5)
 
       constraint { selected.allEqual(_.id) }
     })
