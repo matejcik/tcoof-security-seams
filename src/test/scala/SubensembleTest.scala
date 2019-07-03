@@ -11,7 +11,7 @@ class SubensembleTest extends ModelSolver {
     val members = for (i <- 1 to 10) yield Member(i)
     val door = new Component { name("door") }
 
-    val problem = root(new Ensemble {
+    val problem = Scenario.root(new Ensemble {
 
       class Ens extends Ensemble {
 
@@ -19,8 +19,7 @@ class SubensembleTest extends ModelSolver {
 
         val x = subsetOf(members, _ > 1)
 
-        constraint { x.cardinality === 2 }
-        constraint { x.map(_.id).sum > 5 }
+        constraint { x.cardinality == 2 }
 
         allow(x, "open", door)
 
@@ -37,10 +36,8 @@ class SubensembleTest extends ModelSolver {
 
     })
 
-    problem.init()
-    problem.solve()
-    problem.commit()
+    problem.resolve()
     //println(problem.instance.enses.x.selectedMembers)
-    println(problem.instance.solutionUtility)
+    // TODO
   }
 }
