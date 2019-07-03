@@ -4,7 +4,6 @@ import org.chocosolver.solver.constraints.nary.cnf.{ILogical, LogOp}
 import org.chocosolver.solver.variables.BoolVar
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
-
 /** Parent of clauses used in membership. */
 abstract class Logical {
   protected type ValueType
@@ -24,16 +23,14 @@ private[tcof] abstract class LogicalWithILogic extends Logical {
   override def &&(other: Logical): Logical = other match {
     case LogicalBoolean(true)  => this
     case LogicalBoolean(false) => other
-    case other: LogicalLogOp   => LogicalLogOp(LogOp.and(this.value, other.value))
-    case other: LogicalBoolVar =>
+    case other: LogicalWithILogic =>
       LogicalLogOp(LogOp.and(this.value, other.value))
   }
 
   override def ||(other: Logical): Logical = other match {
     case LogicalBoolean(false) => this
     case LogicalBoolean(true)  => other
-    case other: LogicalLogOp   => LogicalLogOp(LogOp.or(this.value, other.value))
-    case other: LogicalBoolVar =>
+    case other: LogicalWithILogic =>
       LogicalLogOp(LogOp.or(this.value, other.value))
   }
 }
@@ -61,6 +58,7 @@ private[tcof] case class LogicalLogOp(value: LogOp) extends LogicalWithILogic {
   protected type ValueType = LogOp
 
   override def unary_!(): Logical = {
+
     throw new NotImplementedException
     // LogicalLogOp(LogOp.nand(value))
   }
