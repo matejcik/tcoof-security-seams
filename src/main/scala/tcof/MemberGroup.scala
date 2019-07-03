@@ -98,13 +98,13 @@ abstract class MemberGroup[+MemberType](
   def allEqual[T](fun: MemberType => T): Logical = {
     val values = allMembers.map(fun).toSet.zipWithIndex.toMap
     val channelVar = _channelMapResults(fun, values)
-    _solverModel.IntegerIntVar(channelVar.getCard) === 1
+    _solverModel.IntegerIntVar(channelVar.getCard) == 1
   }
 
   def allDifferent[T](fun: MemberType => T): Logical = {
     val values = allMembers.map(fun).toSet.zipWithIndex.toMap
     val channelVar = _channelMapResults(fun, values)
-    _solverModel.IntegerIntVar(channelVar.getCard) === cardinality
+    _solverModel.IntegerIntVar(channelVar.getCard) == cardinality
   }
 
   /* TODO remove this?

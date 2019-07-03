@@ -16,7 +16,7 @@ trait WithRoles extends Initializable with CommonImplicits {
     oneOf(itemFirst +: itemRest)
 
   def oneOf[C <: Component](items: Iterable[C]): Role[C] =
-    _addRole("oneOf_" + randomName, items, card => card === 1)
+    _addRole("oneOf_" + randomName, items, card => card == 1)
 
   def unionOf[C <: Component](roleFirst: Role[C], roleRest: Role[C]*): Role[C] =
     unionOf(roleFirst +: roleRest)
@@ -56,7 +56,7 @@ trait WithRoles extends Initializable with CommonImplicits {
 
   implicit def componentsToRole[C <: Component](
       components: Iterable[C]): Role[C] =
-    subsetOf(components, _ === components.size)
+    subsetOf(components, _ == components.size)
 
   implicit def componentToRole[C <: Component](component: C): Role[C] =
     componentsToRole(Seq(component))

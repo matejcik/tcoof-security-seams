@@ -10,7 +10,8 @@ abstract class Integer {
   def -(other: Integer): Integer
   def *(other: Integer): Integer
   def /(other: Integer): Integer
-  def ===(num: Integer): Logical
+  def ==(num: Integer): Logical
+  def ==(num: Int): Logical
   def !=(num: Integer): Logical
   def <(num: Integer): Logical
   def >(num: Integer): Logical
