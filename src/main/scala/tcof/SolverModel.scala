@@ -241,8 +241,7 @@ class SolverModel extends ChocoModel {
   }
 
   private def divideIntAndIntVar(left: Int, right: IntVar): IntegerIntVar = {
-    val leftVar = newIntVar
-    arithm(leftVar, "=", left).post()
+    val leftVar = intVar(left)
     val result = newIntVar
     div(leftVar, right, result).post()
     IntegerIntVar(result)
