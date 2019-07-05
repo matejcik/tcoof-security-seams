@@ -41,7 +41,7 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
             _solverModel.member(indexInParentGroup, parentGroup.allMembersVar)
           ensembleGroupActive = LogicalBoolVar(ensembleGroupActiveCond.reify())
 
-          for (idx <- 0 until allMembers.size) {
+          for (idx <- allMembers.indices) {
             _solverModel.ifThen(
               _solverModel.member(idx, allMembersVar),
               ensembleGroupActiveCond
