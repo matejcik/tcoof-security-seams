@@ -2,7 +2,7 @@ import scala.language.reflectiveCalls
 import tcof._
 
 class OneOfTest extends ModelSolver {
-  "problem" should "contain one member" in {
+  "oneOf" should "select one member" in {
     val members = for (i <- 1 to 5) yield Member(i)
     val problem = Scenario.root(new Ensemble {
       val selectedMember = oneOf(members)
@@ -12,7 +12,7 @@ class OneOfTest extends ModelSolver {
     assert(problem.instance.selectedMember.selectedMembers.size == 1)
   }
 
-  it should "contain selected member" in {
+  it should "select preferred member" in {
     for (sel <- 1 to 5) {
       val members = for (i <- 1 to 5) yield Member(i)
       val problem = Scenario.root(new Ensemble {

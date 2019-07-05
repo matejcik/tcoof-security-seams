@@ -29,4 +29,24 @@ class RoleTest extends ModelSolver {
     assert(rootOk.resolve())
     assert(!rootFail.resolve())
   }
+
+  "allOf" should "select all components" in {
+    val members = for (i <- 1 to 5) yield Member(i)
+
+    val policy = Scenario.root(new Ensemble {
+      val role = allOf(members)
+    })
+
+    assert(policy.resolve())
+    policy.instance.role.selectedMembers.size shouldEqual members.size
+  }
+
+  it should "group components specified one by one" in {
+    val policy = Scenario.root(new Ensemble {
+      val members = allOf(Member(1), Member(2), Member(3))
+    })
+
+    assert(policy.resolve())
+    policy.instance.members.selectedMembers should have size 3
+  }
 }
