@@ -12,7 +12,7 @@ trait Ensemble
     with WithUtility
     with WithEnsembleGroups
     with WithRoles
-    with WithActionsInEnsemble
+    with WithActions
     with WithConstraints
     with CommonImplicits {
 
