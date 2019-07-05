@@ -57,9 +57,6 @@ trait WithRoles extends Initializable with CommonImplicits {
     _roles.values.foreach(_._init(stage, config))
   }
 
-  implicit def roleToComponents[C <: Component](role: Role[C]): Iterable[C] =
-    role.selectedMembers
-
   implicit def componentsToRole[C <: Component](
       components: Iterable[C]): Role[C] =
     allOf(components)
