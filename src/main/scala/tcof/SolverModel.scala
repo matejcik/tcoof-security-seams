@@ -287,8 +287,7 @@ class SolverModel extends ChocoModel {
     override def -(other: Integer): Integer = op(other, "-")
     override def *(other: Integer): Integer = op(other, "*")
     override def /(other: Integer): Integer = op(other, "/")
-    override def unary_-(): Integer =
-      arithmResult(intVar(0), "-", value)
+    override def unary_-(): Integer = IntegerIntVar(intMinusView(value))
 
     private def relOp(num: Integer, op: String) = {
       num match {
