@@ -78,7 +78,7 @@ object TestScenario {
     val alreadyNotified =
       hungryWorkers.count(_.notified[RoomAssignedNotification])
     val selectCardinalities =
-      model.problem.instance.lunchroomAssignments.selectedMembers
+      model.policy.instance.lunchroomAssignments.selectedMembers
         .map(_.assignees.cardinality.asInt)
         .sum
     alreadyNotified + selectCardinalities == hungryWorkers.length
@@ -88,12 +88,12 @@ object TestScenario {
     val model = ModelGenerator.modelFromSpec(spec)
 
     val start = System.nanoTime()
-    model.problem.init()
-    model.problem.solverLimitTime(SOLVER_TIME_LIMIT)
+    model.policy.init()
+    model.policy.solverLimitTime(SOLVER_TIME_LIMIT)
     //    val init = System.nanoTime()
-    while (model.problem.solve() && !solutionFitsAllWorkers(model)) {}
-    if (model.problem.exists) {
-      model.problem.commit()
+    while (model.policy.solve() && !solutionFitsAllWorkers(model)) {}
+    if (model.policy.exists) {
+      model.policy.commit()
       //      for (action <- model.problem.actions) println(action)
     }
     val end = System.nanoTime()
@@ -101,18 +101,18 @@ object TestScenario {
 
     val success = time < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
 
-    Measure(success, time, model.problem.instance.solutionUtility)
+    Measure(success, time, model.policy.instance.solutionUtility)
   }
 
   def solveScenario(spec: ScenarioSpec): Measure = {
     val model = ModelGenerator.modelFromSpec(spec)
 
     val start = System.nanoTime()
-    model.problem.init()
-    model.problem.solverLimitTime(SOLVER_TIME_LIMIT)
-    while (model.problem.solve()) {}
-    if (model.problem.exists) {
-      model.problem.commit()
+    model.policy.init()
+    model.policy.solverLimitTime(SOLVER_TIME_LIMIT)
+    while (model.policy.solve()) {}
+    if (model.policy.exists) {
+      model.policy.commit()
 //      for (action <- model.problem.actions) println(action)
     }
 //    println(model.problem.instance.toStringWithUtility)
@@ -120,7 +120,7 @@ object TestScenario {
     val time = end - start
 
     val success = time < LIMIT_NANO
-    Measure(success, time, model.problem.instance.solutionUtility)
+    Measure(success, time, model.policy.instance.solutionUtility)
   }
 
   def solveOneByOne(spec: ScenarioSpec): Measure = {
@@ -135,11 +135,11 @@ object TestScenario {
       for (worker <- hungryWorkers) {
         worker.hungry = true
 
-        model.problem.init()
-        model.problem.solverLimitTime(SOLVER_TIME_LIMIT)
-        while (model.problem.solve()) {}
-        if (model.problem.exists) {
-          model.problem.commit()
+        model.policy.init()
+        model.policy.solverLimitTime(SOLVER_TIME_LIMIT)
+        while (model.policy.solve()) {}
+        if (model.policy.exists) {
+          model.policy.commit()
           // for (action <- model.problem.actions) println(action)
         }
 
@@ -151,8 +151,8 @@ object TestScenario {
     val end = System.nanoTime()
     val time = end - start
 
-    val success = model.problem.exists && time < LIMIT_NANO
-    val utility = if (success) model.problem.instance.solutionUtility else 0
+    val success = model.policy.exists && time < LIMIT_NANO
+    val utility = if (success) model.policy.instance.solutionUtility else 0
     Measure(success, time, utility)
   }
 

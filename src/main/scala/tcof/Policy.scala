@@ -2,7 +2,7 @@ package tcof
 
 import org.chocosolver.solver.Model
 
-class Scenario[EnsembleType <: Ensemble](builder: () => EnsembleType) {
+class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
   private var _solution: EnsembleType = _
   private var _utility: Option[Integer] = None
   private var _actions: Iterable[Action] = List()
@@ -65,7 +65,7 @@ class Scenario[EnsembleType <: Ensemble](builder: () => EnsembleType) {
   }
 }
 
-object Scenario {
-  def root[E <: Ensemble](builder: => E): Scenario[E] =
-    new Scenario(builder _)
+object Policy {
+  def root[E <: Ensemble](builder: => E): Policy[E] =
+    new Policy(builder _)
 }

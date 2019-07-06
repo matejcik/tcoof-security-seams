@@ -25,8 +25,8 @@ class RoleTest extends ModelSolver {
       rules(SubEnsemble)
     }
 
-    val rootOk = Scenario.root(new EnsembleWithSubensemble(false))
-    val rootFail = Scenario.root(new EnsembleWithSubensemble(true))
+    val rootOk = Policy.root(new EnsembleWithSubensemble(false))
+    val rootFail = Policy.root(new EnsembleWithSubensemble(true))
 
     assert(rootOk.resolve())
     assert(!rootFail.resolve())
@@ -35,7 +35,7 @@ class RoleTest extends ModelSolver {
   "allOf" should "select all components" in {
     val members = for (i <- 1 to 5) yield Member(i)
 
-    val policy = Scenario.root(new Ensemble {
+    val policy = Policy.root(new Ensemble {
       val role = allOf(members)
     })
 
@@ -44,7 +44,7 @@ class RoleTest extends ModelSolver {
   }
 
   it should "group components specified one by one" in {
-    val policy = Scenario.root(new Ensemble {
+    val policy = Policy.root(new Ensemble {
       val members = allOf(Member(1), Member(2), Member(3))
     })
 

@@ -5,10 +5,10 @@ class UtilityTest extends ModelSolver {
   "utility" should "change result of solving" in {
     val members = for (i <- 1 to 5) yield Member(i)
 
-    val noUtilitySolution = Scenario.root(new Ensemble {
+    val noUtilitySolution = Policy.root(new Ensemble {
       val member = subsetOf(members)
     })
-    val utilitySolution = Scenario.root(new Ensemble {
+    val utilitySolution = Policy.root(new Ensemble {
       val member = subsetOf(members)
 
       utility { -member.cardinality }
@@ -26,7 +26,7 @@ class UtilityTest extends ModelSolver {
   it should "be additive" in {
     val members = for (i <- 1 to 5) yield Member(i)
 
-    val problem = Scenario.root(new Ensemble {
+    val problem = Policy.root(new Ensemble {
       name("utility root")
 
       class SubEnsemble(i: Int) extends Ensemble {

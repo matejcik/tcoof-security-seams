@@ -5,7 +5,7 @@ class SubsetOfTest extends ModelSolver {
   "problem" should "contain given number of members" in {
     for (n <- 3 to 10) {
       val members = for (i <- 1 to 10) yield Member(i)
-      val problem = Scenario.root(new Ensemble {
+      val problem = Policy.root(new Ensemble {
         val selection = subsetOf(members, _ === n)
       })
 
@@ -21,7 +21,7 @@ class SubsetOfTest extends ModelSolver {
     val NchooseK: Int = fact(N) / (fact(K) * fact(N - K))
 
     val members = for (i <- 1 to N) yield Member(i)
-    val problem = Scenario.root(new Ensemble {
+    val problem = Policy.root(new Ensemble {
       val selection = subsetOf(members, _ === K)
     })
 

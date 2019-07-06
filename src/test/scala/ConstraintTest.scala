@@ -5,7 +5,7 @@ class ConstraintTest extends ModelSolver {
   "allEqual" should "ensure all are equal" in {
     val members = for (i <- 1 to 25) yield Member(i)
 
-    val problem = Scenario.root(new Ensemble {
+    val problem = Policy.root(new Ensemble {
       val selection = subsetOf(members, _ === 5)
 
       constraint { selection.allEqual(_.id % 5) }
@@ -24,7 +24,7 @@ class ConstraintTest extends ModelSolver {
   }
 
   it should "work with empty roles" in {
-    val problem = Scenario.root(new Ensemble {
+    val problem = Policy.root(new Ensemble {
       val emptyList = Seq.empty[Component]
       val role = subsetOf(emptyList)
       constraint { role.allEqual(x => x) }
@@ -39,7 +39,7 @@ class ConstraintTest extends ModelSolver {
     val foos = for (i <- 1 to 5) yield new Foo(i)
     val bars = for (i <- 1 to 5) yield new Bar(i)
 
-    val problem = Scenario.root(new Ensemble {
+    val problem = Policy.root(new Ensemble {
       val foo = oneOf(foos)
       constraint { foo.contains(Qux) }
     })

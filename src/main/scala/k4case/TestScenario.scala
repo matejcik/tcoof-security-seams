@@ -325,7 +325,7 @@ class TestScenario(scenarioParams: TestScenarioSpec) extends ModelGenerator {
     }
   }
 
-  val factoryTeams = factoriesMap.values.map(factory => Scenario.root(new FactoryTeam(factory)))
+  val factoryTeams = factoriesMap.values.map(factory => Policy.root(new FactoryTeam(factory)))
 }
 
 

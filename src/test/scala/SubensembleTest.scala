@@ -11,7 +11,7 @@ class SubensembleTest extends ModelSolver {
     val members = for (i <- 1 to 10) yield Member(i)
     val door = new Component { name("door") }
 
-    val problem = Scenario.root(new Ensemble {
+    val problem = Policy.root(new Ensemble {
 
       class Ens extends Ensemble {
 

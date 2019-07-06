@@ -106,5 +106,5 @@ class LunchScenario(val projects: Seq[Project],
     constraint(lunchroomAssignments.map(_.assignees).allDisjoint)
   }
 
-  val problem = Scenario.root(new RoomAssignment)
+  val policy = Policy.root(new RoomAssignment)
 }

@@ -14,7 +14,7 @@ class SimpleScenario(val people: Seq[Person]) {
     allow(greeter, "greet", people)
   }
 
-  val problem = Scenario.root(new HelloWorld)
+  val problem = Policy.root(new HelloWorld)
 }
 
 object SimpleScenario {
