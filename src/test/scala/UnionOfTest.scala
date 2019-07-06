@@ -63,4 +63,14 @@ class UnionOfTest extends ModelSolver {
       a should not equal (b)
     }
   }
+
+  it should "work with empty roles" in {
+    val problem = Scenario.root(new Ensemble {
+      val emptyList = Seq.empty[Component]
+      val emptyRole = subsetOf(emptyList)
+      val union = unionOf(emptyList, emptyRole)
+    })
+
+    assert (problem.resolve())
+  }
 }

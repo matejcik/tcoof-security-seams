@@ -1,5 +1,6 @@
 package tcof
 
+import org.chocosolver.solver.variables.BoolVar
 import tcof.InitStages.InitStages
 import tcof.Utils._
 
@@ -7,45 +8,30 @@ import scala.collection.mutable
 
 trait WithEnsembleGroups extends Initializable with CommonImplicits {
 
-  def rules[E <: Ensemble](ensRest: E*): EnsembleGroup[E] = rules(ensRest)
+  def rules[E <: Ensemble](ensFirst: E, ensRest: E*): EnsembleGroup[E] = rules(ensFirst +: ensRest)
 
   def rules[E <: Ensemble](ens: Iterable[E]): EnsembleGroup[E] =
-    _addEnsembleGroup(
-      "rules_" + randomName,
-      ens,
-      (ensGroup, ensembleGroupActive, _) =>
-        _solverModel.postEnforceSelected(
-          ensGroup.allMembers
-            .map(ens => ens._isInSituation && ensembleGroupActive),
-          ensGroup.allMembersVar
-        )
-    )
+    _addEnsembleGroup("rules_" + randomName, ens, true)
+
+  private[tcof] var isSelectedVar: BoolVar = _
 
   /** A set of all potential ensembles */
-  private[tcof] val _ensembleGroups =
-    mutable.Map.empty[String, EnsembleGroup[Ensemble]]
+  private[tcof] val _ensembleGroups = mutable.Map.empty[String, EnsembleGroup[Ensemble]]
 
-  /*
-  def ensembles[EnsembleType <: Ensemble](ensFirst: EnsembleType, ensRest: EnsembleType*): EnsembleGroup[EnsembleType] = ensembles(randomName, ensRest.+:(ensFirst))
 
-  def ensembles[EnsembleType <: Ensemble](ens: Iterable[EnsembleType]): EnsembleGroup[EnsembleType] = ensembles(randomName, ens)
+  def ensembles[E <: Ensemble](ensFirst: E, ensRest: E*): EnsembleGroup[E] =
+    ensembles(ensFirst +: ensRest)
 
-  def ensembles[EnsembleType <: Ensemble](name: String, ensFirst: EnsembleType, ensRest: EnsembleType*): EnsembleGroup[EnsembleType] = ensembles(name, ensRest.+:(ensFirst))
-
-  def ensembles[EnsembleType <: Ensemble](name: String, ens: Iterable[EnsembleType]): EnsembleGroup[EnsembleType] = _addEnsembleGroup(name, ens, false)
-   */
+  def ensembles[E <: Ensemble](ens: Iterable[E]): EnsembleGroup[E] =
+    _addEnsembleGroup("ensembles_" + randomName, ens, false)
 
   def _addEnsembleGroup[EnsembleType <: Ensemble](
       name: String,
       ens: Iterable[EnsembleType],
-      extraRulesFn: (
-          EnsembleGroup[Ensemble],
-          Logical,
-          Iterable[Logical]
-      ) => Unit
+      enforceSituation: Boolean,
   ): EnsembleGroup[EnsembleType] = {
     val group =
-      new EnsembleGroup(name, ens, extraRulesFn)
+      new EnsembleGroup(name, ens, enforceSituation)
     _ensembleGroups += name -> group
     group
   }
@@ -53,5 +39,16 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
   override private[tcof] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
     _ensembleGroups.values.foreach(_._init(stage, config))
+
+    stage match {
+      case InitStages.VarsCreation =>
+        isSelectedVar = _solverModel.boolVar()
+      case InitStages.RulesCreation =>
+        for (group <- _ensembleGroups.values)
+          _solverModel.arithm(group.isActiveVar, "=", isSelectedVar).post()
+      case _ =>
+    }
   }
+
+  def selected: Boolean = _solverModel.solution.getIntVal(isSelectedVar) == 1
 }

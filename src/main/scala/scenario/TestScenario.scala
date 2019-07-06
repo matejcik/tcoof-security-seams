@@ -13,7 +13,7 @@ import scala.util.Random
 import scala.util.control.Breaks._
 
 object TestScenario {
-  val TEST_ROUNDS = 100
+  val TEST_ROUNDS = 50
   val SOLVER_TIME_LIMIT = 30L * 1000
   val LIMIT_NANO = SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
 
@@ -140,7 +140,7 @@ object TestScenario {
         while (model.problem.solve()) {}
         if (model.problem.exists) {
           model.problem.commit()
-          //for (action <- model.problem.actions) println(action)
+          // for (action <- model.problem.actions) println(action)
         }
 
         val currentTime = System.nanoTime() - start

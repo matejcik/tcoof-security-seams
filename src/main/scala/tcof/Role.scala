@@ -1,7 +1,5 @@
 package tcof
 
-import tcof.InitStages.InitStages
-
 /** Represents a role in an ensemble. Implements methods to build membership over components contained in a role. */
 class Role[+ComponentType <: Component](
     val name: String,

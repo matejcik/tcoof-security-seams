@@ -35,7 +35,7 @@ class UnionRole[+ComponentType <: Component](
       }
     )
 
-  override def _init(
+  override private[tcof] def _init(
       stage: InitStages,
       config: Config
   ): Unit = {
@@ -51,7 +51,8 @@ class UnionRole[+ComponentType <: Component](
 
           _solverModel.ifOnlyIf(
             _solverModel.member(idx, allMembersVar),
-            _solverModel.or(vrs.toSeq: _*))
+            _solverModel.or(vrs.toSeq: _*)
+          )
         }
       case _ =>
     }

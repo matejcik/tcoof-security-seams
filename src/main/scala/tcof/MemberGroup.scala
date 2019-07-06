@@ -1,12 +1,12 @@
 package tcof
 
-import org.chocosolver.solver.variables.SetVar
+import org.chocosolver.solver.variables.{BoolVar, SetVar}
 import tcof.InitStages.InitStages
 
 import scala.reflect.ClassTag
 
 abstract class MemberGroup[+MemberType](
-    val values: Iterable[MemberType]
+    values: Iterable[MemberType]
 ) extends Initializable
     with CommonImplicits {
 
@@ -15,17 +15,26 @@ abstract class MemberGroup[+MemberType](
   private[tcof] val allMembers: IndexedSeq[MemberType] = values.toSet.toIndexedSeq
 
   private[tcof] var allMembersVar: SetVar = null
+  private[tcof] var isActiveVar: BoolVar = null
 
   override private[tcof] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
 
     stage match {
-      case InitStages.VarsCreation =>
+      case InitStages.VarsCreation => {
         allMembersVar = _solverModel.setVar(
           allMembersVarName,
           Array.empty[Int],
           allMembers.indices.toArray,
         )
+        isActiveVar = _solverModel.boolVar()
+      }
+      case InitStages.RulesCreation => {
+        _solverModel.ifThen(
+          isActiveVar.not().asInstanceOf[BoolVar],
+          _solverModel.not(_solverModel.notEmpty(allMembersVar))
+        )
+      }
       case _ =>
     }
   }

@@ -14,7 +14,9 @@ class RoleTest extends ModelSolver {
     val members = for (i <- 1 to 5) yield Member(i)
 
     class EnsembleWithSubensemble(subEnabled: Boolean) extends Ensemble {
+      name("root")
       object SubEnsemble extends Ensemble {
+        name("sub")
         situation { subEnabled }
 
         val role = subsetOf(members, _ > 20)

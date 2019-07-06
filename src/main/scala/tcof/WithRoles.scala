@@ -1,14 +1,15 @@
 package tcof
 
-import scala.language.implicitConversions
+import org.chocosolver.solver.variables.BoolVar
 
+import scala.language.implicitConversions
 import tcof.InitStages.InitStages
 import tcof.Utils._
 
 import scala.collection.mutable
 
 trait WithRoles extends Initializable with CommonImplicits {
-  this: WithConstraints =>
+  this: WithConstraints with WithEnsembleGroups =>
 
   private[tcof] val _roles = mutable.Map.empty[String, Role[Component]]
 
@@ -55,10 +56,16 @@ trait WithRoles extends Initializable with CommonImplicits {
   override private[tcof] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
     _roles.values.foreach(_._init(stage, config))
+
+    stage match {
+      case InitStages.RulesCreation =>
+        for (role <- _roles.values)
+          _solverModel.arithm(role.isActiveVar, "=", isSelectedVar).post()
+      case _ =>
+    }
   }
 
-  implicit def componentsToRole[C <: Component](
-      components: Iterable[C]): Role[C] =
+  implicit def componentsToRole[C <: Component](components: Iterable[C]): Role[C] =
     allOf(components)
 
   implicit def componentToRole[C <: Component](component: C): Role[C] =
