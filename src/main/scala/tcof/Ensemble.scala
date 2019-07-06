@@ -18,7 +18,6 @@ trait Ensemble
 
   private[tcof] var _situationFun: () => Boolean = null
 
-
   def situation(cond: => Boolean): Unit = {
     _situationFun = cond _
   }
@@ -62,7 +61,7 @@ trait Ensemble
     )}${indent(_ensembleGroups.mapValues(_.toStringWithUtility).mkString(""), 1)}\n"""
   }
 
-  implicit def ensembleGroupToMembers[EnsembleType <: Ensemble](
-      group: EnsembleGroup[EnsembleType]
-  ): Iterable[EnsembleType] = group.allMembers
+  implicit def ensembleGroupToMembers[E <: Ensemble](
+      group: EnsembleGroup[E]
+  ): Iterable[E] = group.allMembers
 }
