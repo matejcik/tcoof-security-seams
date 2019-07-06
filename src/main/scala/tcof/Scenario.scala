@@ -7,12 +7,13 @@ class Scenario[EnsembleType <: Ensemble](builder: () => EnsembleType) {
   private var _utility: Option[Integer] = None
   private var _actions: Iterable[Action] = List()
 
-  private val _solverModel = new SolverModel
+  private var _solverModel: SolverModel = _
 
   def instance: EnsembleType = _solution
 
   def init(): Unit = {
     _solution = builder()
+    _solverModel = new SolverModel
     val config = new Config(_solverModel)
 
     // initialize solution
@@ -21,12 +22,13 @@ class Scenario[EnsembleType <: Ensemble](builder: () => EnsembleType) {
     }
 
     // initialize root component
+    _solverModel.arithm(_solution.isSelectedVar, "=", 1).post()
     _solverModel.post(_solution._buildConstraintsClause)
 
     // configure utility
     _utility = _solution._collectUtility
     _utility match {
-      case Some(_solverModel.IntegerIntVar(utility)) =>
+      case Some(config.solverModel.IntegerIntVar(utility)) =>
         _solverModel.setObjective(Model.MAXIMIZE, utility)
       case _ => // utility is constant or unset, so we ignore it
     }
