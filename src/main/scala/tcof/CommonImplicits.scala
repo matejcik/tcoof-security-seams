@@ -1,14 +1,14 @@
 package tcof
 import scala.language.implicitConversions
-
 import org.chocosolver.solver.variables.SetVar
+
 import scala.collection.mutable
 
 trait CommonImplicits {
   this: Initializable =>
 
-  implicit class WithMembersIterable[MemberType](
-      memberGroups: Iterable[MemberGroup[MemberType]]
+  implicit class WithMembersIterable(
+      memberGroups: Iterable[MemberGroup[_]]
   ) {
     def allDisjoint: Logical =
       if (memberGroups.isEmpty)
@@ -37,6 +37,9 @@ trait CommonImplicits {
 
         LogicalBoolVar(_solverModel.allDisjoint(allMembersVars: _*).reify())
       }
+
+    def cardinality: Integer =
+      memberGroups.map(_.cardinality).reduceOption(_ + _).getOrElse(0)
   }
 
   implicit def booleanToLogical(x: Boolean): LogicalBoolean = LogicalBoolean(x)
