@@ -163,7 +163,7 @@ class SolverModel extends ChocoModel {
       if (constValue == 0)
         IntegerIntVar(sumVar)
       else
-        addIntAndIntVar(constValue, sumVar)
+        arithmResult(intVar(constValue), "+", sumVar)
     }
   }
 
@@ -222,58 +222,13 @@ class SolverModel extends ChocoModel {
     sumVar
   }
 
-  private def addIntAndIntVar(left: Int, right: IntVar): IntegerIntVar = {
-    val sumVar = newIntVar
-    arithm(sumVar, "-", right, "=", left).post()
-    IntegerIntVar(sumVar)
-  }
-
-  private def subIntAndIntVar(left: Int, right: IntVar): IntegerIntVar = {
-    val resultVar = newIntVar
-    arithm(resultVar, "+", right, "=", left).post()
-    IntegerIntVar(resultVar)
-  }
-
-  private def multiplyIntAndIntVar(left: Int, right: IntVar): IntegerIntVar = {
-    val productVar = newIntVar
-    times(right, left, productVar).post()
-    IntegerIntVar(productVar)
-  }
-
-  private def divideIntAndIntVar(left: Int, right: IntVar): IntegerIntVar = {
-    val leftVar = intVar(left)
-    val result = newIntVar
-    div(leftVar, right, result).post()
-    IntegerIntVar(result)
-  }
-
-  private def addIntVarAndIntVar(left: IntVar, right: IntVar): IntegerIntVar = {
-    val sum = newIntVar
-    arithm(left, "+", right, "=", sum).post()
-    IntegerIntVar(sum)
-  }
-
-  private def subIntVarAndIntVar(left: IntVar, right: IntVar): IntegerIntVar = {
-    val difference = newIntVar
-    arithm(left, "-", right, "=", difference).post()
-    IntegerIntVar(difference)
-  }
-
-  private def multiplyIntVarAndIntVar(
+  private def arithmResult(
       left: IntVar,
-      right: IntVar
-  ): IntegerIntVar = {
-    val productVar = newIntVar
-    times(left, right, productVar).post()
-    IntegerIntVar(productVar)
-  }
-
-  private def divideIntVarAndIntVar(
-      left: IntVar,
+      op: String,
       right: IntVar
   ): IntegerIntVar = {
     val result = newIntVar
-    div(left, right, result).post()
+    arithm(left, op, right, "=", result).post()
     IntegerIntVar(result)
   }
 
@@ -282,25 +237,21 @@ class SolverModel extends ChocoModel {
 
     override def asInt: Int = value
 
-    override def +(other: Integer): Integer = other match {
-      case IntegerInt(otherValue)    => IntegerInt(value + otherValue)
-      case IntegerIntVar(otherValue) => addIntAndIntVar(value, otherValue)
+    private def op(
+        other: Integer,
+        op: String,
+        opFun: (Int, Int) => Int
+    ): Integer = other match {
+      case IntegerInt(otherValue) => IntegerInt(opFun(value, otherValue))
+      case IntegerIntVar(otherValue) =>
+        arithmResult(intVar(value), op, otherValue)
     }
 
-    override def -(other: Integer): Integer = other match {
-      case IntegerInt(otherValue)    => IntegerInt(value - otherValue)
-      case IntegerIntVar(otherValue) => subIntAndIntVar(value, otherValue)
-    }
-
-    override def *(other: Integer): Integer = other match {
-      case IntegerInt(otherValue)    => IntegerInt(value * otherValue)
-      case IntegerIntVar(otherValue) => multiplyIntAndIntVar(value, otherValue)
-    }
-
-    override def /(other: Integer): Integer = other match {
-      case IntegerInt(otherValue)    => IntegerInt(value / otherValue)
-      case IntegerIntVar(otherValue) => divideIntAndIntVar(value, otherValue)
-    }
+    override def +(other: Integer): Integer = op(other, "+", _ + _)
+    override def -(other: Integer): Integer = op(other, "-", _ - _)
+    override def *(other: Integer): Integer = op(other, "*", _ * _)
+    override def /(other: Integer): Integer = op(other, "/", _ / _)
+    override def unary_-(): Integer = IntegerInt(-value)
 
     private def revRelOp(
         num: Integer,
@@ -314,16 +265,12 @@ class SolverModel extends ChocoModel {
       }
     }
 
-    override def ===(num: Integer): Logical =
-      revRelOp(num, "=", (x, y) => x == y)
-    override def !=(num: Integer): Logical =
-      revRelOp(num, "!=", (x, y) => x != y)
-    override def <(num: Integer): Logical = revRelOp(num, ">", (x, y) => x > y)
-    override def >(num: Integer): Logical = revRelOp(num, "<", (x, y) => x < y)
-    override def <=(num: Integer): Logical =
-      revRelOp(num, ">=", (x, y) => x >= y)
-    override def >=(num: Integer): Logical =
-      revRelOp(num, "<=", (x, y) => x <= y)
+    override def ===(num: Integer): Logical = revRelOp(num, "=", _ == _)
+    override def !=(num: Integer): Logical = revRelOp(num, "!=", _ != _)
+    override def <(num: Integer): Logical = revRelOp(num, ">", _ > _)
+    override def >(num: Integer): Logical = revRelOp(num, "<", _ < _)
+    override def <=(num: Integer): Logical = revRelOp(num, ">=", _ >= _)
+    override def >=(num: Integer): Logical = revRelOp(num, "<=", _ <= _)
   }
 
   private[tcof] case class IntegerIntVar(value: IntVar) extends Integer {
@@ -331,27 +278,17 @@ class SolverModel extends ChocoModel {
 
     override def asInt: Int = solution.getIntVal(value)
 
-    override def +(other: Integer): Integer = other match {
-      case IntegerInt(otherValue)    => addIntAndIntVar(otherValue, value)
-      case IntegerIntVar(otherValue) => addIntVarAndIntVar(value, otherValue)
+    def op(other: Integer, op: String): Integer = other match {
+      case IntegerInt(otherValue)    => arithmResult(value, op, intVar(otherValue))
+      case IntegerIntVar(otherValue) => arithmResult(value, op, otherValue)
     }
 
-    override def -(other: Integer): Integer = other match {
-      case IntegerInt(otherValue)    => subIntAndIntVar(otherValue, value)
-      case IntegerIntVar(otherValue) => subIntVarAndIntVar(value, otherValue)
-    }
-
-    override def *(other: Integer): Integer = other match {
-      case IntegerInt(otherValue) => multiplyIntAndIntVar(otherValue, value)
-      case IntegerIntVar(otherValue) =>
-        multiplyIntVarAndIntVar(value, otherValue)
-    }
-
-    override def /(other: Integer): Integer = other match {
-      case IntegerInt(otherValue) => divideIntAndIntVar(otherValue, value)
-      case IntegerIntVar(otherValue) =>
-        divideIntVarAndIntVar(value, otherValue)
-    }
+    override def +(other: Integer): Integer = op(other, "+")
+    override def -(other: Integer): Integer = op(other, "-")
+    override def *(other: Integer): Integer = op(other, "*")
+    override def /(other: Integer): Integer = op(other, "/")
+    override def unary_-(): Integer =
+      arithmResult(intVar(0), "-", value)
 
     private def relOp(num: Integer, op: String) = {
       num match {
