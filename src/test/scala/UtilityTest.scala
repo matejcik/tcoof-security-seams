@@ -6,19 +6,21 @@ class UtilityTest extends ModelSolver {
     val members = for (i <- 1 to 5) yield Member(i)
 
     val noUtilitySolution = Scenario.root(new Ensemble {
-      val member = oneOf(members)
+      val member = subsetOf(members)
     })
     val utilitySolution = Scenario.root(new Ensemble {
-      val member = oneOf(members)
+      val member = subsetOf(members)
 
-      utility { member.sum(_.id) }
+      utility { -member.cardinality }
     })
 
     noUtilitySolution.resolve()
     utilitySolution.resolve()
 
-    noUtilitySolution.instance.member.selectedMembers.head.id shouldBe 1
-    utilitySolution.instance.member.selectedMembers.head.id shouldBe 5
+    // this relies on an assumption that the solver starts with all
+    // members selected and refines down
+    noUtilitySolution.instance.member.selectedMembers should have size 5
+    utilitySolution.instance.member.selectedMembers should have size 0
   }
 
   it should "be additive" in {

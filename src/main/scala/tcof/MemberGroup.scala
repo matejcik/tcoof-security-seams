@@ -12,7 +12,7 @@ abstract class MemberGroup[+MemberType](
 
   private[tcof] def allMembersVarName: String
 
-  private[tcof] val allMembers: IndexedSeq[MemberType] = values.toIndexedSeq
+  private[tcof] val allMembers: IndexedSeq[MemberType] = values.toSet.toIndexedSeq
 
   private[tcof] var allMembersVar: SetVar = null
 
