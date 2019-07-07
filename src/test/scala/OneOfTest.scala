@@ -40,6 +40,25 @@ class OneOfTest extends ModelSolver {
     }
   }
 
+  it should "work with roles" in {
+    val members = for (i <- 1 to 5) yield Member(i)
+    val problem = Policy.root(new Ensemble {
+      val subset = subsetOf(members)
+      val selectedMember = oneOf(subset)
+    })
+
+    problem.init()
+    var solutions = 0
+    while (problem.solve()) {
+      solutions += 1
+      assert(problem.instance.selectedMember.selectedMembers.size == 1)
+      problem.instance.subset.selectedMembers should contain(
+        problem.instance.selectedMember.selectedMembers.head
+      )
+    }
+    solutions should be > 0
+  }
+
   "unsolvable problem" should "have no solution" in {
     val members = Seq.empty[Member]
     val problem = Policy.root(new Ensemble {

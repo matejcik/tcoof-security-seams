@@ -14,11 +14,13 @@ class SubsetOfTest extends ModelSolver {
     }
   }
 
+  def fact(n: Int): Int = (1 to n).foldLeft(1)(_ * _)
+
+  def choose(n: Int, k: Int): Int = fact(n) / (fact(k) * fact(n - k))
+
   it should "have N choose K solutions" in {
     val N = 10
     val K = 3
-    def fact(n: Int): Int = (1 to n).foldLeft(1)(_ * _)
-    val NchooseK: Int = fact(N) / (fact(K) * fact(N - K))
 
     val members = for (i <- 1 to N) yield Member(i)
     val problem = Policy.root(new Ensemble {
@@ -26,7 +28,28 @@ class SubsetOfTest extends ModelSolver {
     })
 
     problem.init()
-    for (_ <- 0 until NchooseK) assert(problem.solve())
+    for (_ <- 0 until choose(N, K)) assert(problem.solve())
+    assert(!problem.solve())
+  }
+
+  it should "allow subsets of subsets" in {
+    val N  = 10
+    val K1 = 5
+    val K2 = 3
+
+    val members = for (i <- 1 to N) yield Member(i)
+    val problem = Policy.root(new Ensemble {
+      val selection = subsetOf(members, _ === K1)
+      val subselection = subsetOfRole(selection, _ === K2)
+    })
+
+    problem.init()
+    val solutions = choose(N, K1) * choose(K1, K2)
+    for (_ <- 1 to solutions) {
+      assert(problem.solve())
+      for (elem <- problem.instance.subselection.selectedMembers)
+        problem.instance.selection.selectedMembers should contain(elem)
+    }
     assert(!problem.solve())
   }
 }

@@ -34,6 +34,26 @@ trait WithRoles extends Initializable with CommonImplicits {
   ): Role[C] =
     _addRole("subsetOf_" + randomName, items, cardinality)
 
+  /** XXX **/
+  def subsetOfRole[C <: Component](
+      role: Role[C],
+      cardinality: Integer => Logical = null
+  ): Role[C] = {
+    val subsetRole =
+      _addRole("subsetOfRole_" + randomName, role.allMembers, cardinality)
+    constraint {
+      // This block executes in RulesCreation phase, when all variables already exist
+      // See definition of `constraint`
+      val cons =
+        _solverModel.subsetEq(subsetRole.allMembersVar, role.allMembersVar)
+      LogicalBoolVar(cons.reify())
+    }
+    subsetRole
+  }
+
+  def oneOf[C <: Component](role: Role[C]): Role[C] = subsetOfRole(role, _ === 1)
+
+  /** XXX **/
   def allOf[C <: Component](itemFirst: C, itemRest: C*): Role[C] =
     allOf(itemFirst +: itemRest)
 
@@ -46,7 +66,10 @@ trait WithRoles extends Initializable with CommonImplicits {
       cardinality: Integer => Logical,
   ): Role[C] = _addRole(new Role(name, items), cardinality)
 
-  def _addRole[C <: Component](role: Role[C], cardinality: Integer => Logical): Role[C] = {
+  def _addRole[C <: Component](
+      role: Role[C],
+      cardinality: Integer => Logical
+  ): Role[C] = {
     _roles += role.name -> role
     if (cardinality != null)
       constraint(cardinality.apply(role.cardinality))
@@ -65,7 +88,9 @@ trait WithRoles extends Initializable with CommonImplicits {
     }
   }
 
-  implicit def componentsToRole[C <: Component](components: Iterable[C]): Role[C] =
+  implicit def componentsToRole[C <: Component](
+      components: Iterable[C]
+  ): Role[C] =
     allOf(components)
 
   implicit def componentToRole[C <: Component](component: C): Role[C] =
