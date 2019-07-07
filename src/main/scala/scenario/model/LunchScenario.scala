@@ -1,83 +1,88 @@
 package scenario.model
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time.LocalTime
 
 import tcof._
 
 // Different types of rooms
-abstract class Room(name: String, val capacity: Int) extends Component {
+abstract class Room(name: String) extends Component {
   name(s"Room:$name")
 }
-
-class LunchRoom(name: String, capacity: Int) extends Room("Lunch" + name, capacity)
-class WorkRoom(name: String, capacity: Int) extends Room("Work" + name, capacity)
-
-// Project with pre-assigned workrooms
-class Project(name: String, val workrooms: Seq[WorkRoom]) extends Component {
-  name(s"Project:$name")
-}
+class LunchRoom(name: String, val capacity: Int)
+  extends Room("Lunch" + name)
+class WorkRoom(name: String)
+  extends Room("Work" + name)
 
 // Worker assigned to a project, can be hungry or not
 class Worker(id: Int, val project: Project) extends Component {
   name(s"Worker:$id:${project.name}")
   var hungry = false
+  var location: Option[Room] = None
+
+  def isInLunchRoom: Boolean =
+    location.map(_.isInstanceOf[LunchRoom]).getOrElse(false)
 }
 
+// Project with pre-assigned workrooms
+case class Project(name: String, workrooms: Seq[WorkRoom])
+
 // Notification for lunchroom assignment
-case class RoomAssignedNotification(room: Room) extends Notification
+case class LunchRoomAssigned(room: LunchRoom) extends Notification
 
 class LunchScenario(val projects: Seq[Project],
                     val workers: Seq[Worker],
                     val workrooms: Seq[WorkRoom],
-                    val lunchrooms: Seq[LunchRoom],
-) {
+                    val lunchrooms: Seq[LunchRoom]) {
 
   // Opening times of the building and of the lunchrooms
-  val BUILDING_OPEN_TIME = LocalTime.of(7, 30)
-  val BUILDING_CLOSE_TIME = LocalTime.of(21, 0)
-  val LUNCH_OPEN_TIME = LocalTime.of(11, 30)
-  val LUNCH_CLOSE_TIME = LocalTime.of(15, 0)
+  val BuildingOpenTime  = LocalTime.of( 7, 30)
+  val BuildingCloseTime = LocalTime.of(21,  0)
+  val LunchOpenTime     = LocalTime.of(11, 30)
+  val LunchCloseTime    = LocalTime.of(15,  0)
 
-  val DEFAULT_NOW = LocalTime.of(8, 42)
-  var now = DEFAULT_NOW
+  val DefaultNow = LocalTime.of(8, 42)
+  var now = DefaultNow
+
+  // mapping projects to lists of workers
+  val workersByProject = workers.groupBy(_.project)
 
   class RoomAssignment extends Ensemble {
     name("assign workers to projects and rooms")
 
-    // mapping projects to lists of workers
-    private val _workersGroupByProject = workers.groupBy(_.project)
-    val workersByProject =
-      projects.map(p => p -> _workersGroupByProject.getOrElse(p, Seq.empty)).toMap
-
     // list of all hungry workers waiting for a lunchroom
-    val hungryWorkers =
-      workers.filter(_.hungry).filterNot(_.notified[RoomAssignedNotification])
+    val hungryWorkers = workers.filter { w =>
+      w.hungry &&
+      !w.isInLunchRoom &&
+      !w.notified[LunchRoomAssigned]
+    }
 
     // Each worker assigned to a project can access all workrooms
     // assigned to that project when the building is open.
     class WorkroomAssignment(project: Project) extends Ensemble {
-      name(s"allow workers on project ${project.name} to enter assigned rooms")
+      name(s"assign workrooms to workers on project ${project.name}")
 
-      situation {
-        (now isAfter BUILDING_OPEN_TIME) && (now isBefore BUILDING_CLOSE_TIME)
-      }
+      situation { (now isAfter BuildingOpenTime) &&
+                  (now isBefore BuildingCloseTime) }
 
-      allow(workersByProject(project), "enter", project.workrooms)
+      val projectWorkers = workersByProject.getOrElse(project, Seq.empty)
+      allow(projectWorkers, "enter", project.workrooms)
     }
 
     // Each hungry worker will get an assigned lunchroom so that
     // no lunchroom is over capacity and workers from different
     // projects do not meet in the same lunchroom.
     class LunchroomAssignment(room: LunchRoom) extends Ensemble {
-      name(s"assign workers to room ${room.name}")
+      name(s"assign workers to lunchroom ${room.name}")
 
       // Only activate when lunchrooms are open
-      situation {
-        (now isAfter LUNCH_OPEN_TIME) && (now isBefore LUNCH_CLOSE_TIME)
-      }
+      situation { (now isAfter LunchOpenTime) &&
+                  (now isBefore LunchCloseTime) }
 
       // list of previously assigned workers
-      val occupants = workers.filter(_.notified(RoomAssignedNotification(room)))
+      val occupants = workers.filter { w =>
+        w.notified(LunchRoomAssigned(room)) ||
+        w.location.contains(room)
+      }
 
       // newly-assigned hungry workers must fit into free space
       val freeSpaces = room.capacity - occupants.size
@@ -94,13 +99,14 @@ class LunchScenario(val projects: Seq[Project],
       }
 
       // grant access rights and notify newly selected hungry workers
-      notify(assignees, RoomAssignedNotification(room))
-      allow(assignees, "enter", room)
-      allow(occupants, "enter", room)
+      notify(assignees, LunchRoomAssigned(room))
+      allow(eaters, "enter", room)
     }
 
-    val workroomAssignments = rules(projects.map(new WorkroomAssignment(_)))
-    val lunchroomAssignments = rules(lunchrooms.map(new LunchroomAssignment(_)))
+    val workroomAssignments =
+      rules(projects.map(new WorkroomAssignment(_)))
+    val lunchroomAssignments =
+      rules(lunchrooms.map(new LunchroomAssignment(_)))
 
     // ensure that a worker is not assigned to more than one lunchroom
     constraint(lunchroomAssignments.map(_.assignees).allDisjoint)

@@ -3,21 +3,19 @@ package scenario.model
 import java.time.LocalTime
 import scala.collection.mutable.{Map => MutableMap}
 
-
 object ModelGenerator {
   def modelFromSpec(spec: ScenarioSpec): LunchScenario = {
     val lunchrooms = for (i <- 0 until spec.lunchrooms.n)
       yield new LunchRoom(i.toString, spec.lunchrooms.capacity)
 
     val workrooms = for (i <- 0 until spec.workrooms.n)
-      yield new WorkRoom(i.toString, spec.workrooms.capacity)
+      yield new WorkRoom(i.toString)
 
     val projects = for (i <- 0 until spec.projects) yield {
       val selectedWorkrooms =
-        workrooms
-        .zipWithIndex
-        .collect { case (e, wi) if (wi % spec.projects) == i => e }
-      new Project(('A' + i).toChar.toString, selectedWorkrooms)
+        workrooms.zipWithIndex
+          .collect { case (e, wi) if (wi % spec.projects) == i => e }
+      Project(('A' + i).toChar.toString, selectedWorkrooms)
     }
 
     val workers = for (i <- 0 until spec.workers)
@@ -32,15 +30,15 @@ object ModelGenerator {
       val loopProjects = Stream.continually(projects).flatten
       for ((room, project) <- lunchrooms zip loopProjects) {
         val projectWorkers = workersByProject(project)
-        projectWorkers.take(room.capacity).foreach(
-          _.notify(RoomAssignedNotification(room))
-        )
+        projectWorkers
+          .take(room.capacity)
+          .foreach(_.notify(LunchRoomAssigned(room)))
         workersByProject(project) = projectWorkers.drop(room.capacity)
       }
     }
 
     workers
-      .filterNot(_.notified[RoomAssignedNotification])
+      .filterNot(_.notified[LunchRoomAssigned])
       .take(spec.hungryWorkers)
       .foreach(_.hungry = true)
 

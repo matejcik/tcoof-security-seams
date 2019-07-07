@@ -76,7 +76,7 @@ object TestScenario {
   def solutionFitsAllWorkers(model: LunchScenario): Boolean = {
     val hungryWorkers = model.workers.filter(_.hungry)
     val alreadyNotified =
-      hungryWorkers.count(_.notified[RoomAssignedNotification])
+      hungryWorkers.count(_.notified[LunchRoomAssigned])
     val selectCardinalities =
       model.policy.instance.lunchroomAssignments.selectedMembers
         .map(_.assignees.cardinality.asInt)
