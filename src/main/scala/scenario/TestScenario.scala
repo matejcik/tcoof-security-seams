@@ -99,7 +99,7 @@ object TestScenario {
     val end = System.nanoTime()
     val time = end - start
 
-    val success = time < SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
+    val success = time < LIMIT_NANO
 
     Measure(success, time, model.policy.instance.solutionUtility)
   }
