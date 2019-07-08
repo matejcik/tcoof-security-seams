@@ -10,6 +10,7 @@ trait Ensemble
     extends Initializable
     with WithName
     with WithUtility
+    with WithSelectionStatus
     with WithEnsembleGroups
     with WithRoles
     with WithActions

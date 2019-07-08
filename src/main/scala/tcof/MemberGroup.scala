@@ -14,8 +14,8 @@ abstract class MemberGroup[+MemberType](
 
   private[tcof] val allMembers: IndexedSeq[MemberType] = values.toSet.toIndexedSeq
 
-  private[tcof] var allMembersVar: SetVar = null
-  private[tcof] var isActiveVar: BoolVar = null
+  private[tcof] var allMembersVar: SetVar = _
+  private[tcof] var isActiveVar: BoolVar = _
 
   override private[tcof] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
