@@ -1,6 +1,6 @@
 package scenario.testing
 
-import tcof._
+import cz.cuni.mff.d3s.enact.{Ensemble, Policy}
 
 trait Spec[ScenarioType] {
   def makeScenario(): ScenarioType

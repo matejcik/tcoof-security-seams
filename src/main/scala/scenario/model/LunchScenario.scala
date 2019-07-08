@@ -2,7 +2,7 @@ package scenario.model
 
 import java.time.LocalTime
 
-import tcof._
+import cz.cuni.mff.d3s.enact._
 
 // Different types of rooms
 abstract class Room(name: String) extends Component {

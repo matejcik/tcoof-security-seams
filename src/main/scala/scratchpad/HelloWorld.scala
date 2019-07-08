@@ -1,6 +1,6 @@
 package scratchpad
 
-import tcof._
+import cz.cuni.mff.d3s.enact.{Component, Ensemble, Policy}
 
 class Person(name: String) extends Component {
   name(name)

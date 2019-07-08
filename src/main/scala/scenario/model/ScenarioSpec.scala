@@ -2,9 +2,10 @@ package scenario.model
 
 import java.time.LocalTime
 
+import cz.cuni.mff.d3s.enact._
+
 import scala.language.implicitConversions
 import scenario.testing.Spec
-import tcof.{Ensemble, Policy}
 
 import scala.collection.mutable.{Map => MutableMap}
 

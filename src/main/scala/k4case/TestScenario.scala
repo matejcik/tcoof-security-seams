@@ -3,7 +3,8 @@ package k4case
 import java.io.{File, PrintWriter}
 import java.time.LocalDateTime
 
-import tcof._
+import cz.cuni.mff.d3s.enact.{Component, Ensemble, Notification, Policy}
+
 import scala.util.control.Breaks._
 
 case class TestScenarioSpec(
