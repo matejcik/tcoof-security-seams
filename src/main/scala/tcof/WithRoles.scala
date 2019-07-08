@@ -26,16 +26,16 @@ trait WithRoles extends Initializable with CommonImplicits {
     _addRole(new UnionRole("unionOf_" + randomName, roles), null)
 
   def subsetOf[C <: Component](itemFirst: C, itemRest: C*): Role[C] =
-    subsetOf(itemFirst +: itemRest)
+    subsetOfComponents(itemFirst +: itemRest)
 
-  def subsetOf[C <: Component](
+  def subsetOfComponents[C <: Component](
       items: Iterable[C],
       cardinality: Integer => Logical = null,
   ): Role[C] =
-    _addRole("subsetOf_" + randomName, items, cardinality)
+    _addRole("subsetOfComponents_" + randomName, items, cardinality)
 
   /** XXX **/
-  def subsetOfRole[C <: Component](
+  def subsetOf[C <: Component](
       role: Role[C],
       cardinality: Integer => Logical = null
   ): Role[C] = {
@@ -51,7 +51,7 @@ trait WithRoles extends Initializable with CommonImplicits {
     subsetRole
   }
 
-  def oneOf[C <: Component](role: Role[C]): Role[C] = subsetOfRole(role, _ === 1)
+  def oneOf[C <: Component](role: Role[C]): Role[C] = subsetOf(role, _ === 1)
 
   /** XXX **/
   def allOf[C <: Component](itemFirst: C, itemRest: C*): Role[C] =
