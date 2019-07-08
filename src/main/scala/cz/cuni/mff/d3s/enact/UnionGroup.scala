@@ -1,27 +1,24 @@
 package cz.cuni.mff.d3s.enact
 
 import InitStages.InitStages
+import Utils._
 
 import scala.collection.mutable
 
-class UnionRole[+ComponentType <: Component](
+class UnionGroup[+ComponentType <: Component](
     name: String,
-    roles: Iterable[Role[ComponentType]],
-    linkedMembers: Map[ComponentType, Iterable[(Role[_], Int)]],
-) extends Role(name, linkedMembers.keys) {
+    groups: Iterable[MemberGroup[ComponentType]],
+    linkedMembers: Map[ComponentType, Iterable[(MemberGroup[_], Int)]],
+) extends MemberGroup(name, linkedMembers.keys) {
 
-  def this(
-      name: String,
-      roles: Iterable[Role[ComponentType]],
-  ) =
+  def this(name: String, roles: Iterable[MemberGroup[ComponentType]]) =
     this(
       name,
       roles, {
         val linkedMembers = roles
           .flatMap(_.allMembers)
           .toSet
-          .map((x: ComponentType) =>
-            x -> mutable.ListBuffer.empty[(Role[_], Int)])
+          .map((x: ComponentType) => x -> mutable.ListBuffer.empty[(MemberGroup[_], Int)])
           .toMap
 
         for (role <- roles) {

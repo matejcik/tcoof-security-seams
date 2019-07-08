@@ -5,21 +5,19 @@ import scala.collection.mutable
 trait WithActions {
   this: WithEnsembleGroups =>
 
+  private type Role = MemberGroup[Component]
+
   private[enact] val _actions = mutable.ListBuffer.empty[() => Iterable[Action]]
 
   private[enact] def _collectActions(): Iterable[Action] = {
-    val groupActions = _ensembleGroups.values.flatMap(
-      group => group.selectedMembers.flatMap(member => member._collectActions())
-    )
+    val groupActions = _ensembleGroups
+      .flatMap(_.selectedMembers)
+      .flatMap(_._collectActions())
 
     groupActions ++ _actions.flatMap(_())
   }
 
-  def allow(
-      subjects: Role[Component],
-      action: String,
-      objects: Role[Component]
-  ): Unit = {
+  def allow(subjects: Role, action: String, objects: Role): Unit = {
     _actions += (() => {
       for {
         objct <- objects.selectedMembers
@@ -28,11 +26,7 @@ trait WithActions {
     })
   }
 
-  def deny(
-      subjects: Role[Component],
-      action: String,
-      objects: Role[Component],
-  ): Unit = {
+  def deny(subjects: Role, action: String, objects: Role): Unit = {
     _actions += (() => {
       for {
         objct <- objects.selectedMembers
@@ -41,10 +35,7 @@ trait WithActions {
     })
   }
 
-  def notify(
-      subjects: Role[Component],
-      notification: Notification,
-  ): Unit = {
+  def notify(subjects: Role, notification: Notification): Unit = {
     _actions += (() => {
       val members = subjects.selectedMembers
       members.foreach(_.notify(notification))

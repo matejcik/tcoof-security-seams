@@ -1,10 +1,10 @@
 package external
 
-import cz.cuni.mff.d3s.enact.{Ensemble, Policy}
+import cz.cuni.mff.d3s.enact._
 
 import scala.language.reflectiveCalls
 
-class UtilityTest extends ModelSolver {
+class UtilityTest extends TestClass {
   "utility" should "change result of solving" in {
     val members = for (i <- 1 to 5) yield Member(i)
 

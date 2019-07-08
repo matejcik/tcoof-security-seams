@@ -1,6 +1,5 @@
 package cz.cuni.mff.d3s.enact
 
-import org.chocosolver.solver.variables.BoolVar
 import InitStages.InitStages
 import Utils._
 
@@ -16,8 +15,7 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
     _addEnsembleGroup("rules_" + randomName, ens, true)
 
   /** A set of all potential ensembles */
-  private[enact] val _ensembleGroups =
-    mutable.Map.empty[String, EnsembleGroup[Ensemble]]
+  private[enact] val _ensembleGroups = mutable.ArrayBuffer.empty[EnsembleGroup[Ensemble]]
 
   def ensembles[E <: Ensemble](ensFirst: E, ensRest: E*): EnsembleGroup[E] =
     ensembles(ensFirst +: ensRest)
@@ -32,17 +30,17 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
   ): EnsembleGroup[EnsembleType] = {
     val group =
       new EnsembleGroup(name, ens, enforceSituation)
-    _ensembleGroups += name -> group
+    _ensembleGroups += group
     group
   }
 
   override private[enact] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
-    _ensembleGroups.values.foreach(_._init(stage, config))
+    _ensembleGroups.foreach(_._init(stage, config))
 
     stage match {
       case InitStages.RulesCreation =>
-        for (group <- _ensembleGroups.values)
+        for (group <- _ensembleGroups)
           _solverModel.arithm(group.isActiveVar, "=", isSelectedVar).post()
       case _ =>
     }

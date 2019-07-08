@@ -4,14 +4,14 @@ import InitStages.InitStages
 import Utils._
 
 class EnsembleGroup[+EnsembleType <: Ensemble](
-    val name: String,
+    name: String,
     values: Iterable[EnsembleType],
     val enforceSituation: Boolean,
-) extends MemberGroup(values)
+) extends MemberGroup(name, values)
     with Initializable
     with CommonImplicits {
 
-  private[enact] def allMembersVarName: String = "EG_" + name
+  override private[enact] val allMembersVarName: String = "EG_" + name
 
   override private[enact] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
@@ -40,19 +40,5 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
 
   }
 
-  override def toString: String =
-    if (_config != null && _solverModel.exists) {
-      s"""Ensemble group "$name":\n${indent(selectedMembers.mkString(""), 1)}"""
-    } else {
-      s"""Ensemble group "$name" (unsolved):\n${indent(
-        allMembers.mkString(""),
-        1
-      )}"""
-    }
-
-  def toStringWithUtility: String =
-    s"""Ensemble group "$name":\n${indent(
-      selectedMembers.map(_.toStringWithUtility).mkString(""),
-      1
-    )}"""
+  override def toString: String = s"<EnsembleGroup:$allMembersVarName:$name>"
 }

@@ -9,7 +9,9 @@ import scala.collection.mutable
 trait WithRoles extends Initializable with CommonImplicits {
   this: WithConstraints with WithSelectionStatus =>
 
-  private[enact] val _roles = mutable.Map.empty[String, Role[Component]]
+  private type Role[T] = MemberGroup[T]
+
+  private[enact] val _roles = mutable.ArrayBuffer.empty[Role[Component]]
 
   def oneOf[C <: Component](itemFirst: C, itemRest: C*): Role[C] =
     oneOf(itemFirst +: itemRest)
@@ -17,11 +19,13 @@ trait WithRoles extends Initializable with CommonImplicits {
   def oneOf[C <: Component](items: Iterable[C]): Role[C] =
     _addRole("oneOf_" + randomName, items, card => card === 1)
 
+  def oneOf[C <: Component](role: Role[C]): Role[C] = subsetOf(role, _ === 1)
+
   def unionOf[C <: Component](roleFirst: Role[C], roleRest: Role[C]*): Role[C] =
     unionOf(roleFirst +: roleRest)
 
   def unionOf[C <: Component](roles: Iterable[Role[C]]): Role[C] =
-    _addRole(new UnionRole("unionOf_" + randomName, roles), null)
+    _addRole(new UnionGroup("unionOf_" + randomName, roles), null)
 
   def subsetOf[C <: Component](itemFirst: C, itemRest: C*): Role[C] =
     subsetOfComponents(itemFirst +: itemRest)
@@ -49,7 +53,6 @@ trait WithRoles extends Initializable with CommonImplicits {
     subsetRole
   }
 
-  def oneOf[C <: Component](role: Role[C]): Role[C] = subsetOf(role, _ === 1)
 
   /** XXX **/
   def allOf[C <: Component](itemFirst: C, itemRest: C*): Role[C] =
@@ -68,7 +71,7 @@ trait WithRoles extends Initializable with CommonImplicits {
       role: Role[C],
       cardinality: Integer => Logical
   ): Role[C] = {
-    _roles += role.name -> role
+    _roles += role
     if (cardinality != null)
       constraint(cardinality.apply(role.cardinality))
     role
@@ -76,11 +79,11 @@ trait WithRoles extends Initializable with CommonImplicits {
 
   override private[enact] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
-    _roles.values.foreach(_._init(stage, config))
+    _roles.foreach(_._init(stage, config))
 
     stage match {
       case InitStages.RulesCreation =>
-        for (role <- _roles.values)
+        for (role <- _roles)
           _solverModel.arithm(role.isActiveVar, "=", isSelectedVar).post()
       case _ =>
     }

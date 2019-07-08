@@ -1,10 +1,10 @@
 package external
 
-import cz.cuni.mff.d3s.enact.{Ensemble, Policy}
+import cz.cuni.mff.d3s.enact._
 
 import scala.language.reflectiveCalls
 
-class OneOfTest extends ModelSolver {
+class OneOfTest extends TestClass {
   "oneOf" should "select one member" in {
     val members = for (i <- 1 to 5) yield Member(i)
     val problem = Policy.root(new Ensemble {

@@ -1,10 +1,10 @@
 package external
 
-import cz.cuni.mff.d3s.enact.{Ensemble, Policy}
+import cz.cuni.mff.d3s.enact._
 
 import scala.language.reflectiveCalls
 
-class SubsetOfTest extends ModelSolver {
+class SubsetOfTest extends TestClass {
   "problem" should "contain given number of members" in {
     for (n <- 3 to 10) {
       val members = for (i <- 1 to 10) yield Member(i)

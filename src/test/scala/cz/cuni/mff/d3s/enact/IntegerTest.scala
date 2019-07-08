@@ -2,7 +2,7 @@ package cz.cuni.mff.d3s.enact
 
 import org.chocosolver.solver.Solution
 
-class IntegerTest extends ModelSolver {
+class IntegerTest extends TestClass {
 
   class IntegerVsInt(
       left: Integer,

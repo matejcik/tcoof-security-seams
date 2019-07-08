@@ -1,10 +1,10 @@
 package external
 
-import cz.cuni.mff.d3s.enact.{Component, Ensemble, Policy}
+import cz.cuni.mff.d3s.enact._
 
 import scala.language.reflectiveCalls
 
-class SubensembleTest extends ModelSolver {
+class SubensembleTest extends TestClass {
   "multiple subensembles" should "behave identically with multiple rules calls" in {
     val members = for (i <- 1 to 10) yield Member(i)
 

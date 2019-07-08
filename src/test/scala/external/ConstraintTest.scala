@@ -1,10 +1,10 @@
 package external
 
-import cz.cuni.mff.d3s.enact.{Component, Ensemble, Policy}
+import cz.cuni.mff.d3s.enact._
 
 import scala.language.reflectiveCalls
 
-class ConstraintTest extends ModelSolver {
+class ConstraintTest extends TestClass {
   "allEqual" should "ensure all are equal" in {
     val members = for (i <- 1 to 25) yield Member(i)
 

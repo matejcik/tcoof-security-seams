@@ -1,10 +1,10 @@
 package external
 
-import cz.cuni.mff.d3s.enact.{Component, Ensemble, Policy}
+import cz.cuni.mff.d3s.enact._
 
 import scala.language.reflectiveCalls
 
-class UnionOfTest extends ModelSolver {
+class UnionOfTest extends TestClass {
   "union" should "contain same members as its parents" in {
     val membersA = for (i <- 1 to 10) yield Member(i)
     val membersB = for (i <- 101 to 110) yield Member(i)

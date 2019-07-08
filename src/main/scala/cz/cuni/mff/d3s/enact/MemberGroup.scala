@@ -2,16 +2,17 @@ package cz.cuni.mff.d3s.enact
 
 import org.chocosolver.solver.variables.{BoolVar, SetVar}
 import InitStages.InitStages
+import Utils._
 
 import scala.reflect.ClassTag
 
-abstract class MemberGroup[+MemberType](
+class MemberGroup[+MemberType](
+    val name: String,
     values: Iterable[MemberType]
 ) extends Initializable
     with CommonImplicits {
 
-  private[enact] def allMembersVarName: String
-
+  private[enact] val allMembersVarName: String = "G_" + randomName
   private[enact] val allMembers: IndexedSeq[MemberType] = values.toSet.toIndexedSeq
 
   private[enact] var allMembersVar: SetVar = _
@@ -89,12 +90,9 @@ abstract class MemberGroup[+MemberType](
     LogicalBoolVar(_solverModel.disjoint(thisVar, otherVar).reify())
   }
 
-  def _channelMapResults[T](fun: MemberType => T,
-                            valMap: Map[T, Int]): SetVar = {
+  def _channelMapResults[T](fun: MemberType => T, valMap: Map[T, Int]): SetVar = {
     val memberMap = allMembers.indices.groupBy(idx => fun(allMembers(idx)))
-    val channelVar = _solverModel.setVar(
-      Array.empty[Int],
-      memberMap.keys.map(valMap(_)).toArray)
+    val channelVar = _solverModel.setVar(Array.empty[Int], memberMap.keys.map(valMap(_)).toArray)
     for ((value, indices) <- memberMap) {
       val memberships = for (idx <- indices)
         yield _solverModel.member(idx, allMembersVar)
@@ -141,4 +139,6 @@ abstract class MemberGroup[+MemberType](
     for (idx <- _solverModel.solution.getSetVal(allMembersVar))
       yield allMembers(idx)
   }
+
+  override def toString: String = s"<MemberGroup:$allMembersVarName:$name>"
 }

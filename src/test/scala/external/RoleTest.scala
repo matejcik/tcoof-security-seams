@@ -1,10 +1,10 @@
 package external
 
-import cz.cuni.mff.d3s.enact.{Ensemble, Policy}
+import cz.cuni.mff.d3s.enact._
 
 import scala.language.reflectiveCalls
 
-class RoleTest extends ModelSolver {
+class RoleTest extends TestClass {
   "role" should "only accept components" in {
     case class NotAComponent(id: Int)
     val members = for (i <- 1 to 5) yield NotAComponent(i)
