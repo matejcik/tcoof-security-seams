@@ -40,7 +40,7 @@ class SubsetOfTest extends ModelSolver {
     val members = for (i <- 1 to N) yield Member(i)
     val problem = Policy.root(new Ensemble {
       val selection = subsetOf(members, _ === K1)
-      val subselection = subsetOfRole(selection, _ === K2)
+      val subselection = subsetOf(selection, _ === K2)
     })
 
     problem.init()
