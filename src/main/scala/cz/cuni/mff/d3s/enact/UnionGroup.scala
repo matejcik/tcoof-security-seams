@@ -5,15 +5,15 @@ import Utils._
 
 import scala.collection.mutable
 
-class UnionGroup[+ComponentType <: Component](
+class UnionGroup[+ComponentType <: Component] private(
     name: String,
     groups: Iterable[MemberGroup[ComponentType]],
     linkedMembers: Map[ComponentType, Iterable[(MemberGroup[_], Int)]],
 ) extends MemberGroup(name, linkedMembers.keys) {
 
-  def this(name: String, roles: Iterable[MemberGroup[ComponentType]]) =
+  def this(roles: Iterable[MemberGroup[ComponentType]]) =
     this(
-      name,
+      "unionOf_" + roles.map(_.name).mkString("_"),
       roles, {
         val linkedMembers = roles
           .flatMap(_.allMembers)
