@@ -33,4 +33,88 @@ class ConstraintTest extends TestClass {
       constraint { role.allEqual(x => x) }
     })
   }
+
+  "all" should "ensure application to all members" in {
+    val members = for (i <- 1 to 25) yield Member(i)
+
+    val problem = Policy.root(new Ensemble {
+      val selection = subsetOf(members, _ > 1)
+
+      constraint { selection.all(_.id % 5 == 1) }
+    })
+
+    problem.init()
+    while (problem.solve()) {
+      val ids = problem.instance.selection.selectedMembers.map(_.id)
+      ids.size should be > 1
+      assert(ids.forall(_ % 5 == 1))
+    }
+    assert(problem.exists)
+  }
+
+  it should "work with logicals" in {
+    val members = for (i <- 1 to 25) yield Member(i)
+
+    val problem = Policy.root(new Ensemble {
+      val selection = subsetOf(members, _ > 1)
+
+      constraint {
+        val logical = selection.cardinality > 0
+        selection.all(x => (x.id % 5 == 1) && logical)
+      }
+    })
+
+    problem.init()
+    while (problem.solve()) {
+      val ids = problem.instance.selection.selectedMembers.map(_.id)
+      ids.size should be > 1
+      assert(ids.forall(_ % 5 == 1))
+    }
+    assert(problem.exists)
+  }
+
+  "some" should "ensure application to at least one member" in {
+    val members = for (i <- 1 to 25) yield Member(i)
+
+    val problem = Policy.root(new Ensemble {
+      val selection = subsetOf(members, _ === 3)
+
+      constraint {
+        selection.some(_.id % 5 == 1) &&
+        selection.some(_.id % 5 != 1)
+      }
+    })
+
+    problem.init()
+    while (problem.solve()) {
+      val ids = problem.instance.selection.selectedMembers.map(_.id)
+      ids.size should be > 1
+      assert(ids.exists(_ % 5 == 1))
+      assert(ids.exists(_ % 5 != 1))
+    }
+    assert(problem.exists)
+  }
+
+  it should "work with logicals" in {
+    val members = for (i <- 1 to 25) yield Member(i)
+
+    val problem = Policy.root(new Ensemble {
+      val selection = subsetOf(members, _ === 3)
+
+      constraint {
+        val logical = selection.cardinality > 0
+        selection.some(x => (x.id % 5 == 1) && logical) &&
+        selection.some(x => (x.id % 5 != 1) && logical)
+      }
+    })
+
+    problem.init()
+    while (problem.solve()) {
+      val ids = problem.instance.selection.selectedMembers.map(_.id)
+      ids.size should be > 1
+      assert(ids.exists(_ % 5 == 1))
+      assert(ids.exists(_ % 5 != 1))
+    }
+    assert(problem.exists)
+  }
 }

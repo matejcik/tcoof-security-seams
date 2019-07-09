@@ -2,6 +2,7 @@ package scenario
 
 import cz.cuni.mff.d3s.enact._
 import scenario.testing.{Spec, TestHarness}
+import scala.util.control.Breaks._
 
 class ManyVarScenario(ints: Int, bools: Int, constraints: Int) {
   case class Member(id: Int) extends Component
@@ -34,9 +35,9 @@ case class ManyVarSpec(ints: Int, bools: Int, constraints: Int) extends Spec[Man
   override def root(scenario: ManyVarScenario): Ensemble = scenario.policy.instance
 }
 
-object IntegerVariables extends TestHarness[ManyVarScenario] {
+object Variables extends TestHarness[ManyVarScenario] {
 
-  override val TEST_ROUNDS: Int = 10
+  override val TEST_ROUNDS: Int = 20
 
   override def solveScenario(spec: ScenarioSpec): Measure = {
     val model = spec.makeScenario()
@@ -73,9 +74,11 @@ object IntegerVariables extends TestHarness[ManyVarScenario] {
     ) { m =>
       warmup(ManyVarSpec(0, 250, 0))
 
-      for (boolCount <- 500.to(5000, 500)) {
-        val spec = ManyVarSpec(0, boolCount, 0)
-        m(spec)
+      breakable {
+        for (boolCount <- 500.to(10000, 500)) {
+          val spec = ManyVarSpec(0, boolCount, 0)
+          if (!m(spec)) break()
+        }
       }
     }
 
@@ -84,17 +87,17 @@ object IntegerVariables extends TestHarness[ManyVarScenario] {
       "constraints",
       "creating a LOT of separate membership constraints",
     ) { m =>
-      warmup(ManyVarSpec(0, 0, 250))
+      warmup(ManyVarSpec(0, 0, 2500))
 
       for (constraintCount <- 500.to(10000, 500)) {
-        val spec = ManyVarSpec(0, 0, constraintCount)
+        val spec = ManyVarSpec(0, 0, constraintCount * 100)
         m(spec)
       }
     }
 
   def main(args: Array[String]): Unit = {
-    measure_manyIntVars
     measure_manyConstraints
+    measure_manyIntVars
     measure_manyBoolVars
   }
 }

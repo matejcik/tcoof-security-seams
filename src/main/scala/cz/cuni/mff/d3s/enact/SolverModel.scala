@@ -2,7 +2,7 @@ package cz.cuni.mff.d3s.enact
 
 import org.chocosolver.solver.{Solution, Model => ChocoModel}
 import org.chocosolver.solver.constraints.nary.cnf.{ILogical, LogOp}
-import org.chocosolver.solver.variables.{IntVar, SetVar}
+import org.chocosolver.solver.variables.{BoolVar, IntVar, SetVar}
 
 import scala.collection.mutable
 
@@ -119,27 +119,23 @@ class SolverModel extends ChocoModel {
       membersClauses: Iterable[Logical],
       membersVar: SetVar
   ): Logical = {
-    val clauses = mutable.ListBuffer.empty[ILogical]
-
-    var idx = 0
-    for (clause <- membersClauses) {
-      clause match {
-        case LogicalBoolean(value) =>
-          if (value) clauses += member(idx, membersVar).reify
-        case LogicalBoolVar(value) =>
-          clauses += LogOp.and(member(idx, membersVar).reify, value)
-        case LogicalLogOp(value) =>
-          clauses += LogOp.and(member(idx, membersVar).reify, value)
-        case _ =>
+    // Room for optimization: if there are just LogicalBooleans, and just a few
+    // of them are true, a formula like "A is member OR B is member OR C is member"
+    // is going to be better.
+    val booleans = membersClauses.map {
+      case LogicalBoolean(value) => boolVar(value)
+      case LogicalBoolVar(value) => value
+      case LogicalLogOp(value) => {
+        val b = boolVar
+        addClauses(LogOp.reified(b, value))
+        b
       }
+    }.toIndexedSeq
 
-      idx = idx + 1
-    }
-
-    if (clauses.nonEmpty)
-      LogicalLogOp(LogOp.or(clauses: _*))
-    else
-      LogicalBoolean(false)
+    val channelSet = setVar(Array.emptyIntArray, booleans.indices.toArray)
+    setBoolsChanneling(booleans.toArray, channelSet).post()
+    val notDisjoint = disjoint(channelSet, membersVar).reify().not().asInstanceOf[BoolVar]
+    LogicalBoolVar(notDisjoint)
   }
 
   // Integer utils

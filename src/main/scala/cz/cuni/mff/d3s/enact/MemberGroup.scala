@@ -3,6 +3,7 @@ package cz.cuni.mff.d3s.enact
 import org.chocosolver.solver.variables.{BoolVar, SetVar}
 import InitStages.InitStages
 import Utils._
+import org.chocosolver.solver.constraints.nary.cnf.LogOp
 
 import scala.reflect.ClassTag
 
@@ -42,27 +43,45 @@ class MemberGroup[+MemberType](
 
   def cardinality: Integer = _solverModel.IntegerIntVar(allMembersVar.getCard)
 
-  def contains(member: Any): Logical = some(x => LogicalBoolean(x == member))
-  def containsOtherThan(member: Any): Logical =
-    some(x => LogicalBoolean(x != member))
-  def containsOnly(member: Any): Logical = all(x => LogicalBoolean(x == member))
+  def contains(member: Any): Logical = {
+    val idx = allMembers.indexOf(member)
+    if (idx == -1) LogicalBoolean(false)
+    else LogicalBoolVar(_solverModel.member(idx, allMembersVar).reify())
+  }
 
-  def sum(fun: MemberType => Integer): Integer =
-    _solverModel.sumBasedOnMembership(allMembersVar, allMembers.map(fun))
+  def containsOtherThan(member: Any): Logical = {
+    val idx = allMembers.indexOf(member)
+    val atLeastOne = cardinality > 0
+    if (idx == -1) atLeastOne
+    else {
+      val contains = _solverModel.member(idx, allMembersVar).reify()
+      val atLeastTwo = _solverModel.arithm(allMembersVar.getCard, ">", 1).reify()
+      atLeastOne && LogicalLogOp(LogOp.implies(contains, atLeastTwo))
+    }
+  }
 
-  def all(fun: MemberType => Logical): Logical =
-    _solverModel.forAllSelected(allMembers.map(fun), allMembersVar)
+  def containsOnly(member: Any): Logical = {
+    val idx = allMembers.indexOf(member)
+    if (idx == -1) LogicalBoolean(false)
+    else cardinality === 1 && LogicalBoolVar(_solverModel.member(idx, allMembersVar).reify())
+  }
 
-  def some(fun: MemberType => Logical): Logical =
-    _solverModel.existsSelected(allMembers.map(fun), allMembersVar)
+  def sum(func: MemberType => Integer): Integer =
+    _solverModel.sumBasedOnMembership(allMembersVar, allMembers.map(func))
+
+  def all(func: MemberType => Logical): Logical =
+    _solverModel.forAllSelected(allMembers.map(func), allMembersVar)
+
+  def some(func: MemberType => Logical): Logical =
+    _solverModel.existsSelected(allMembers.map(func), allMembersVar)
 
   def disjointAfterMap[OtherMemberType, T: ClassTag](
-      funThis: MemberType => T,
+      funcThis: MemberType => T,
       other: MemberGroup[OtherMemberType],
-      funOther: OtherMemberType => T
+      funcOther: OtherMemberType => T
   ): Logical = {
-    val thisValues = allMembers.map(funThis)
-    val otherValues = other.allMembers.map(funOther)
+    val thisValues = allMembers.map(funcThis)
+    val otherValues = other.allMembers.map(funcOther)
 
     val allMap = thisValues.toSet.union(otherValues.toSet).zipWithIndex.toMap
 
@@ -90,8 +109,8 @@ class MemberGroup[+MemberType](
     LogicalBoolVar(_solverModel.disjoint(thisVar, otherVar).reify())
   }
 
-  def _channelMapResults[T](fun: MemberType => T, valMap: Map[T, Int]): SetVar = {
-    val memberMap = allMembers.indices.groupBy(idx => fun(allMembers(idx)))
+  def _channelMapResults[T](func: MemberType => T, valMap: Map[T, Int]): SetVar = {
+    val memberMap = allMembers.indices.groupBy(idx => func(allMembers(idx)))
     val channelVar = _solverModel.setVar(Array.empty[Int], memberMap.keys.map(valMap(_)).toArray)
     for ((value, indices) <- memberMap) {
       val memberships = for (idx <- indices)
@@ -102,15 +121,15 @@ class MemberGroup[+MemberType](
     channelVar
   }
 
-  def allEqual[T](fun: MemberType => T): Logical = {
-    val values = allMembers.map(fun).toSet.zipWithIndex.toMap
-    val channelVar = _channelMapResults(fun, values)
+  def allEqual[T](func: MemberType => T): Logical = {
+    val values = allMembers.map(func).toSet.zipWithIndex.toMap
+    val channelVar = _channelMapResults(func, values)
     _solverModel.IntegerIntVar(channelVar.getCard) === 1
   }
 
-  def allDifferent[T](fun: MemberType => T): Logical = {
-    val values = allMembers.map(fun).toSet.zipWithIndex.toMap
-    val channelVar = _channelMapResults(fun, values)
+  def allDifferent[T](func: MemberType => T): Logical = {
+    val values = allMembers.map(func).toSet.zipWithIndex.toMap
+    val channelVar = _channelMapResults(func, values)
     _solverModel.IntegerIntVar(channelVar.getCard) === cardinality
   }
 
@@ -126,19 +145,16 @@ class MemberGroup[+MemberType](
       else
         forNotSelected(member)
     }
-  }
+  }*/
 
   def membersWithSelectionIndicator: Iterable[(Boolean, MemberType)] = {
     val selection = _solverModel.solution.getSetVal(allMembersVar)
-    allMembers.zipWithIndex.map {
-      case (member, idx) => (selection.contains(idx), member)
-    }
-  }*/
+    allMembers.zipWithIndex.map { case (member, idx) => (selection.contains(idx), member) }
+  }
 
-  def selectedMembers: Iterable[MemberType] = {
+  def selectedMembers: Iterable[MemberType] =
     for (idx <- _solverModel.solution.getSetVal(allMembersVar))
       yield allMembers(idx)
-  }
 
   override def toString: String = s"<MemberGroup:$allMembersVarName:$name>"
 }

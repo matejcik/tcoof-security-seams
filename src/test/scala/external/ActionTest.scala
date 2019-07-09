@@ -56,13 +56,11 @@ class ActionTest extends TestClass {
     })
 
     problem.init()
-    var solutions = 0
     while (problem.solve()) {
       for (actor <- problem.instance.role.selectedMembers; subject <- members) {
         problem.actions should contain(AllowAction(actor, "xyz", subject))
       }
-      solutions += 1
     }
-    solutions should be > 0
+    assert(problem.exists)
   }
 }

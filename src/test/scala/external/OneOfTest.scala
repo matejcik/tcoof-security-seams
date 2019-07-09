@@ -51,15 +51,13 @@ class OneOfTest extends TestClass {
     })
 
     problem.init()
-    var solutions = 0
     while (problem.solve()) {
-      solutions += 1
       assert(problem.instance.selectedMember.selectedMembers.size == 1)
       problem.instance.subset.selectedMembers should contain(
         problem.instance.selectedMember.selectedMembers.head
       )
     }
-    solutions should be > 0
+    assert(problem.exists)
   }
 
   "unsolvable problem" should "have no solution" in {
