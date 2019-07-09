@@ -39,12 +39,9 @@ trait CommonImplicits {
         LogicalBoolVar(_solverModel.allDisjoint(allMembersVars: _*).reify())
       }
 
-    def cardinality: Integer =
-      memberGroups.map(_.cardinality).reduceOption(_ + _).getOrElse(0)
+    def cardinality: Integer = memberGroups.map(_.cardinality).reduceOption(_ + _).getOrElse(0)
   }
 
   implicit def booleanToLogical(x: Boolean): LogicalBoolean = LogicalBoolean(x)
-  implicit def intToInteger(value: Int): Integer =
-    _solverModel.IntegerInt(value)
-
+  implicit def intToInteger(value: Int): Integer = _solverModel.IntegerInt(value)
 }

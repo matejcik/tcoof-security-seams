@@ -5,13 +5,12 @@ import org.chocosolver.solver.Model
 class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
   private var _solution: EnsembleType = _
   private var _utility: Option[Integer] = None
-  private var _actions: Iterable[Action] = List()
+  private var _actions: Iterable[Action] = null
 
   private var _solverModel: SolverModel = _
 
-  def instance: EnsembleType = _solution
-
   def init(): Unit = {
+    _actions = null
     _solution = builder()
     _solverModel = new SolverModel
     val config = new Config(_solverModel)
@@ -41,16 +40,19 @@ class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
   def solverLimitTime(limit: Long) =
     _solverModel.getSolver.limitTime(limit)
 
-  def solve(): Boolean = _solverModel.solveAndRecord()
+  def solve(): Boolean = {
+    _actions = null
+    _solverModel.solveAndRecord()
+  }
+
+  def instance: EnsembleType = _solution
 
   def exists: Boolean = _solverModel.exists
 
-
-  def commit(): Unit = {
-    _actions = instance._collectActions()
+  def actions: Iterable[Action] = {
+    if (_actions == null) _actions = _solution._collectActions()
+    _actions
   }
-
-  def actions: Iterable[Action] = _actions
 
   def resolve(): Boolean = {
     init()
@@ -58,9 +60,8 @@ class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
       // repeatedly solve to optimize objective
       case Some(u) => while (solve()) {}
       // solve and record first solution
-      case None    => solve()
+      case None => solve()
     }
-    if (exists) commit()
     return exists
   }
 }

@@ -58,7 +58,6 @@ class ActionTest extends TestClass {
     problem.init()
     var solutions = 0
     while (problem.solve()) {
-      problem.commit()
       for (actor <- problem.instance.role.selectedMembers; subject <- members) {
         problem.actions should contain(AllowAction(actor, "xyz", subject))
       }

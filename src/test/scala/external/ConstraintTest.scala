@@ -33,18 +33,4 @@ class ConstraintTest extends TestClass {
       constraint { role.allEqual(x => x) }
     })
   }
-
-  "contains" should "only accept appropriate component types" in {
-    class Foo(id: Int) extends Component
-    class Bar(id: Int) extends Component
-    object Qux extends Foo(99)
-
-    val foos = for (i <- 1 to 5) yield new Foo(i)
-    val bars = for (i <- 1 to 5) yield new Bar(i)
-
-    val problem = Policy.root(new Ensemble {
-      val foo = oneOf(foos)
-      constraint { foo.contains(Qux) }
-    })
-  }
 }

@@ -28,10 +28,6 @@ object TestScenario extends TestHarness[LunchScenario] {
     model.policy.solverLimitTime(SOLVER_TIME_LIMIT)
     //    val init = System.nanoTime()
     while (model.policy.solve() && !solutionFitsAllWorkers(model)) {}
-    if (model.policy.exists) {
-      model.policy.commit()
-      //      for (action <- model.problem.actions) println(action)
-    }
     val end = System.nanoTime()
     val time = end - start
 
@@ -55,10 +51,6 @@ object TestScenario extends TestHarness[LunchScenario] {
         model.policy.init()
         model.policy.solverLimitTime(SOLVER_TIME_LIMIT)
         while (model.policy.solve()) {}
-        if (model.policy.exists) {
-          model.policy.commit()
-          // for (action <- model.problem.actions) println(action)
-        }
 
         val currentTime = System.nanoTime() - start
         if (currentTime > LIMIT_NANO) break
@@ -84,15 +76,6 @@ object TestScenario extends TestHarness[LunchScenario] {
       isLunchTime = true,
     )
     warmup(spec)
-  }
-
-  def warmup(spec: ScenarioSpec,
-             solverFunc: ScenarioSpec => Measure = solveScenario): Unit = {
-    var totalTime: Long = 0
-    while (totalTime < 10L * 1000 * 1000 * 1000) {
-      totalTime += solverFunc(spec).time
-    }
-    log(s"warmup completed in ${formatMs(totalTime)} ms")
   }
 
   def measure_workerCount_simple =

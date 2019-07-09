@@ -24,7 +24,7 @@ case class ScenarioSpec(
 ) extends Spec[LunchScenario] {
   require(workers >= hungryWorkers)
 
-  def toPerfLine: String = {
+  override def toPerfLine: String = {
     s"$projects, ${lunchrooms.n}, ${lunchrooms.capacity}, ${workrooms.n}, " +
       s"${workrooms.capacity}, $workers, $hungryWorkers, $fillRooms, $isLunchTime"
   }
