@@ -26,6 +26,7 @@ COLUMNS_COMMON = {
     "success": str,
     "nsec": np.int64,
     "utility": np.int32,
+    "memory": np.int64,
 }
 # fmt: on
 

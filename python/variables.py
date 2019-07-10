@@ -1,7 +1,7 @@
 import resultlib
 from resultlib import make_colors, box_graph
 
-resultlib.set_result_path("2019-07-09")
+resultlib.set_result_path("2019-07-10")
 
 import numpy as np
 import pandas as pd

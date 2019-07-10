@@ -37,6 +37,8 @@ case class ManyVarSpec(ints: Int, bools: Int, constraints: Int) extends Spec[Man
 
 object Variables extends TestHarness[ManyVarScenario] {
 
+  override val TEST_ROUNDS: Int = 5
+
   override def solveScenario(spec: ScenarioSpec): Measure = {
     val model = spec.makeScenario()
     val policy = spec.policy(model)
@@ -94,8 +96,8 @@ object Variables extends TestHarness[ManyVarScenario] {
     }
 
   def main(args: Array[String]): Unit = {
-    measure_manyConstraints
     measure_manyIntVars
+    measure_manyConstraints
     measure_manyBoolVars
   }
 }

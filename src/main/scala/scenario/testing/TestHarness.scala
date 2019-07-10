@@ -1,9 +1,15 @@
 package scenario.testing
 
 import java.io.{File, PrintWriter}
+import java.lang.management.ManagementFactory
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+import com.sun.management.GarbageCollectionNotificationInfo
+import javax.management.openmbean.CompositeData
+import javax.management.{Notification, NotificationEmitter, NotificationListener}
+
+import scala.collection.JavaConverters._
 import org.chocosolver.util.tools.TimeUtils
 
 class TestHarness[ScenarioType] {
@@ -31,25 +37,72 @@ class TestHarness[ScenarioType] {
 
   def formatMs(nanosec: Long): String = f"${nanosec.toDouble / 1000000}%.05f"
 
+  class PeakMemoryListener extends NotificationListener {
+    var peakMemory: Long = 0
+
+    def reset(): Unit = peakMemory = 0
+    def updatePeak(peak: Long): Unit = peakMemory = Math.max(peak, peakMemory)
+
+    override def handleNotification(notification: Notification, o: Any): Unit = {
+      if (notification.getType != GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)
+        return
+      val compositeData = notification.getUserData.asInstanceOf[CompositeData]
+      val info = GarbageCollectionNotificationInfo.from(compositeData).getGcInfo
+      val totalMemory = info.getMemoryUsageBeforeGc.asScala.values
+        .map(_.getUsed)
+        .sum
+      updatePeak(totalMemory)
+    }
+  }
+
+  def forceGc(): Unit = {
+    def getGcCount: Long =
+      ManagementFactory.getGarbageCollectorMXBeans.asScala
+        .map(_.getCollectionCount)
+        .filter(_ != -1)
+        .sum
+
+    val before = getGcCount
+    System.gc()
+    while (before == getGcCount) {}
+  }
+
+  // set up peak memory metric
+  private val peakMemStats = ManagementFactory.getGarbageCollectorMXBeans.asScala
+    .map { x =>
+      val listener = new PeakMemoryListener
+      x.asInstanceOf[NotificationEmitter].addNotificationListener(listener, null, null)
+      listener
+    }
+
   def measure(
       label: String,
       description: String,
       solverFunc: ScenarioSpec => Measure = solveScenario
   )(loop: (ScenarioSpec => Boolean) => Unit): Unit = {
-    val perfLogWriter = new PrintWriter(new File(s"$RESULT_PATH/$label.log"))
+    val filename = s"$RESULT_PATH/$label.log"
+    val perfLogWriter = new PrintWriter(new File(filename))
+    log(s"===== $description =====")
+    log(s"saving detailed logs to $filename")
 
-    def perf(spec: ScenarioSpec, runIndex: Int, measure: Measure) {
+    def perf(spec: ScenarioSpec, runIndex: Int, measure: Measure, peakMemory: Long): Unit = {
       val measureStr = measure.productIterator.mkString(", ")
-      perfLogWriter.println(s"${spec.toPerfLine}, $runIndex, $measureStr")
+      perfLogWriter.println(s"${spec.toPerfLine}, $runIndex, $measureStr, $peakMemory")
       perfLogWriter.flush()
     }
 
-    def singleRun(spec: ScenarioSpec): Boolean = {
-      var utility = 0
+    def singleRun(spec: ScenarioSpec): Boolean =
       try {
+        var utility = 0
+        var maxPeak: Long = 0
         val measurements = for (i <- 0 until TEST_ROUNDS) yield {
+          forceGc()
+          peakMemStats.foreach(_.reset())
           val m = solverFunc(spec)
-          perf(spec, i, m)
+          forceGc()
+          val peakMemory = peakMemStats.map(_.peakMemory).sum
+          maxPeak = Math.max(maxPeak, peakMemory)
+          perf(spec, i, m, peakMemory)
           utility = m.utility
           m.time
         }
@@ -59,19 +112,19 @@ class TestHarness[ScenarioType] {
         val max = formatMs(measurements.max)
         val avg = formatMs(measurements.sum / TEST_ROUNDS)
         val med = formatMs(measurementsSorted(TEST_ROUNDS / 2))
-        log(s"Scenario ${spec} solved in avg $avg ms " + s" (min: $min, max: $max, med: $med), utility $utility")
+        val maxMem = f"${maxPeak.toDouble / (1024 * 1024)}%.02f MB"
+        log(
+          s"Scenario $spec solved in avg $avg ms " + s" (min: $min, max: $max, med: $med), utility $utility, mem $maxMem"
+        )
 
         measurements.exists(_ < LIMIT_NANO)
       } catch {
-        case any: Throwable => {
-          log(s"Scenario ${spec} crashed on $any")
+        case any: Throwable =>
+          log(s"Scenario $spec crashed on $any")
           any.printStackTrace()
           false
-        }
       }
-    }
 
-    log(s"===== $description =====")
     loop(singleRun)
     perfLogWriter.close()
   }
