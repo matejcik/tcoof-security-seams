@@ -22,7 +22,7 @@ def read_csv(label, scaling_factor=1e-6):
 
 def plot_variables():
     files = ["integers", "booleans", "constraints"]
-    headers = ["IntVar count", "BoolVar count", "Constraint count"]
+    headers = ["IntVars", "BoolVars", "Constraints (x100)"]
     datasets = []
     labels = []
     colors = make_colors(len(files))
@@ -38,9 +38,9 @@ def plot_variables():
         labels.append(header)
 
     maxticks = max(len(d) for d in datasets)
-    x_ticks = range(5, maxticks + 5)
+    x_ticks = range(500, (maxticks + 1) * 500, 500)
 
-    fig, ax = box_graph(datasets, labels, colors, x_ticks)
+    fig, ax = box_graph(datasets, labels, colors, x_ticks, "vertical")
     ax.set_xlabel("Number of elements")
 
     fig.tight_layout()

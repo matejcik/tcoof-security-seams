@@ -55,7 +55,7 @@ def make_colors(n):
     return [colorsys.hsv_to_rgb(i * f, 0.9, 0.76) for i in range(n)]
 
 
-def box_graph(datasets, labels, colors, x_ticks):
+def box_graph(datasets, labels, colors, x_ticks, rotation=None):
     """
     Datasets is a list of lists of series: the outer list is the number of "lines"
     (i.e., different measure types that will be shown per each tick).
@@ -96,7 +96,11 @@ def box_graph(datasets, labels, colors, x_ticks):
         plt.plot([], c=color, label=label)
 
     plt.legend()
-    plt.xticks([(x * step_size) + group_size / 2 - 0.5 for x in range(x_size)], x_ticks)
+    plt.xticks(
+        [(x * step_size) + group_size / 2 - 0.5 for x in range(x_size)],
+        x_ticks,
+        rotation=rotation,
+    )
     plt.xlim(-1, step_size * x_size)
 
     ax.set_ylabel("Computation time (ms)")
