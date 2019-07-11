@@ -1,4 +1,4 @@
-name := "EnACT - Ensemble-based Access Control Toolkit"
+name := "TCOOF-Trust"
 
 version := "1.0"
 
