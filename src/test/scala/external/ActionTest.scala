@@ -1,5 +1,6 @@
 package external
 
+import scala.language.reflectiveCalls
 import cz.cuni.mff.d3s.enact._
 
 class ActionTest extends TestClass {
@@ -57,6 +58,7 @@ class ActionTest extends TestClass {
 
     problem.init()
     while (problem.solve()) {
+      problem.commit()
       for (actor <- problem.instance.role.selectedMembers; subject <- members) {
         problem.actions should contain(AllowAction(actor, "xyz", subject))
       }

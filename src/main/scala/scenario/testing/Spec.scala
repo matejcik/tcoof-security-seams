@@ -7,5 +7,4 @@ trait Spec[ScenarioType] {
   def makeScenario(): ScenarioType
   def toPerfLine: String = productIterator.mkString(", ")
   def policy(scenario: ScenarioType): Policy[_]
-  def root(scenario: ScenarioType): Ensemble
 }

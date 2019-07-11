@@ -49,9 +49,10 @@ class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
 
   def exists: Boolean = _solverModel.exists
 
-  def actions: Iterable[Action] = {
-    if (_actions == null) _actions = _solution._collectActions()
-    _actions
+  def actions: Iterable[Action] = _actions
+
+  def commit(): Unit = {
+    _actions = _solution._collectActions()
   }
 
   def resolve(): Boolean = {
@@ -62,6 +63,7 @@ class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
       // solve and record first solution
       case None => solve()
     }
+    if (exists) commit()
     return exists
   }
 }

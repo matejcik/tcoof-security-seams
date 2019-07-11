@@ -141,7 +141,7 @@ class TestHarness[ScenarioType] {
     val time = end - start
 
     val success = time < LIMIT_NANO
-    Measure(success, time, spec.root(model).solutionUtility)
+    Measure(success, time, policy.solutionUtility)
   }
 
   def warmup(spec: ScenarioSpec, solverFunc: ScenarioSpec => Measure = solveScenario): Unit = {

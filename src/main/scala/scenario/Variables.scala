@@ -32,12 +32,9 @@ class ManyVarScenario(ints: Int, bools: Int, constraints: Int) {
 case class ManyVarSpec(ints: Int, bools: Int, constraints: Int) extends Spec[ManyVarScenario] {
   override def makeScenario(): ManyVarScenario = new ManyVarScenario(ints, bools, constraints)
   override def policy(scenario: ManyVarScenario): Policy[_] = scenario.policy
-  override def root(scenario: ManyVarScenario): Ensemble = scenario.policy.instance
 }
 
 object Variables extends TestHarness[ManyVarScenario] {
-
-  override val TEST_ROUNDS: Int = 5
 
   override def solveScenario(spec: ScenarioSpec): Measure = {
     val model = spec.makeScenario()
@@ -51,7 +48,7 @@ object Variables extends TestHarness[ManyVarScenario] {
     val time = end - start
 
     val success = time < LIMIT_NANO
-    Measure(success, time, spec.root(model).solutionUtility)
+    Measure(success, time, policy.solutionUtility)
   }
 
   def measure_manyIntVars =
@@ -87,7 +84,7 @@ object Variables extends TestHarness[ManyVarScenario] {
       "constraints",
       "creating a LOT of separate membership constraints",
     ) { m =>
-      warmup(ManyVarSpec(0, 0, 2500))
+      warmup(ManyVarSpec(0, 0, 250))
 
       for (constraintCount <- 500.to(10000, 500)) {
         val spec = ManyVarSpec(0, 0, constraintCount * 100)

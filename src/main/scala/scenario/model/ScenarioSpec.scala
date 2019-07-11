@@ -74,7 +74,6 @@ case class ScenarioSpec(
   }
 
   override def policy(scenario: LunchScenario): Policy[_] = scenario.policy
-  override def root(scenario: LunchScenario): Ensemble = scenario.policy.instance
 }
 
 object ScenarioSpec {

@@ -33,7 +33,7 @@ object TestScenario extends TestHarness[LunchScenario] {
 
     val success = time < LIMIT_NANO
 
-    Measure(success, time, model.policy.instance.solutionUtility)
+    Measure(success, time, model.policy.solutionUtility)
   }
 
   def solveOneByOne(spec: ScenarioSpec): Measure = {
@@ -51,6 +51,7 @@ object TestScenario extends TestHarness[LunchScenario] {
         model.policy.init()
         model.policy.solverLimitTime(SOLVER_TIME_LIMIT)
         while (model.policy.solve()) {}
+        if (model.policy.exists) model.policy.commit()
 
         val currentTime = System.nanoTime() - start
         if (currentTime > LIMIT_NANO) break
@@ -61,7 +62,7 @@ object TestScenario extends TestHarness[LunchScenario] {
     val time = end - start
 
     val success = model.policy.exists && time < LIMIT_NANO
-    val utility = if (success) model.policy.instance.solutionUtility else 0
+    val utility = if (success) model.policy.solutionUtility else 0
     Measure(success, time, utility)
   }
 
@@ -241,8 +242,11 @@ object TestScenario extends TestHarness[LunchScenario] {
 //    )
 //    warmup(defaultSpec, 10, solveOneByOne)
 //    return
+
     measure_workerCount_simple
     measure_moreRoomsThanProjects_compareMethods
     measure_oneByOne_growingParams
+
+    measure_moreProjectsThanRooms_compareMethods
   }
 }
