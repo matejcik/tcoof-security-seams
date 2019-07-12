@@ -21,8 +21,8 @@ class UnionOfTest extends TestClass {
     val union = problem.instance.union.selectedMembers
 
     union should have size 2
-    union should contain (a)
-    union should contain (b)
+    union should contain(a)
+    union should contain(b)
   }
 
   it should "only have one copy of each member" in {
@@ -42,8 +42,8 @@ class UnionOfTest extends TestClass {
     val union = problem.instance.union.selectedMembers
 
     union should have size 1
-    union should contain (a)
-    union should contain (b)
+    union should contain(a)
+    union should contain(b)
   }
 
   it should "affect selection in parents" in {
@@ -74,6 +74,36 @@ class UnionOfTest extends TestClass {
       val union = unionOf(emptyList, emptyRole)
     })
 
-    assert (problem.resolve())
+    assert(problem.resolve())
+  }
+
+  it should "allow empty roles from non-empty sets" in {
+    val problem = Policy.root(new Ensemble {
+      val emptyList = Seq.empty[Component]
+      val nonemptyList = Seq(Member(1))
+      val subset = subsetOf(nonemptyList)
+      val union = unionOf(emptyList, subset)
+
+      constraint { subset.cardinality === 0 }
+    })
+
+    assert(problem.resolve())
+  }
+
+  it should "allow empty roles in sub-ensembles" in {
+    val problem = Policy.root(new Ensemble {
+      class Ens extends Ensemble {
+        val emptyList = Seq.empty[Component]
+        val nonemptyList = Seq(Member(1))
+        val subset = subsetOf(nonemptyList, _ <= 5)
+        val union = unionOf(emptyList, subset)
+
+        constraint { subset.cardinality === 0 }
+      }
+      val ens = new Ens
+      rules(ens)
+    })
+
+    assert(problem.resolve())
   }
 }

@@ -10,37 +10,36 @@ class SubensembleTest extends TestClass {
 
   }
 
-  "subensemble" should "not select members?" in {
+  "subensemble" should "not select members" in {
     val members = for (i <- 1 to 10) yield Member(i)
-    val door = new Component { name("door") }
-
     val problem = Policy.root(new Ensemble {
 
       class Ens extends Ensemble {
-
-        situation { true }
-
+        situation { false }
         val x = subsetOf(members, _ > 1)
-
-        constraint { x.cardinality === 2 }
-
-        allow(x, "open", door)
-
-        //utility { x.sum { v => if (v.id % 3 == 0) v.id else -v.id } }
       }
 
-      val enses = for (_ <- 1 to 5) yield new Ens
-
-      utility {
-        enses.map(_.x.cardinality).reduce(_ + _) / enses.size
-      }
-
-      rules(enses)
-
+      val ens = new Ens
+      rules(ens)
     })
 
-    problem.resolve()
-    //println(problem.instance.enses.x.selectedMembers)
-    // TODO
+    assert(problem.resolve())
+    problem.instance.ens.x.selectedMembers shouldBe empty
+  }
+
+  "active ensemble" should "allow empty roles" in {
+    val members = for (i <- 1 to 10) yield Member(i)
+    val problem = Policy.root(new Ensemble {
+
+      class Ens extends Ensemble {
+        situation { true }
+        val x = subsetOf(members, _ === 0)
+      }
+
+      val ens = new Ens
+      rules(ens)
+    })
+
+    assert(problem.resolve())
   }
 }

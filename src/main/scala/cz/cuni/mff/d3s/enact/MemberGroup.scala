@@ -124,7 +124,7 @@ class MemberGroup[+MemberType](
   def allEqual[T](func: MemberType => T): Logical = {
     val values = allMembers.map(func).toSet.zipWithIndex.toMap
     val channelVar = _channelMapResults(func, values)
-    _solverModel.IntegerIntVar(channelVar.getCard) === 1
+    _solverModel.IntegerIntVar(channelVar.getCard) <= 1
   }
 
   def allDifferent[T](func: MemberType => T): Logical = {
