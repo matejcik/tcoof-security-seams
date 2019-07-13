@@ -56,6 +56,15 @@ def make_colors(n):
     return [colorsys.hsv_to_rgb(i * f, 0.9, 0.76) for i in range(n)]
 
 
+def prepare_graph():
+    fig = plt.figure(figsize=(7, 5), dpi=300)
+    ax = fig.add_subplot(111)
+    ax.yaxis.grid(True, linestyle="-", which="major", color="lightgrey", alpha=0.5)
+    ax.xaxis.grid(True, linestyle="-", which="both", color="lightgrey", alpha=0.5)
+    ax.set_ylabel("Computation time (ms)")
+    return fig, ax
+
+
 def box_graph(datasets, labels, colors, x_ticks, rotation=None):
     """
     Datasets is a list of lists of series: the outer list is the number of "lines"
@@ -74,8 +83,7 @@ def box_graph(datasets, labels, colors, x_ticks, rotation=None):
         plt.setp(bp["caps"], color=color)
         plt.setp(bp["medians"], color=color)
 
-    fig = plt.figure(figsize=(7, 5), dpi=300)
-    ax = fig.add_subplot(111)
+    fig, ax = prepare_graph()
 
     assert len(datasets) <= len(colors)
     assert len(datasets) <= len(labels)
@@ -103,8 +111,5 @@ def box_graph(datasets, labels, colors, x_ticks, rotation=None):
         rotation=rotation,
     )
     plt.xlim(-1, step_size * x_size)
-
-    ax.set_ylabel("Computation time (ms)")
-    ax.yaxis.grid(True, linestyle="-", which="major", color="lightgrey", alpha=0.5)
 
     return fig, ax
