@@ -21,33 +21,62 @@ def read_csv(label, scaling_factor=1e-6):
 def plot_variables():
     files = ["integers", "booleans", "constraints"]
     headers = ["IntVars", "BoolVars", "Constraints (x100)"]
-    datasets = []
-    labels = []
-    colors = make_colors(len(files))
+
+    fig, ax = resultlib.prepare_graph()
 
     for ifn, header in zip(files, headers):
         data = read_csv(ifn)
         subsel = data[data.success]
         subsel = subsel[[ifn, "nsec"]]
+        if ifn == "constraints":
+            subsel.constraints /= 100
         grouping = subsel.groupby(ifn)["nsec"]
-        series = [s for _, s in grouping]
+        line = grouping.mean()
+        ax.plot(line.index, line.values, "-o", label=header)
 
-        datasets.append(series)
-        labels.append(header)
+    x_ticks = range(500, 10001, 500)
+    plt.xticks(x_ticks, rotation="vertical")
 
-    maxticks = max(len(d) for d in datasets)
-    x_ticks = range(500, (maxticks + 1) * 500, 500)
-
-    fig, ax = box_graph(datasets, labels, colors, x_ticks, "vertical")
+    # fig, ax = box_graph(datasets, labels, colors, x_ticks, "vertical")
     ax.set_xlabel("Number of elements")
 
+    plt.legend()
     fig.tight_layout()
     plt.savefig("variables.pdf")
+    plt.close()
+
+def plot_variablemem():
+    files = ["integers", "booleans", "constraints"]
+    headers = ["IntVars", "BoolVars", "Constraints (x100)"]
+
+    fig, ax = resultlib.prepare_graph()
+
+    for ifn, header in zip(files, headers):
+        data = read_csv(ifn)
+        data.memory *= 1e-6
+        subsel = data[data.success]
+        subsel = subsel[[ifn, "memory"]]
+        if ifn == "constraints":
+            subsel.constraints /= 100
+        grouping = subsel.groupby(ifn)["memory"]
+        line = grouping.max()
+        ax.plot(line.index, line.values, "-v", label=header)
+
+    x_ticks = range(500, 10001, 500)
+    plt.xticks(x_ticks, rotation="vertical")
+
+    ax.set_ylabel("Peak memory usage (MB)")
+    ax.set_xlabel("Number of elements")
+
+    plt.legend()
+    fig.tight_layout()
+    plt.savefig("variablemem.pdf")
     plt.close()
 
 
 def main():
     plot_variables()
+    plot_variablemem()
 
 
 if __name__ == "__main__":
