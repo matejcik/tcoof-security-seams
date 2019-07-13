@@ -19,7 +19,7 @@ case class ScenarioSpec(
     workrooms: RoomParam,
     workers: Int,
     hungryWorkers: Int,
-    fillRooms: Boolean,
+    fillRooms: Int,
     isLunchTime: Boolean
 ) extends Spec[LunchScenario] {
   require(workers >= hungryWorkers)
@@ -51,19 +51,17 @@ case class ScenarioSpec(
       newProjects.map(p => p -> _groupByProject.getOrElse(p, Seq.empty)): _*
     )
 
-    if (fillRooms) {
-      val loopProjects = Stream.continually(newProjects).flatten
-      for ((room, project) <- newLunchrooms zip loopProjects) {
-        val projectWorkers = workersByProject(project)
-        projectWorkers
-          .take(room.capacity)
-          .foreach(_.notify(LunchRoomAssigned(room)))
-        workersByProject(project) = projectWorkers.drop(room.capacity)
-      }
+    val loopProjects = Stream.continually(newProjects).flatten
+    for ((room, project) <- newLunchrooms zip loopProjects) {
+      val projectWorkers = workersByProject(project)
+      projectWorkers
+        .take(fillRooms)
+        .foreach(_.location = Some(room))
+      workersByProject(project) = projectWorkers.drop(fillRooms)
     }
 
     newWorkers
-      .filterNot(_.notified[LunchRoomAssigned])
+      .filter(_.location.isEmpty)
       .take(hungryWorkers)
       .foreach(_.hungry = true)
 

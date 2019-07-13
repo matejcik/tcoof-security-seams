@@ -17,7 +17,7 @@ class TestHarness[ScenarioType] {
 
   val TEST_ROUNDS = 100
   val SOLVER_TIME_LIMIT = 30L * 1000
-  val LIMIT_NANO = SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
+  def LIMIT_NANO = SOLVER_TIME_LIMIT * TimeUtils.MILLISECONDS_IN_NANOSECONDS
   val WARMUP_TIME = 10L * 1000 * TimeUtils.MILLISECONDS_IN_NANOSECONDS
 
   val RESULT_PATH = "results/" + LocalDate.now.format(
@@ -41,7 +41,7 @@ class TestHarness[ScenarioType] {
     var peakMemory: Long = 0
 
     def reset(): Unit = peakMemory = 0
-    def updatePeak(peak: Long): Unit = peakMemory = Math.max(peak, peakMemory)
+    def updatePeak(peak: Long): Unit = peakMemory = math.max(peak, peakMemory)
 
     override def handleNotification(notification: Notification, o: Any): Unit = {
       if (notification.getType != GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)
@@ -101,9 +101,9 @@ class TestHarness[ScenarioType] {
           val m = solverFunc(spec)
           forceGc()
           val peakMemory = peakMemStats.map(_.peakMemory).sum
-          maxPeak = Math.max(maxPeak, peakMemory)
+          maxPeak = math.max(maxPeak, peakMemory)
           perf(spec, i, m, peakMemory)
-          utility = m.utility
+          utility = math.max(utility, m.utility)
           m.time
         }
 
@@ -140,8 +140,10 @@ class TestHarness[ScenarioType] {
     val end = System.nanoTime()
     val time = end - start
 
-    val success = time < LIMIT_NANO
-    Measure(success, time, policy.solutionUtility)
+    val success = policy.exists && time < LIMIT_NANO
+    val utility = if (policy.exists) policy.solutionUtility else -1
+
+    Measure(success, time, utility)
   }
 
   def warmup(spec: ScenarioSpec, solverFunc: ScenarioSpec => Measure = solveScenario): Unit = {

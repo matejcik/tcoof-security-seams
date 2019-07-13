@@ -31,9 +31,10 @@ object TestScenario extends TestHarness[LunchScenario] {
     val end = System.nanoTime()
     val time = end - start
 
-    val success = time < LIMIT_NANO
+    val success = model.policy.exists && time < LIMIT_NANO
+    val utility = if (model.policy.exists) model.policy.solutionUtility else -1
 
-    Measure(success, time, model.policy.solutionUtility)
+    Measure(success, time, utility)
   }
 
   def solveOneByOne(spec: ScenarioSpec): Measure = {
@@ -73,97 +74,74 @@ object TestScenario extends TestHarness[LunchScenario] {
       workrooms = (3, 10),
       workers = 10,
       hungryWorkers = 10,
-      fillRooms = false,
+      fillRooms = 0,
       isLunchTime = true,
     )
     warmup(spec)
   }
 
   def measure_workerCount_simple =
-    measure("workercount-simple", "varying worker count - not lunch hour") {
-      m =>
-        val defaultSpec = ScenarioSpec(
-          projects = 40,
-          lunchrooms = (0, 0),
-          workrooms = (100, 50),
-          workers = 50,
-          hungryWorkers = 0,
-          fillRooms = false,
-          isLunchTime = false,
-        )
-        warmup(defaultSpec)
-        for (projectCount <- Seq(5, 15, 50)) {
-          breakable {
-            for (workerCount <- 100.to(1000, 100)) {
-              val spec = defaultSpec.copy(
-                projects = projectCount,
-                workers = workerCount,
-              )
-              if (!m(spec)) break
-            }
-          }
-        }
-    }
-
-  def measure_moreProjectsThanRooms_compareMethods = {
-    val defaultSpec = ScenarioSpec(
-      projects = 7,
-      lunchrooms = (2, 5),
-      workrooms = (10, 50),
-      workers = 50,
-      hungryWorkers = 5,
-      fillRooms = false,
-      isLunchTime = true,
-    )
-    val measuringLoop = (m: ScenarioSpec => Boolean) =>
-      for (lunchroomCount <- 2 to 5) {
+    measure("workercount-simple", "varying worker count - not lunch hour") { m =>
+      val defaultSpec = ScenarioSpec(
+        projects = 40,
+        lunchrooms = (0, 0),
+        workrooms = (100, 50),
+        workers = 50,
+        hungryWorkers = 0,
+        fillRooms = 0,
+        isLunchTime = false,
+      )
+      warmup(defaultSpec)
+      for (projectCount <- Seq(5, 15, 50)) {
         breakable {
-          for (workerCount <- 5 to 40) {
+          for (workerCount <- 500.to(10000, 500)) {
             val spec = defaultSpec.copy(
-              hungryWorkers = workerCount,
-              lunchrooms = (lunchroomCount, 5)
+              projects = projectCount,
+              workers = workerCount,
             )
             if (!m(spec)) break
           }
         }
       }
+    }
 
+  def measure_moreProjectsThanRooms =
     measure(
-      "moreprojects-optimizing",
-      "more projects than roooms - optimizing solver",
+      "moreprojects",
+      "more projects than rooms - iterate project and worker count",
       solverFunc = solveScenario
     ) { m =>
+      val defaultSpec = ScenarioSpec(
+        projects = 7,
+        lunchrooms = (3, 5),
+        workrooms = (10, 50),
+        workers = 50,
+        hungryWorkers = 5,
+        fillRooms = 0,
+        isLunchTime = true,
+      )
       warmup(defaultSpec)
-      measuringLoop(m)
+      for (projectCount <- 2 to 10) {
+        breakable {
+          for (workerCount <- 5 to 50) {
+            val spec = defaultSpec.copy(
+              hungryWorkers = workerCount,
+              projects = projectCount,
+            )
+            m(spec)
+          }
+        }
+      }
     }
 
-    measure(
-      "moreprojects-satisfying",
-      "more projects than roooms - satisfying solver",
-      solverFunc = solveUntilFitsAll
-    ) { m =>
-      warmup(defaultSpec, solverFunc = solveUntilFitsAll)
-      measuringLoop(m)
-    }
-
-    measure(
-      "moreprojects-onebyone",
-      "more projects than roooms - one-by-one assignment",
-      solverFunc = solveOneByOne
-    ) { m =>
-      warmup(defaultSpec, solverFunc = solveOneByOne)
-      measuringLoop(m)
-    }
-  }
-
-  def measure_moreRoomsThanProjects_compareMethods = {
+  def measure_moreRoomsThanProjects = {
     val defaultSpec = ScenarioSpec(
       projects = 3,
       lunchrooms = (4, 10),
       workrooms = (10, 50),
       workers = 50,
       hungryWorkers = 5,
-      fillRooms = false,
+      fillRooms = 0,
       isLunchTime = true,
     )
     val measuringLoop = (m: ScenarioSpec => Boolean) => breakable {
@@ -182,14 +160,14 @@ object TestScenario extends TestHarness[LunchScenario] {
       measuringLoop(m)
     }
 
-    measure(
-      "morerooms-satisfying",
-      "more rooms than projects - satisfying solver",
-      solverFunc = solveUntilFitsAll
-    ) { m =>
-      warmup(defaultSpec, solverFunc = solveUntilFitsAll)
-      measuringLoop(m)
-    }
+//    measure(
+//      "morerooms-satisfying",
+//      "more rooms than projects - satisfying solver",
+//      solverFunc = solveUntilFitsAll
+//    ) { m =>
+//      warmup(defaultSpec, solverFunc = solveUntilFitsAll)
+//      measuringLoop(m)
+//    }
 
     measure(
       "morerooms-onebyone",
@@ -212,20 +190,53 @@ object TestScenario extends TestHarness[LunchScenario] {
         workrooms = (10, 50),
         workers = 5000,
         hungryWorkers = 1,
-        fillRooms = false,
+        fillRooms = 0,
         isLunchTime = true,
       )
       warmup(defaultSpec)
 
-      for (projectCount <- Seq(5, 10, 20)) {
-        breakable {
-          for (lunchCount <- 10.to(150, 10)) {
-            val spec = defaultSpec.copy(
-              lunchrooms = (lunchCount, 100),
-              projects = projectCount,
-            )
-            if(!m(spec)) break
-          }
+      //for (projectCount <- Seq(5, 10, 20)) {
+      breakable {
+        for (lunchCount <- 50.to(500, 25)) {
+          val spec = defaultSpec.copy(
+            lunchrooms = (lunchCount, 100),
+            //projects = projectCount,
+          )
+          if (!m(spec)) break
+        }
+      }
+    //}
+    }
+
+  def measure_blabla =
+    measure("blabla", "measuring some things") { m =>
+      val defaultSpec = ScenarioSpec(
+        projects = 7,
+        lunchrooms = (3, 5),
+        workrooms = (10, 50),
+        workers = 500,
+        hungryWorkers = 5,
+        fillRooms = 0,
+        isLunchTime = true,
+      )
+      warmup(defaultSpec)
+      for (projectCount <- 3 to 7) {
+        for (workerCount <- 5 to 40) {
+          val emptySpec = defaultSpec.copy(
+            projects = projectCount,
+            hungryWorkers = workerCount,
+          )
+          m(emptySpec)
+
+          val oneSpec = emptySpec.copy(
+            fillRooms = 1,
+          )
+          m(oneSpec)
+
+          val fullSpec = emptySpec.copy(
+            fillRooms = 5,
+          )
+          m(fullSpec)
         }
       }
     }
@@ -244,9 +255,10 @@ object TestScenario extends TestHarness[LunchScenario] {
 //    return
 
     measure_workerCount_simple
-    measure_moreRoomsThanProjects_compareMethods
+    measure_moreProjectsThanRooms
     measure_oneByOne_growingParams
+    measure_moreRoomsThanProjects
 
-    measure_moreProjectsThanRooms_compareMethods
+    BadSolverLikelihood.measure_growingProjects
   }
 }
