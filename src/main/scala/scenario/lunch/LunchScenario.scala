@@ -1,4 +1,4 @@
-package scenario.model
+package scenario.lunch
 
 import java.time.LocalTime
 

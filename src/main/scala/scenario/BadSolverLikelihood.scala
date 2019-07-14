@@ -1,17 +1,18 @@
 package scenario
 
-import scenario.model._
-import scenario.model.ScenarioSpec._
+import scenario.lunch._
+import scenario.lunch.LunchSpec._
 import scenario.testing.TestHarness
 
 object BadSolverLikelihood extends TestHarness[LunchScenario] {
+  override type ScenarioSpec = LunchSpec
 
   def measure_growingProjects =
     measure(
       "badsolver-growingprojects",
       "increase number of projects, keep solution simple",
     ) { m =>
-      val defaultSpec = ScenarioSpec(
+      val defaultSpec = LunchSpec(
         projects = 1,
         lunchrooms = (1, 4),
         workrooms = (10, 50),

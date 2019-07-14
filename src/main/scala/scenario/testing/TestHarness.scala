@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 import org.chocosolver.util.tools.TimeUtils
 
 class TestHarness[ScenarioType] {
-  type ScenarioSpec = Spec[ScenarioType]
+  type ScenarioSpec <: Spec[ScenarioType]
 
   val TEST_ROUNDS = 100
   val SOLVER_TIME_LIMIT = 30L * 1000
@@ -107,11 +107,10 @@ class TestHarness[ScenarioType] {
           m.time
         }
 
-        val measurementsSorted = measurements.sorted
         val min = formatMs(measurements.min)
         val max = formatMs(measurements.max)
         val avg = formatMs(measurements.sum / TEST_ROUNDS)
-        val med = formatMs(measurementsSorted(TEST_ROUNDS / 2))
+        val med = formatMs(measurements.sorted.apply((TEST_ROUNDS / 2)))
         val maxMem = f"${maxPeak.toDouble / (1024 * 1024)}%.02f MB"
         log(
           s"Scenario $spec solved in avg $avg ms " + s" (min: $min, max: $max, med: $med), utility $utility, mem $maxMem"

@@ -1,13 +1,14 @@
 package scenario
 
-import scenario.model._
-import scenario.model.ScenarioSpec._
+import scenario.lunch._
+import scenario.lunch.LunchSpec._
 import scenario.testing.TestHarness
 
 import scala.util.Random
 import scala.util.control.Breaks._
 
-object TestScenario extends TestHarness[LunchScenario] {
+object LunchTests extends TestHarness[LunchScenario] {
+  override type ScenarioSpec = LunchSpec
 
   def solutionFitsAllWorkers(model: LunchScenario): Boolean = {
     val hungryWorkers = model.workers.filter(_.hungry)
@@ -68,7 +69,7 @@ object TestScenario extends TestHarness[LunchScenario] {
   }
 
   def warmup: Unit = {
-    val spec = ScenarioSpec(
+    val spec = LunchSpec(
       projects = 3,
       lunchrooms = (3, 10),
       workrooms = (3, 10),
@@ -82,7 +83,7 @@ object TestScenario extends TestHarness[LunchScenario] {
 
   def measure_workerCount_simple =
     measure("workercount-simple", "varying worker count - not lunch hour") { m =>
-      val defaultSpec = ScenarioSpec(
+      val defaultSpec = LunchSpec(
         projects = 40,
         lunchrooms = (0, 0),
         workrooms = (100, 50),
@@ -111,7 +112,7 @@ object TestScenario extends TestHarness[LunchScenario] {
       "more projects than rooms - iterate project and worker count",
       solverFunc = solveScenario
     ) { m =>
-      val defaultSpec = ScenarioSpec(
+      val defaultSpec = LunchSpec(
         projects = 7,
         lunchrooms = (3, 5),
         workrooms = (10, 50),
@@ -134,57 +135,34 @@ object TestScenario extends TestHarness[LunchScenario] {
       }
     }
 
-  def measure_moreRoomsThanProjects = {
-    val defaultSpec = ScenarioSpec(
-      projects = 3,
-      lunchrooms = (4, 10),
-      workrooms = (10, 50),
-      workers = 50,
-      hungryWorkers = 5,
-      fillRooms = 0,
-      isLunchTime = true,
-    )
-    val measuringLoop = (m: ScenarioSpec => Boolean) => breakable {
+  def measure_moreRoomsThanProjects =
+    measure(
+      "morerooms-optimizing",
+      "more rooms than projects - optimizing solver",
+      solverFunc = solveScenario
+    ) { m =>
+      val defaultSpec = LunchSpec(
+        projects = 3,
+        lunchrooms = (4, 10),
+        workrooms = (10, 50),
+        workers = 50,
+        hungryWorkers = 5,
+        fillRooms = 0,
+        isLunchTime = true,
+      )
+      warmup(defaultSpec)
       for (workerCount <- 5 to 40) {
         val spec = defaultSpec.copy(hungryWorkers = workerCount)
         if (!m(spec)) break
       }
     }
 
-    measure(
-      "morerooms-optimizing",
-      "more rooms than projects - optimizing solver",
-      solverFunc = solveScenario
-    ) { m =>
-      warmup(defaultSpec)
-      measuringLoop(m)
-    }
-
-//    measure(
-//      "morerooms-satisfying",
-//      "more rooms than projects - satisfying solver",
-//      solverFunc = solveUntilFitsAll
-//    ) { m =>
-//      warmup(defaultSpec, solverFunc = solveUntilFitsAll)
-//      measuringLoop(m)
-//    }
-
-    measure(
-      "morerooms-onebyone",
-      "more rooms than projects - one-by-one assignment",
-      solverFunc = solveOneByOne
-    ) { m =>
-      warmup(defaultSpec, solverFunc = solveOneByOne)
-      measuringLoop(m)
-    }
-  }
-
   def measure_oneByOne_growingParams =
     measure(
       "oneworker-params",
       "assigning one worker with growing parameters",
     ) { m =>
-      val defaultSpec = ScenarioSpec(
+      val defaultSpec = LunchSpec(
         projects = 20,
         lunchrooms = (20, 100),
         workrooms = (10, 50),
@@ -210,7 +188,7 @@ object TestScenario extends TestHarness[LunchScenario] {
 
   def measure_blabla =
     measure("blabla", "measuring some things") { m =>
-      val defaultSpec = ScenarioSpec(
+      val defaultSpec = LunchSpec(
         projects = 7,
         lunchrooms = (3, 5),
         workrooms = (10, 50),

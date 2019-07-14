@@ -35,6 +35,7 @@ case class ManyVarSpec(ints: Int, bools: Int, constraints: Int) extends Spec[Man
 }
 
 object Variables extends TestHarness[ManyVarScenario] {
+  override type ScenarioSpec = ManyVarSpec
 
   override def solveScenario(spec: ScenarioSpec): Measure = {
     val model = spec.makeScenario()

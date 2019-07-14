@@ -1,18 +1,19 @@
 package scenario
 
-import scenario.model._
-import scenario.model.ScenarioSpec._
-import scenario.testing.TestHarness
+import cz.cuni.mff.d3s.enact.Policy
+import org.chocosolver.util.tools.TimeUtils
+import scenario.lunch._
+import scenario.lunch.LunchSpec._
+import scenario.testing.{Spec, TestHarness}
 
 import scala.collection.mutable
 import scala.util.Random
 
-object RandomLunch extends TestHarness[LunchScenario] {
-
-  val DefaultSpec = ScenarioSpec(
+class LunchSimulator {
+  val DefaultSpec = LunchSpec(
     projects = 10,
-    lunchrooms = (5, 20),
-    workrooms = (1, 1),
+    lunchrooms = (5, 40),
+    workrooms = (30, 50),
     workers = 500,
     hungryWorkers = 0,
     fillRooms = 0,
@@ -27,11 +28,11 @@ object RandomLunch extends TestHarness[LunchScenario] {
   val workersStartedEating = mutable.HashMap.empty[Worker, Int]
   val workersDone = mutable.HashSet.empty[Worker]
 
-  final val StepsToLunchRoom = 10
+  final val StepsToLunchRoom = 5
   final val MinEatingTime = 5
   final val MaxEatingTime = 20
 
-  final val HungerProbability = 0.002
+  final val HungerProbability = 0.005
 
   def simulationStep(): Unit = {
     step += 1
@@ -87,18 +88,35 @@ object RandomLunch extends TestHarness[LunchScenario] {
 
     val starving = scenario.workers.filter(_.hungry).filterNot(_.isInLunchRoom).size
 
-    println(s"step $step: starving $starving, becameHungry $hungry, headedOut $seated, arrived $arrived, finished $finished")
-    val lunchroomUtilization = for (l <- scenario.lunchrooms) yield {
-      val used = scenario.workers.filter(_.location == Some(l)).size
-      s"${l.name}: $used/${l.capacity}"
-    }
-    println(lunchroomUtilization.mkString(" :: "))
+//    println(
+//      s"step $step: starving $starving, becameHungry $hungry, headedOut $seated, arrived $arrived, finished $finished"
+//    )
+//    val lunchroomUtilization = for (l <- scenario.lunchrooms) yield {
+//      val used = scenario.workers.count(_.location == Some(l))
+//      s"${l.name}: $used/${l.capacity}"
+//    }
+//    println(lunchroomUtilization.mkString(" :: "))
   }
 
   def allFinished: Boolean = workersDone.size == scenario.workers.size
 
-  def solveScenario(): Measure = {
-    simulationStep()
+}
+
+case class SimulatorSpec(simulator: LunchSimulator, iter: Int) extends Spec[LunchScenario] {
+  override def makeScenario(): LunchScenario = {
+    simulator.simulationStep()
+    simulator.scenario
+  }
+
+  override def policy(scenario: LunchScenario): Policy[_] = scenario.policy
+  override def toPerfLine: String = iter.toString
+}
+
+object RandomLunch extends TestHarness[LunchSimulator] {
+  override type ScenarioSpec = SimulatorSpec
+
+  override def solveScenario(spec: ScenarioSpec): Measure = {
+    val scenario = spec.makeScenario()
     val policy = scenario.policy
 
     val start = System.nanoTime()
@@ -109,21 +127,24 @@ object RandomLunch extends TestHarness[LunchScenario] {
     val end = System.nanoTime()
     val time = end - start
 
-    val success = policy.exists && time < LIMIT_NANO
-    val utility = if (policy.exists) policy.solutionUtility else -1
-
-    println(s"solved in ${formatMs(time)} ms, utility $utility")
-    Measure(success, time, utility)
+    Measure(true, time, 0)
   }
 
+  override val TEST_ROUNDS: Int = 1500
+
   def main(args: Array[String]): Unit = {
-    val start = System.nanoTime()
-    while (!allFinished) {
-      simulationStep()
-      solveScenario()
+    val warmupSim = new LunchSimulator
+    val warmupSpec = SimulatorSpec(warmupSim, 0)
+    warmup(warmupSpec)
+    measure(
+      "simulated",
+      "simulating lunchtime in a big company",
+    ) { m =>
+      for (i <- 1 to 100) {
+        val sim = new LunchSimulator
+        m(SimulatorSpec(sim, i))
+      }
+
     }
-    val end = System.nanoTime()
-    val time = end - start
-    println(s"all finished at step $step, after ${formatMs(time)} ms")
   }
 }

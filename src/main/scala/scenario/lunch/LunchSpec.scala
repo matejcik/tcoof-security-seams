@@ -1,4 +1,4 @@
-package scenario.model
+package scenario.lunch
 
 import java.time.LocalTime
 
@@ -13,7 +13,7 @@ case class RoomParam(n: Int, capacity: Int) {
   override def toString: String = s"($n,$capacity)"
 }
 
-case class ScenarioSpec(
+case class LunchSpec(
     projects: Int,
     lunchrooms: RoomParam,
     workrooms: RoomParam,
@@ -74,7 +74,7 @@ case class ScenarioSpec(
   override def policy(scenario: LunchScenario): Policy[_] = scenario.policy
 }
 
-object ScenarioSpec {
+object LunchSpec {
   implicit def tupleToRoomParam(tuple: (Int, Int)): RoomParam =
     RoomParam(tuple._1, tuple._2)
 }
