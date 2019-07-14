@@ -15,6 +15,8 @@ COLUMNS = {
 
 FILES = ["integers", "booleans", "constraints"]
 HEADERS = ["Integers", "Logicals", "Constraints (x100)"]
+FORMATS = ["-o", "-v", "-x"]
+
 
 def read_csv(label, scaling_factor=1e-6):
     return resultlib.read_csv(label, COLUMNS, scaling_factor)
@@ -23,7 +25,7 @@ def read_csv(label, scaling_factor=1e-6):
 def plot_variables():
     fig, ax = resultlib.prepare_graph()
 
-    for ifn, header in zip(FILES, HEADERS):
+    for ifn, header, fmt in zip(FILES, HEADERS, FORMATS):
         data = read_csv(ifn)
         subsel = data[data.success]
         subsel = subsel[[ifn, "nsec"]]
@@ -31,7 +33,7 @@ def plot_variables():
             subsel.constraints /= 100
         grouping = subsel.groupby(ifn)["nsec"]
         line = grouping.mean()
-        ax.plot(line.index, line.values, "-o", label=header)
+        ax.plot(line.index, line.values, fmt, label=header)
 
     x_ticks = range(500, 10001, 500)
     plt.xticks(x_ticks, rotation="vertical")
@@ -44,10 +46,11 @@ def plot_variables():
     plt.savefig("variables.pdf")
     plt.close()
 
+
 def plot_variablemem():
     fig, ax = resultlib.prepare_graph()
 
-    for ifn, header in zip(FILES, HEADERS):
+    for ifn, header, fmt in zip(FILES, HEADERS, FORMATS):
         data = read_csv(ifn)
         data.memory *= 1e-6
         subsel = data[data.success]
@@ -56,7 +59,7 @@ def plot_variablemem():
             subsel.constraints /= 100
         grouping = subsel.groupby(ifn)["memory"]
         line = grouping.max()
-        ax.plot(line.index, line.values, "-v", label=header)
+        ax.plot(line.index, line.values, fmt, label=header)
 
     x_ticks = range(500, 10001, 500)
     plt.xticks(x_ticks, rotation="vertical")

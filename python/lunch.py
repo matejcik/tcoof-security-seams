@@ -1,11 +1,11 @@
 import resultlib
 from resultlib import make_colors, box_graph
 
-resultlib.set_result_path("2019-07-12")
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+from scipy.optimize import curve_fit
 
 COLUMNS = {
     "projects": np.int32,
@@ -27,27 +27,25 @@ def read_csv(label, scaling_factor=1e-6):
 
 
 def plot_morerooms():
-    files = ["morerooms-" + s for s in ("optimizing", "satisfying", "onebyone")]
-    headers = ["Optimizing solver", "Satisfying solver", "One-by-one solver"]
-    datasets = []
-    labels = []
-    colors = make_colors(len(files))
+    data = read_csv("morerooms-optimizing")
+    data = data[["hungry", "nsec"]][data.hungry < 16]
+    grouping = data.groupby("hungry")["nsec"]
 
-    for ifn, header in zip(files, headers):
-        data = read_csv(ifn)
-        subsel = data[data.success & (data.hungry <= 25)]
-        subsel = subsel[["hungry", "nsec"]]
-        grouping = subsel.groupby("hungry")["nsec"]
-        series = [s for _, s in grouping]
+    xticks, series = zip(*grouping)
 
-        datasets.append(series)
-        labels.append(header)
+    fig, ax = resultlib.prepare_graph()
+    ax.boxplot(series, showfliers=False, positions=xticks)
+    # plt.xticks(range(1, len(series) + 1), xticks)
 
-    maxticks = max(len(d) for d in datasets)
-    x_ticks = range(5, maxticks + 5)
+    def exp(x, a, b, c):
+        return a * np.exp(-b * x) + c
 
-    fig, ax = box_graph(datasets, labels, colors, x_ticks)
-    ax.set_xlabel("Number of workers")
+    meds = grouping.median()
+    popt, _ = curve_fit(exp, meds.index, meds.values, p0=(1, 1e-6, 1))
+
+    fitx = np.linspace(xticks[0], xticks[-1], 100)
+    fity = exp(fitx, *popt)
+    plt.plot(fitx, fity, "-")
 
     fig.tight_layout()
     plt.savefig("workers-morerooms.pdf")
@@ -55,27 +53,40 @@ def plot_morerooms():
 
 
 def plot_moreprojects():
-    data = read_csv("moreprojects-optimizing")
-    lunchrooms = data.lunch_n.unique()
-    colors = make_colors(len(lunchrooms))
-    labels = [f"{n} lunchrooms" for n in lunchrooms]
-    x_ticks = list(range(5, 41))
+    data = read_csv("moreprojects")
+    data = data[(data.hungry <= 40) & data.success]
+    # projects = data.projects.unique()
+    projects = [5, 6, 7, 8, 9]
+    labels = [f"{n} projects" for n in projects]
+    x_ticks = data[data.projects == projects[0]].hungry.unique()
     datasets = []
 
-    for n in lunchrooms[:2]:
-        subsel = data[data.lunch_n == n][["hungry", "nsec"]]
-        # if n == 2:
-        #     subsel.nsec *= 50
+    fig, ax = resultlib.prepare_graph()
+
+    for n, label in zip(projects, labels):
+        subsel = data.copy()
+
+        # clear outliers after the expected cutoff point
+        maxhungry = n * 4 + 2
+        subsel.loc[subsel.hungry > maxhungry, "nsec"] = 0
+
+        subsel = subsel[subsel.projects == n][["hungry", "nsec"]]
         grouping = subsel.groupby("hungry")["nsec"]
         series = [s for _, s in grouping]
+
+        line = grouping.median()
+        ax.plot(line.index, line.values, "-", label=label)
 
         datasets.append(series)
 
     # maxticks = max(len(d) for d in datasets)
     # x_ticks = range(5, maxticks + 5)
 
-    fig, ax = box_graph(datasets, labels, colors, x_ticks, rotation="vertical")
+    # fig, ax = box_graph(datasets, labels, colors, x_ticks, rotation="vertical")
     ax.set_xlabel("Number of workers")
+    plt.legend()
+    plt.xticks(x_ticks, rotation="vertical")
+    # plt.yscale("log")
 
     fig.tight_layout()
     plt.savefig("workers-moreprojects.pdf")
@@ -138,38 +149,11 @@ def plot_onebyone():
     plt.close()
 
 
-def plot_blabla():
-    data = read_csv("blabla")
-    fills = [0]
-    projects = data.projects.unique()
-    colors = make_colors(len(projects) * len(fills))
-    labels = [f"{n} projects (fill {f})" for f in fills for n in projects]
-    x_ticks = list(range(5, 31))
-    datasets = []
-    for f in fills:
-        for n in projects:
-            subsel = data[data.hungry <= 30]
-            subsel = subsel[subsel.projects == n]
-            subsel = subsel[subsel.fill == f]
-            subsel = subsel[["hungry", "nsec"]]
-            grouping = subsel.groupby("hungry")["nsec"]
-            series = [s for _, s in grouping]
-            datasets.append(series)
-
-    fig, ax = box_graph(datasets, labels, colors, x_ticks, rotation="vertical")
-    ax.set_xlabel("Number of workers")
-
-    fig.tight_layout()
-    plt.savefig("blabla.pdf")
-    plt.close()
-
-
 def main():
-    plot_blabla()
-    # plot_simple()
-    # plot_morerooms()
-    # plot_onebyone()
-    # plot_moreprojects()
+    plot_simple()
+    plot_onebyone()
+    plot_morerooms()
+    plot_moreprojects()
 
 
 if __name__ == "__main__":
