@@ -13,18 +13,17 @@ COLUMNS = {
 }
 # fmt: on
 
+FILES = ["integers", "booleans", "constraints"]
+HEADERS = ["Integers", "Logicals", "Constraints (x100)"]
 
 def read_csv(label, scaling_factor=1e-6):
     return resultlib.read_csv(label, COLUMNS, scaling_factor)
 
 
 def plot_variables():
-    files = ["integers", "booleans", "constraints"]
-    headers = ["IntVars", "BoolVars", "Constraints (x100)"]
-
     fig, ax = resultlib.prepare_graph()
 
-    for ifn, header in zip(files, headers):
+    for ifn, header in zip(FILES, HEADERS):
         data = read_csv(ifn)
         subsel = data[data.success]
         subsel = subsel[[ifn, "nsec"]]
@@ -46,12 +45,9 @@ def plot_variables():
     plt.close()
 
 def plot_variablemem():
-    files = ["integers", "booleans", "constraints"]
-    headers = ["IntVars", "BoolVars", "Constraints (x100)"]
-
     fig, ax = resultlib.prepare_graph()
 
-    for ifn, header in zip(files, headers):
+    for ifn, header in zip(FILES, HEADERS):
         data = read_csv(ifn)
         data.memory *= 1e-6
         subsel = data[data.success]
