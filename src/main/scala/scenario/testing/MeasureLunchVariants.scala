@@ -9,34 +9,6 @@ import scala.util.control.Breaks._
 object MeasureLunchVariants extends TestHarness[LunchScenario] {
   override type ScenarioSpec = LunchSpec
 
-  def solutionFitsAllWorkers(model: LunchScenario): Boolean = {
-    val hungryWorkers = model.workers.filter(_.hungry)
-    val alreadyNotified =
-      hungryWorkers.count(_.notified[LunchRoomAssigned])
-    val selectCardinalities =
-      model.policy.instance.lunchroomAssignments.selectedMembers
-        .map(_.assignees.cardinality.asInt)
-        .sum
-    alreadyNotified + selectCardinalities == hungryWorkers.length
-  }
-
-  def solveUntilFitsAll(spec: ScenarioSpec): Measure = {
-    val model = spec.makeScenario()
-
-    val start = System.nanoTime()
-    model.policy.init()
-    model.policy.solverLimitTime(SOLVER_TIME_LIMIT)
-    //    val init = System.nanoTime()
-    while (model.policy.solve() && !solutionFitsAllWorkers(model)) {}
-    val end = System.nanoTime()
-    val time = end - start
-
-    val success = model.policy.exists && time < LIMIT_NANO
-    val utility = if (model.policy.exists) model.policy.solutionUtility else -1
-
-    Measure(success, time, utility)
-  }
-
   def solveOneByOne(spec: ScenarioSpec): Measure = {
     val model = spec.makeScenario()
 
@@ -49,10 +21,7 @@ object MeasureLunchVariants extends TestHarness[LunchScenario] {
       for (worker <- hungryWorkers) {
         worker.hungry = true
 
-        model.policy.init()
-        model.policy.solverLimitTime(SOLVER_TIME_LIMIT)
-        while (model.policy.solve()) {}
-        if (model.policy.exists) model.policy.commit()
+        model.policy.resolve(SOLVER_TIME_LIMIT)
 
         val currentTime = System.nanoTime() - start
         if (currentTime > LIMIT_NANO) break

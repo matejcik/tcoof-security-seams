@@ -5,12 +5,19 @@ import org.chocosolver.solver.Model
 class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
   private var _solution: EnsembleType = _
   private var _utility: Option[Integer] = None
+
   private var _actions: Iterable[Action] = null
+  private var _actionSet: Set[Action] = Set.empty
 
   private var _solverModel: SolverModel = _
 
-  def init(): Unit = {
+  def _resetActions(): Unit = {
     _actions = null
+    _actionSet = Set.empty
+  }
+
+  def init(limit: Long = -1): Unit = {
+    _resetActions()
     _solution = builder()
     _solverModel = new SolverModel
     val config = new Config(_solverModel)
@@ -32,16 +39,14 @@ class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
       case _ => // utility is constant or unset, so we ignore it
     }
 
-    config.solverModel.init()
+    _solverModel.init()
+    if (limit > -1) _solverModel.getSolver.limitTime(limit)
   }
 
   def solutionUtility: Int = _utility.map(_.asInt).getOrElse(0)
 
-  def solverLimitTime(limit: Long) =
-    _solverModel.getSolver.limitTime(limit)
-
   def solve(): Boolean = {
-    _actions = null
+    _resetActions()
     _solverModel.solveAndRecord()
   }
 
@@ -51,15 +56,22 @@ class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
 
   def actions: Iterable[Action] = _actions
 
-  def commit(): Unit = {
-    _actions = _solution._collectActions()
+  def allows(actor: Component, action: String, subject: Component): Boolean = {
+    if (_actionSet contains DenyAction(actor, action, subject)) false
+    else _actionSet contains AllowAction(actor, action, subject)
   }
 
-  def resolve(): Boolean = {
-    init()
+  def commit(): Unit = {
+    _actions = _solution._collectActions()
+    _actionSet = _actions.toSet
+  }
+
+  def resolve(limit: Long = -1): Boolean = {
+    init(limit)
+
     _utility match {
       // repeatedly solve to optimize objective
-      case Some(u) => while (solve()) {}
+      case Some(_) => while (solve()) {}
       // solve and record first solution
       case None => solve()
     }

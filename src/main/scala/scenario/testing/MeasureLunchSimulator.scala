@@ -118,10 +118,7 @@ object MeasureLunchSimulator extends TestHarness[LunchScenario] {
     val policy = scenario.policy
 
     val start = System.nanoTime()
-    policy.init()
-    policy.solverLimitTime(SOLVER_TIME_LIMIT)
-    while (policy.solve()) {}
-    if (policy.exists) policy.commit()
+    policy.resolve(SOLVER_TIME_LIMIT)
     val end = System.nanoTime()
     val time = end - start
 

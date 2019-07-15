@@ -133,9 +133,7 @@ class TestHarness[ScenarioType] {
     val policy = spec.policy(model)
 
     val start = System.nanoTime()
-    policy.init()
-    policy.solverLimitTime(SOLVER_TIME_LIMIT)
-    while (policy.solve()) {}
+    policy.resolve(SOLVER_TIME_LIMIT)
     val end = System.nanoTime()
     val time = end - start
 

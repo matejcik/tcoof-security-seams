@@ -27,9 +27,7 @@ object MeasureVaryingTimeLimit extends TestHarness[LunchScenario] {
     val policy = spec.policy(model)
 
     val start = System.nanoTime()
-    policy.init()
-    policy.solverLimitTime(spec.limit)
-    while (policy.solve()) {}
+    policy.resolve(SOLVER_TIME_LIMIT)
     val end = System.nanoTime()
     val time = end - start
 

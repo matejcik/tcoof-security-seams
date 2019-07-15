@@ -41,10 +41,8 @@ object MeasureVariables extends TestHarness[ManyVarScenario] {
     val model = spec.makeScenario()
     val policy = spec.policy(model)
 
-    policy.init()
-    policy.solverLimitTime(SOLVER_TIME_LIMIT)
     val start = System.nanoTime()
-    policy.resolve()
+    policy.resolve(SOLVER_TIME_LIMIT)
     val end = System.nanoTime()
     val time = end - start
 
