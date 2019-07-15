@@ -1,5 +1,7 @@
 name := "TCOOF-Trust"
 
+mainClass in (Compile, run) := Some("scenario.SimpleScenario")
+
 version := "1.0"
 
 scalaVersion := "2.12.8"

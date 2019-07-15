@@ -1,4 +1,4 @@
-package scenario.lunch
+package scenario
 
 import cz.cuni.mff.d3s.trust.{Component, Ensemble, Policy}
 
@@ -14,7 +14,7 @@ class SimpleScenario(val people: Seq[Person]) {
     allow(greeter, "greet", people)
   }
 
-  val problem = Policy.root(new HelloWorld)
+  val policy = Policy.root(new HelloWorld)
 }
 
 object SimpleScenario {
@@ -22,9 +22,9 @@ object SimpleScenario {
 
   def main(args: Array[String]): Unit = {
     val people = for (name <- names) yield new Person(name)
-    val scn = new SimpleScenario(people)
+    val scenario = new SimpleScenario(people)
 
-    scn.problem.resolve()
-    for (action <- scn.problem.actions) println(action)
+    scenario.policy.resolve()
+    for (action <- scenario.policy.actions) println(action)
   }
 }
