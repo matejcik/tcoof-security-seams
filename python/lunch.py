@@ -96,20 +96,21 @@ def plot_moreprojects():
 def plot_simple():
     data = read_csv("workercount-simple")
     projects = data.projects.unique()
-    colors = make_colors(len(projects))
-    labels = [f"{n} projects" for n in projects]
-    x_ticks = []
-    datasets = []
+    fmts = {5: "-o", 15: "-v", 50: "-x"}
+
+    fig, ax = resultlib.prepare_graph()
 
     for n in projects:
         subsel = data[data.projects == n][["workers", "nsec"]]
         grouping = subsel.groupby("workers")["nsec"]
-        ticks, series = zip(*grouping)
-        if len(ticks) > len(x_ticks):
-            x_ticks = ticks
-        datasets.append(series)
+        line = grouping.median()
+        lineerr = grouping.std()
+        ax.errorbar(
+            line.index, line.values, yerr=lineerr, fmt=fmts[n], label=f"{n} projects"
+        )
 
-    fig, ax = box_graph(datasets, labels, colors, x_ticks, rotation="45")
+    plt.legend()
+    plt.xticks(line.index, rotation="45")
     ax.set_xlabel("Number of workers")
 
     fig.tight_layout()
