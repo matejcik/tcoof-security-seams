@@ -129,39 +129,6 @@ object MeasureLunchVariants extends TestHarness[LunchScenario] {
     //}
     }
 
-  def measure_blabla =
-    measure("blabla", "measuring some things") { m =>
-      val defaultSpec = LunchSpec(
-        projects = 7,
-        lunchrooms = (3, 5),
-        workrooms = (10, 50),
-        workers = 500,
-        hungryWorkers = 5,
-        fillRooms = 0,
-        isLunchTime = true,
-      )
-      warmup(defaultSpec)
-      for (projectCount <- 3 to 7) {
-        for (workerCount <- 5 to 40) {
-          val emptySpec = defaultSpec.copy(
-            projects = projectCount,
-            hungryWorkers = workerCount,
-          )
-          m(emptySpec)
-
-          val oneSpec = emptySpec.copy(
-            fillRooms = 1,
-          )
-          m(oneSpec)
-
-          val fullSpec = emptySpec.copy(
-            fillRooms = 5,
-          )
-          m(fullSpec)
-        }
-      }
-    }
-
   def main(args: Array[String]): Unit = {
 //    val defaultSpec = ScenarioSpec(
 //      projects = 3,
