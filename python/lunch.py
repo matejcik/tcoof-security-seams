@@ -38,15 +38,16 @@ def plot_morerooms():
     # plt.xticks(range(1, len(series) + 1), xticks)
 
     def exp(x, a, b, c):
-        return a * np.exp(-b * x) + c
+        return a * np.exp(b * x) + c
 
     meds = grouping.median()
-    popt, _ = curve_fit(exp, meds.index, meds.values, p0=(1, 1e-6, 1))
+    popt, _ = curve_fit(exp, meds.index, meds.values)
 
     fitx = np.linspace(xticks[0], xticks[-1], 100)
     fity = exp(fitx, *popt)
     plt.plot(fitx, fity, "-")
 
+    ax.set_xlabel("Number of workers")
     fig.tight_layout()
     plt.savefig("workers-morerooms.pdf")
     plt.close()
