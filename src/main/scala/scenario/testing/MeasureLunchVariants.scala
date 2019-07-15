@@ -49,31 +49,6 @@ object MeasureLunchVariants extends TestHarness[LunchScenario] {
     warmup(spec)
   }
 
-  def measure_workerCount_simple =
-    measure("workercount-simple", "varying worker count - not lunch hour") { m =>
-      val defaultSpec = LunchSpec(
-        projects = 40,
-        lunchrooms = (0, 0),
-        workrooms = (100, 50),
-        workers = 50,
-        hungryWorkers = 0,
-        fillRooms = 0,
-        isLunchTime = false,
-      )
-      warmup(defaultSpec)
-      for (projectCount <- Seq(5, 15, 50)) {
-        breakable {
-          for (workerCount <- 500.to(10000, 500)) {
-            val spec = defaultSpec.copy(
-              projects = projectCount,
-              workers = workerCount,
-            )
-            if (!m(spec)) break
-          }
-        }
-      }
-    }
-
   def measure_moreProjectsThanRooms =
     measure(
       "moreprojects",
@@ -200,7 +175,6 @@ object MeasureLunchVariants extends TestHarness[LunchScenario] {
 //    warmup(defaultSpec, 10, solveOneByOne)
 //    return
 
-    measure_workerCount_simple
     measure_moreProjectsThanRooms
     measure_oneByOne_growingParams
     measure_moreRoomsThanProjects
