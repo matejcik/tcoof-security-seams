@@ -52,8 +52,9 @@ def read_csv(label, columns, scaling_factor=1e-6):
 
 
 def make_colors(n):
-    f = 1 / n
-    return [colorsys.hsv_to_rgb(i * f, 0.9, 0.76) for i in range(n)]
+    # f = 1 / n
+    # return [colorsys.hsv_to_rgb(i * f, 0.9, 0.76) for i in range(n)]
+    return plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
 
 def prepare_graph():

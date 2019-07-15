@@ -109,7 +109,7 @@ def plot_simple():
             x_ticks = ticks
         datasets.append(series)
 
-    fig, ax = box_graph(datasets, labels, colors, x_ticks)
+    fig, ax = box_graph(datasets, labels, colors, x_ticks, rotation="45")
     ax.set_xlabel("Number of workers")
 
     fig.tight_layout()
@@ -127,6 +127,9 @@ def plot_onebyone():
 
     fig, ax = resultlib.prepare_graph()
 
+    def poly(x, a, b, e):
+        return a * x ** e + b
+
     for label, color, n in zip(labels, colors, project_counts):
         subsel = data[data.projects == n][["lunch_n", "nsec"]]
         grouping = subsel.groupby("lunch_n")["nsec"]
@@ -141,6 +144,12 @@ def plot_onebyone():
             color=color,
         )
 
+        popt, _ = curve_fit(poly, linedata.index, linedata.values)
+
+        fitx = np.linspace(x_ticks[0], x_ticks[-1], 100)
+        fity = poly(fitx, *popt)
+        plt.plot(fitx, fity, "-", color=colors[1])
+
     plt.xticks(x_ticks, rotation="45")
     plt.legend(loc="upper left")
     ax.set_xlabel("Number of lunch rooms")
@@ -149,11 +158,34 @@ def plot_onebyone():
     plt.close()
 
 
+def plot_badsolver():
+    data = read_csv("badsolver-growingprojects")
+    groups = data.groupby("projects")["nsec"]
+
+    projects = list(range(4, 31, 4))
+
+    fig, ax = resultlib.prepare_graph()
+    for p in projects:
+        series = groups.get_group(p)
+        series = series.sort_values(ascending=True).reset_index(drop=True)
+        ax.plot(series.index, series, "-", label=f"{p} projects")
+
+    perc_ticks = list(range(0, 101, 10))
+    plt.xticks([p * 5 for p in perc_ticks], perc_ticks)
+    ax.set_xlabel("Percentile")
+    plt.legend()
+
+    fig.tight_layout()
+    plt.savefig("badsolver.pdf")
+    plt.close()
+
+
 def main():
     plot_simple()
     plot_onebyone()
     plot_morerooms()
     plot_moreprojects()
+    plot_badsolver()
 
 
 if __name__ == "__main__":
