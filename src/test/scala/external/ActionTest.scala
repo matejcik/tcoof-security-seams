@@ -1,7 +1,7 @@
 package external
 
 import scala.language.reflectiveCalls
-import cz.cuni.mff.d3s.enact._
+import cz.cuni.mff.d3s.trust._
 
 class ActionTest extends TestClass {
   case object TestMessage extends Notification

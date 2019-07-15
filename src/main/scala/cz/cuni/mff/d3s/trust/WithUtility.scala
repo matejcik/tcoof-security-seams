@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import InitStages.InitStages
 
@@ -13,7 +13,7 @@ trait WithUtility extends Initializable {
 
   private var _utility: Option[Integer] = None
 
-  private[enact] def _getUtility: Option[Integer] = _utility
+  private[trust] def _getUtility: Option[Integer] = _utility
 
   def utility: Integer = _getUtility.getOrElse(_solverModel.IntegerInt(0))
 
@@ -42,7 +42,7 @@ trait WithUtility extends Initializable {
     }
   }
 
-  override private[enact] def _init(stage: InitStages, config: Config): Unit = {
+  override private[trust] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
 
     stage match {

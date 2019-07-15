@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import org.chocosolver.solver.constraints.nary.cnf.{ILogical, LogOp}
 import org.chocosolver.solver.variables.BoolVar
@@ -17,7 +17,7 @@ abstract class Logical {
 }
 
 /** Common functionality for LogicalLogOp and LogicalBoolVar. */
-private[enact] abstract class LogicalWithILogic extends Logical {
+private[trust] abstract class LogicalWithILogic extends Logical {
   protected type ValueType <: ILogical
 
   override def &&(other: Logical): Logical = other match {
@@ -36,7 +36,7 @@ private[enact] abstract class LogicalWithILogic extends Logical {
 }
 
 /** Result of an expression that can be directly instantiated (i.e. does not have to be represented as a variable in the solver. */
-private[enact] case class LogicalBoolean(value: Boolean) extends Logical {
+private[trust] case class LogicalBoolean(value: Boolean) extends Logical {
   protected type ValueType = Boolean
 
   override def &&(other: Logical): Logical = if (!value) this else other
@@ -45,7 +45,7 @@ private[enact] case class LogicalBoolean(value: Boolean) extends Logical {
 }
 
 /** Boolean variable clause. This is used to represent reified constraints (e.g. cardinality). */
-private[enact] case class LogicalBoolVar(value: BoolVar)
+private[trust] case class LogicalBoolVar(value: BoolVar)
     extends LogicalWithILogic {
   protected type ValueType = BoolVar
 
@@ -54,7 +54,7 @@ private[enact] case class LogicalBoolVar(value: BoolVar)
 }
 
 /** And/Or tree of clauses. This is used to represent clauses about membership of a component. */
-private[enact] case class LogicalLogOp(value: LogOp) extends LogicalWithILogic {
+private[trust] case class LogicalLogOp(value: LogOp) extends LogicalWithILogic {
   protected type ValueType = LogOp
 
   override def unary_!(): Logical = {

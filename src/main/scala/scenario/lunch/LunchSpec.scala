@@ -2,7 +2,7 @@ package scenario.lunch
 
 import java.time.LocalTime
 
-import cz.cuni.mff.d3s.enact._
+import cz.cuni.mff.d3s.trust._
 
 import scala.language.implicitConversions
 import scenario.testing.Spec

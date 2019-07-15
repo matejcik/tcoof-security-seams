@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import InitStages.InitStages
 import Utils._
@@ -15,7 +15,7 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
     _addEnsembleGroup("rules_" + randomName, ens, true)
 
   /** A set of all potential ensembles */
-  private[enact] val _ensembleGroups = mutable.ArrayBuffer.empty[EnsembleGroup[Ensemble]]
+  private[trust] val _ensembleGroups = mutable.ArrayBuffer.empty[EnsembleGroup[Ensemble]]
 
   def ensembles[E <: Ensemble](ensFirst: E, ensRest: E*): EnsembleGroup[E] =
     ensembles(ensFirst +: ensRest)
@@ -34,7 +34,7 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
     group
   }
 
-  override private[enact] def _init(stage: InitStages, config: Config): Unit = {
+  override private[trust] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
     _ensembleGroups.foreach(_._init(stage, config))
 

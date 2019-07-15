@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import scala.collection.mutable
 
@@ -7,9 +7,9 @@ trait WithActions {
 
   private type Role = MemberGroup[Component]
 
-  private[enact] val _actions = mutable.ListBuffer.empty[() => Iterable[Action]]
+  private[trust] val _actions = mutable.ListBuffer.empty[() => Iterable[Action]]
 
-  private[enact] def _collectActions(): Iterable[Action] = {
+  private[trust] def _collectActions(): Iterable[Action] = {
     val groupActions = _ensembleGroups
       .flatMap(_.selectedMembers)
       .flatMap(_._collectActions())

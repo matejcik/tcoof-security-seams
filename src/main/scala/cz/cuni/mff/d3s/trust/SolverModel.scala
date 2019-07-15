@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import org.chocosolver.solver.{Solution, Model => ChocoModel}
 import org.chocosolver.solver.constraints.nary.cnf.{ILogical, LogOp}
@@ -9,11 +9,11 @@ import scala.collection.mutable
 class SolverModel extends ChocoModel {
 
   /** Upper bound for integer variables of the solver */
-  private[enact] val IntMaxValue = 10000 // IntVar.MAX_INT_BOUND
+  private[trust] val IntMaxValue = 10000 // IntVar.MAX_INT_BOUND
   /** Lower bound for integer variables of the solver */
-  private[enact] val IntMinValue = -10000 // IntVar.MIN_INT_BOUND
+  private[trust] val IntMinValue = -10000 // IntVar.MIN_INT_BOUND
 
-  private[enact] def newIntVar = intVar(IntMinValue, IntMaxValue)
+  private[trust] def newIntVar = intVar(IntMinValue, IntMaxValue)
 
   // Logical utils
   def and(clauses: Iterable[Logical]): Logical = {
@@ -228,7 +228,7 @@ class SolverModel extends ChocoModel {
     IntegerIntVar(result)
   }
 
-  private[enact] case class IntegerInt(value: Int) extends Integer {
+  private[trust] case class IntegerInt(value: Int) extends Integer {
     protected type ValueType = Int
 
     override def asInt: Int = value
@@ -269,7 +269,7 @@ class SolverModel extends ChocoModel {
     override def >=(num: Integer): Logical = revRelOp(num, "<=", _ <= _)
   }
 
-  private[enact] case class IntegerIntVar(value: IntVar) extends Integer {
+  private[trust] case class IntegerIntVar(value: IntVar) extends Integer {
     protected type ValueType = IntVar
 
     override def asInt: Int = solution.getIntVal(value)
@@ -301,8 +301,8 @@ class SolverModel extends ChocoModel {
     override def >=(num: Integer): Logical = relOp(num, ">=")
   }
 
-  private[enact] var solution = new Solution(this)
-  private[enact] var solutionExists = false
+  private[trust] var solution = new Solution(this)
+  private[trust] var solutionExists = false
 
   def init(): Unit = {}
 

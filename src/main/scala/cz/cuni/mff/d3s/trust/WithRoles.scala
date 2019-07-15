@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import InitStages.InitStages
 import Utils._
@@ -11,7 +11,7 @@ trait WithRoles extends Initializable with CommonImplicits {
 
   private type Role[T] = MemberGroup[T]
 
-  private[enact] val _roles = mutable.ArrayBuffer.empty[Role[Component]]
+  private[trust] val _roles = mutable.ArrayBuffer.empty[Role[Component]]
 
   def oneOf[C <: Component](itemFirst: C, itemRest: C*): Role[C] =
     oneOf(itemFirst +: itemRest)
@@ -76,7 +76,7 @@ trait WithRoles extends Initializable with CommonImplicits {
     role
   }
 
-  override private[enact] def _init(stage: InitStages, config: Config): Unit = {
+  override private[trust] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
     _roles.foreach(_._init(stage, config))
 

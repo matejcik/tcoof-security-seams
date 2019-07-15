@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import InitStages.InitStages
 import Utils._
@@ -32,7 +32,7 @@ class UnionGroup[+ComponentType <: Component] private(
       }
     )
 
-  override private[enact] def _init(
+  override private[trust] def _init(
       stage: InitStages,
       config: Config
   ): Unit = {

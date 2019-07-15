@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import org.chocosolver.solver.variables.{BoolVar, SetVar}
 import InitStages.InitStages
@@ -13,13 +13,13 @@ class MemberGroup[+MemberType](
 ) extends Initializable
     with CommonImplicits {
 
-  private[enact] val allMembersVarName: String = "G_" + randomName
-  private[enact] val allMembers: IndexedSeq[MemberType] = values.toSet.toIndexedSeq
+  private[trust] val allMembersVarName: String = "G_" + randomName
+  private[trust] val allMembers: IndexedSeq[MemberType] = values.toSet.toIndexedSeq
 
-  private[enact] var allMembersVar: SetVar = _
-  private[enact] var isActiveVar: BoolVar = _
+  private[trust] var allMembersVar: SetVar = _
+  private[trust] var isActiveVar: BoolVar = _
 
-  override private[enact] def _init(stage: InitStages, config: Config): Unit = {
+  override private[trust] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
 
     stage match {

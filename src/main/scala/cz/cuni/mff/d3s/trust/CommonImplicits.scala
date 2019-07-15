@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import scala.language.implicitConversions
 import org.chocosolver.solver.variables.SetVar

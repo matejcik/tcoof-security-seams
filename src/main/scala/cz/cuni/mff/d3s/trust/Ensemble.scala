@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import Utils._
 import scala.language.implicitConversions
@@ -14,13 +14,13 @@ trait Ensemble
     with WithConstraints
     with CommonImplicits {
 
-  private[enact] var _situationFun: () => Boolean = null
+  private[trust] var _situationFun: () => Boolean = null
 
   def situation(cond: => Boolean): Unit = {
     _situationFun = cond _
   }
 
-  private[enact] def _isInSituation: Boolean = {
+  private[trust] def _isInSituation: Boolean = {
     if (_situationFun != null)
       _situationFun()
     else

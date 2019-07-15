@@ -1,6 +1,6 @@
 package scenario.testing
 
-import cz.cuni.mff.d3s.enact.Policy
+import cz.cuni.mff.d3s.trust.Policy
 import scenario.lunch.LunchSpec._
 import scenario.lunch._
 

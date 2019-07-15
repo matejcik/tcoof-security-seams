@@ -1,6 +1,6 @@
 package scenario.lunch
 
-import cz.cuni.mff.d3s.enact.{Component, Ensemble, Policy}
+import cz.cuni.mff.d3s.trust.{Component, Ensemble, Policy}
 
 class Person(name: String) extends Component {
   name(name)

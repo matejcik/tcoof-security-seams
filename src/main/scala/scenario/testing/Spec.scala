@@ -1,6 +1,6 @@
 package scenario.testing
 
-import cz.cuni.mff.d3s.enact.{Ensemble, Policy}
+import cz.cuni.mff.d3s.trust.{Ensemble, Policy}
 
 trait Spec[ScenarioType] {
   this: Product =>

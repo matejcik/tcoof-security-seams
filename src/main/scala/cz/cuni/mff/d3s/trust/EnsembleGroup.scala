@@ -1,4 +1,4 @@
-package cz.cuni.mff.d3s.enact
+package cz.cuni.mff.d3s.trust
 
 import InitStages.InitStages
 import Utils._
@@ -11,9 +11,9 @@ class EnsembleGroup[+EnsembleType <: Ensemble](
     with Initializable
     with CommonImplicits {
 
-  override private[enact] val allMembersVarName: String = "EG_" + name
+  override private[trust] val allMembersVarName: String = "EG_" + name
 
-  override private[enact] def _init(stage: InitStages, config: Config): Unit = {
+  override private[trust] def _init(stage: InitStages, config: Config): Unit = {
     super._init(stage, config)
     allMembers.foreach(_._init(stage, config))
 

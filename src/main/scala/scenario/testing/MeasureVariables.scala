@@ -1,6 +1,6 @@
 package scenario.testing
 
-import cz.cuni.mff.d3s.enact._
+import cz.cuni.mff.d3s.trust._
 
 import scala.util.control.Breaks._
 
