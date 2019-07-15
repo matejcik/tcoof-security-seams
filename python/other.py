@@ -13,26 +13,24 @@ COLUMNS = {"timeout": np.int32}
 def plot_timeouts():
     data = resultlib.read_csv("timelimits", COLUMNS)
     data.timeout //= 1000
-    data = data[data.success & (data.timeout <= 30)]
-    subsel = data[["timeout", "utility"]]
-    grouping = subsel.groupby("timeout")["utility"]
+    grouping = data.groupby("timeout")["utility"]
     xticks, series = zip(*grouping)
 
     fig, ax = resultlib.prepare_graph()
     ax.boxplot(series, showfliers=False, positions=xticks)
 
-    s = grouping.median()
-    ax.plot(s.index, s.values, "o")
+    filtered = data[data.success].groupby("timeout")["utility"]
+    meds = filtered.median()
+    ax.plot(meds.index, meds.values, "o")
 
     def log(x, a, b):
         return a + b * np.log(x)
 
-    meds = grouping.median()
     popt, _ = curve_fit(log, meds.index, meds.values)
 
     fitx = np.linspace(xticks[0], xticks[-1], 100)
     fity = log(fitx, *popt)
-    plt.plot(fitx, fity, "-")
+    plt.plot(fitx, fity, "-", color=resultlib.make_colors(4)[3])
 
     ax.set_xlabel("Time limit (s)")
     ax.set_ylabel("Total utility")
