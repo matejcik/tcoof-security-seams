@@ -1,10 +1,9 @@
-package scenario
+package scenario.testing
 
-import scenario.lunch._
 import scenario.lunch.LunchSpec._
-import scenario.testing.TestHarness
+import scenario.lunch._
 
-object BadSolverLikelihood extends TestHarness[LunchScenario] {
+object MeasureBadSolverLikelihood extends TestHarness[LunchScenario] {
   override type ScenarioSpec = LunchSpec
 
   def measure_growingProjects =

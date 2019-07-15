@@ -1,4 +1,4 @@
-package scratchpad
+package scenario.lunch
 
 import cz.cuni.mff.d3s.enact.{Component, Ensemble, Policy}
 

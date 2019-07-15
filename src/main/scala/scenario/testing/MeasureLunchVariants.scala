@@ -1,13 +1,12 @@
-package scenario
+package scenario.testing
 
-import scenario.lunch._
 import scenario.lunch.LunchSpec._
-import scenario.testing.TestHarness
+import scenario.lunch._
 
 import scala.util.Random
 import scala.util.control.Breaks._
 
-object LunchTests extends TestHarness[LunchScenario] {
+object MeasureLunchVariants extends TestHarness[LunchScenario] {
   override type ScenarioSpec = LunchSpec
 
   def solutionFitsAllWorkers(model: LunchScenario): Boolean = {
@@ -236,7 +235,5 @@ object LunchTests extends TestHarness[LunchScenario] {
     measure_moreProjectsThanRooms
     measure_oneByOne_growingParams
     measure_moreRoomsThanProjects
-
-    BadSolverLikelihood.measure_growingProjects
   }
 }

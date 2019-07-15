@@ -1,10 +1,8 @@
-package scenario
+package scenario.testing
 
 import cz.cuni.mff.d3s.enact.Policy
-import org.chocosolver.util.tools.TimeUtils
-import scenario.lunch._
 import scenario.lunch.LunchSpec._
-import scenario.testing.{Spec, TestHarness}
+import scenario.lunch._
 
 import scala.collection.mutable
 import scala.util.Random
@@ -39,7 +37,7 @@ class LunchSimulator {
 
     // workers become hungry
     var hungry = 0
-    for (w <- scenario.workers.filterNot(_.hungry).filterNot(workersDone contains _)) {
+    for (w <- scenario.workers.filterNot(_.hungry).filterNot(workersDone.contains)) {
       if (random.nextFloat() <= HungerProbability) {
         w.hungry = true
         hungry += 1
@@ -112,7 +110,7 @@ case class SimulatorSpec(simulator: LunchSimulator, iter: Int) extends Spec[Lunc
   override def toPerfLine: String = iter.toString
 }
 
-object RandomLunch extends TestHarness[LunchSimulator] {
+object MeasureLunchSimulator extends TestHarness[LunchScenario] {
   override type ScenarioSpec = SimulatorSpec
 
   override def solveScenario(spec: ScenarioSpec): Measure = {

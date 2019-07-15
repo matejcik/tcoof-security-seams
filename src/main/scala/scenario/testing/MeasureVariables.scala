@@ -1,7 +1,7 @@
-package scenario
+package scenario.testing
 
 import cz.cuni.mff.d3s.enact._
-import scenario.testing.{Spec, TestHarness}
+
 import scala.util.control.Breaks._
 
 class ManyVarScenario(ints: Int, bools: Int, constraints: Int) {
@@ -34,7 +34,7 @@ case class ManyVarSpec(ints: Int, bools: Int, constraints: Int) extends Spec[Man
   override def policy(scenario: ManyVarScenario): Policy[_] = scenario.policy
 }
 
-object Variables extends TestHarness[ManyVarScenario] {
+object MeasureVariables extends TestHarness[ManyVarScenario] {
   override type ScenarioSpec = ManyVarSpec
 
   override def solveScenario(spec: ScenarioSpec): Measure = {

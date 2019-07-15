@@ -1,10 +1,8 @@
-package scenario
+package scenario.testing
 
 import cz.cuni.mff.d3s.enact.Policy
-import org.chocosolver.util.tools.TimeUtils
-import scenario.testing._
-import scenario.lunch._
 import scenario.lunch.LunchSpec._
+import scenario.lunch._
 
 case class VaryingTimeLimit(limit: Long) extends Spec[LunchScenario] {
   val DefaultScenario = LunchSpec(
@@ -21,7 +19,7 @@ case class VaryingTimeLimit(limit: Long) extends Spec[LunchScenario] {
   override def policy(scenario: LunchScenario): Policy[_] = scenario.policy
 }
 
-object VaryingTimeLimitTest extends TestHarness[LunchScenario] {
+object MeasureVaryingTimeLimit extends TestHarness[LunchScenario] {
   override type ScenarioSpec = VaryingTimeLimit
 
   override def solveScenario(spec: ScenarioSpec): Measure = {
@@ -49,7 +47,7 @@ object VaryingTimeLimitTest extends TestHarness[LunchScenario] {
       "resulting utility with increasing time limit",
     ) { m =>
     warmup(VaryingTimeLimit(1000))
-      for (timeLimit <- 1 to 60) {
+      for (timeLimit <- 1 to 30) {
         m(VaryingTimeLimit(timeLimit * 1000L))
       }
     }
