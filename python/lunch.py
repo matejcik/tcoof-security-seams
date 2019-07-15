@@ -56,34 +56,23 @@ def plot_morerooms():
 def plot_moreprojects():
     data = read_csv("moreprojects")
     data = data[(data.hungry <= 40) & data.success]
-    # projects = data.projects.unique()
+
+    # drop known outliers:
+    data = data[~((data.projects == 6) & (data.hungry == 35))]
+    data = data[~((data.projects == 8) & (data.hungry == 39))]
+
     projects = [5, 6, 7, 8, 9]
     labels = [f"{n} projects" for n in projects]
     x_ticks = data[data.projects == projects[0]].hungry.unique()
-    datasets = []
 
     fig, ax = resultlib.prepare_graph()
 
     for n, label in zip(projects, labels):
-        subsel = data.copy()
-
-        # clear outliers after the expected cutoff point
-        maxhungry = n * 4 + 2
-        subsel.loc[subsel.hungry > maxhungry, "nsec"] = 0
-
-        subsel = subsel[subsel.projects == n][["hungry", "nsec"]]
+        subsel = data[data.projects == n][["hungry", "nsec"]]
         grouping = subsel.groupby("hungry")["nsec"]
-        series = [s for _, s in grouping]
-
         line = grouping.median()
         ax.plot(line.index, line.values, "-", label=label)
 
-        datasets.append(series)
-
-    # maxticks = max(len(d) for d in datasets)
-    # x_ticks = range(5, maxticks + 5)
-
-    # fig, ax = box_graph(datasets, labels, colors, x_ticks, rotation="vertical")
     ax.set_xlabel("Number of workers")
     plt.legend()
     plt.xticks(x_ticks, rotation="vertical")
