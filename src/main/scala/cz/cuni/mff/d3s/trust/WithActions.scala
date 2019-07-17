@@ -2,13 +2,20 @@ package cz.cuni.mff.d3s.trust
 
 import scala.collection.mutable
 
+/** Ensemble part for handling security actions.
+  *
+  * Provides DSL functions that create security actions and notifications.
+  */
 trait WithActions {
   this: WithEnsembleGroups =>
 
+  /** Local type alias for roles. */
   private type Role = MemberGroup[Component]
 
+  /** List of generators of actions. */
   private[trust] val _actions = mutable.ListBuffer.empty[() => Iterable[Action]]
 
+  /** Collect security actions from this ensemble and all its sub-ensembles. */
   private[trust] def _collectActions(): Iterable[Action] = {
     val groupActions = _ensembleGroups
       .flatMap(_.selectedMembers)
@@ -17,27 +24,59 @@ trait WithActions {
     groupActions ++ _actions.flatMap(_())
   }
 
-  def allow(subjects: Role, action: String, objects: Role): Unit = {
+  /** Generate an allow action.
+    *
+    * In place of `actors` and `subjects`, it is possible to use a role object,
+    * a component, or a collection of components. Implicit conversions from components
+    * to roles are invoked if the argument is not a role object.
+    *
+    * @param actors Actor role
+    * @param action Action name
+    * @param subjects Subjects role
+    */
+  def allow(actors: Role, action: String, subjects: Role): Unit = {
     _actions += (() => {
       for {
-        objct <- objects.selectedMembers
         subject <- subjects.selectedMembers
-      } yield AllowAction(subject, action, objct)
+        actor <- actors.selectedMembers
+      } yield AllowAction(actor, action, subject)
     })
   }
 
-  def deny(subjects: Role, action: String, objects: Role): Unit = {
+  /** Generate a deny action.
+    *
+    * In place of `actors` and `subjects`, it is possible to use a role object,
+    * a component, or a collection of components. Implicit conversions from components
+    * to roles are invoked if the argument is not a role object.
+    *
+    * @param actors Actor role
+    * @param action Action name
+    * @param subjects Subjects role
+    */
+  def deny(actors: Role, action: String, subjects: Role): Unit = {
     _actions += (() => {
       for {
-        objct <- objects.selectedMembers
         subject <- subjects.selectedMembers
-      } yield DenyAction(subject, action, objct)
+        actor <- actors.selectedMembers
+      } yield DenyAction(actor, action, subject)
     })
   }
 
-  def notify(subjects: Role, notification: Notification): Unit = {
+  /** Generate a notify action
+    *
+    * In place of `target` and `subjects`, it is possible to use a role object,
+    * a component, or a collection of components. Implicit conversions from components
+    * to roles are invoked if the argument is not a role object.
+    *
+    * When the security actions are collected with [[Policy.commit()]], notifications
+    * will also be sent to component instances.
+    *
+    * @param targets Target role
+    * @param notification Notification message
+    */
+  def notify(targets: Role, notification: Notification): Unit = {
     _actions += (() => {
-      val members = subjects.selectedMembers
+      val members = targets.selectedMembers
       members.foreach(_.notify(notification))
       members.map(NotifyAction(_, notification))
     })

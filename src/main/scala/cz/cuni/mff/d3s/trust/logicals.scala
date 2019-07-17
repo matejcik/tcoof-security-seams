@@ -4,38 +4,58 @@ import org.chocosolver.solver.constraints.nary.cnf.{ILogical, LogOp}
 import org.chocosolver.solver.variables.BoolVar
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
-/** Parent of clauses used in membership. */
+/** Constraint type.
+  *
+  * Represents a truth value that can be used by the solver. This means that
+  * instances of this class can be used as constraints directly. Boolean operators are
+  * overloaded, so it is possible to use `Logical` in a way similar to the native
+  * `Boolean` type.
+  */
 abstract class Logical {
   protected type ValueType
   protected def value: ValueType
 
+  /** Logical conjunction. */
   def &&(other: Logical): Logical
+
+  /** Logical disjunction. */
   def ||(other: Logical): Logical
+
+  /** Logical negation. */
   def unary_!(): Logical
+
+  /** Implication: if `this` is true, then `other` must also be true. */
   def ->(other: Logical): Logical = !this || other
+
+  /** Equivalence: truth value of `this` is identical to `other`. */
   def <->(other: Logical): Logical = this -> other && other -> this
 }
 
-/** Common functionality for LogicalLogOp and LogicalBoolVar. */
+/** Solver-bound constraint type.
+  *
+  * Common functionality for LogicalLogOp and LogicalBoolVar, based on Choco solver's
+  * [[ILogical]] interface.
+  * */
 private[trust] abstract class LogicalWithILogic extends Logical {
   protected type ValueType <: ILogical
 
   override def &&(other: Logical): Logical = other match {
-    case LogicalBoolean(true)  => this
-    case LogicalBoolean(false) => other
-    case other: LogicalWithILogic =>
-      LogicalLogOp(LogOp.and(this.value, other.value))
+    case LogicalBoolean(true)     => this
+    case LogicalBoolean(false)    => other
+    case other: LogicalWithILogic => LogicalLogOp(LogOp.and(this.value, other.value))
   }
 
   override def ||(other: Logical): Logical = other match {
-    case LogicalBoolean(false) => this
-    case LogicalBoolean(true)  => other
-    case other: LogicalWithILogic =>
-      LogicalLogOp(LogOp.or(this.value, other.value))
+    case LogicalBoolean(false)    => this
+    case LogicalBoolean(true)     => other
+    case other: LogicalWithILogic => LogicalLogOp(LogOp.or(this.value, other.value))
   }
 }
 
-/** Result of an expression that can be directly instantiated (i.e. does not have to be represented as a variable in the solver. */
+/** Statically known constraint type.
+  *
+  * Wrapper around the native `Boolean` type, interoperable with solver-bound types.
+  */
 private[trust] case class LogicalBoolean(value: Boolean) extends Logical {
   protected type ValueType = Boolean
 
@@ -44,16 +64,23 @@ private[trust] case class LogicalBoolean(value: Boolean) extends Logical {
   override def unary_!(): Logical = LogicalBoolean(!value)
 }
 
-/** Boolean variable clause. This is used to represent reified constraints (e.g. cardinality). */
-private[trust] case class LogicalBoolVar(value: BoolVar)
-    extends LogicalWithILogic {
+/** Native solver constraint.
+  *
+  * Wrapper around Choco solver [[BoolVar]] type. Can represent reified constraints,
+  * such as membership conditions or results of arithmetic comparisons.
+  */
+private[trust] case class LogicalBoolVar(value: BoolVar) extends LogicalWithILogic {
   protected type ValueType = BoolVar
 
   override def unary_!(): Logical =
     LogicalBoolVar(value.not.asInstanceOf[BoolVar])
 }
 
-/** And/Or tree of clauses. This is used to represent clauses about membership of a component. */
+/** Tree of boolean operations on constraints
+  *
+  * Wrapper around Choco solver [[LogOp]] type. Represents results of boolean operations
+  * with [[BoolVar]]s.
+  */
 private[trust] case class LogicalLogOp(value: LogOp) extends LogicalWithILogic {
   protected type ValueType = LogOp
 
