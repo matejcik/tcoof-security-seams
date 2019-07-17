@@ -19,6 +19,10 @@ case class VaryingTimeLimit(limit: Long) extends Spec[LunchScenario] {
   override def policy(scenario: LunchScenario): Policy[_] = scenario.policy
 }
 
+/** Measure best utility with increasing time limit.
+  *
+  * @see section 7.3.4
+  */
 object MeasureVaryingTimeLimit extends TestHarness[LunchScenario] {
   override type ScenarioSpec = VaryingTimeLimit
 

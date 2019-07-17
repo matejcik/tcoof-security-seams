@@ -30,6 +30,7 @@ case class LunchSpec(
   }
 
   def makeScenario(): LunchScenario = {
+    // generate the appropriate number of rooms
     val newLunchrooms = for (i <- 0 until lunchrooms.n)
       yield new LunchRoom(i.toString, lunchrooms.capacity)
 
@@ -37,12 +38,14 @@ case class LunchSpec(
       yield new WorkRoom(i.toString)
 
     val newProjects = for (i <- 0 until projects) yield {
+      // assign rooms to new projects in a round-robin fashion
       val selectedWorkrooms =
         newWorkrooms.zipWithIndex
           .collect { case (e, wi) if (wi % projects) == i => e }
       Project(('A' + i).toChar.toString, selectedWorkrooms)
     }
 
+    // generate workers, assigned round-robin to projects
     val newWorkers = for (i <- 0 until workers)
       yield new Worker(i, newProjects(i % newProjects.size))
 
@@ -51,6 +54,7 @@ case class LunchSpec(
       newProjects.map(p => p -> _groupByProject.getOrElse(p, Seq.empty)): _*
     )
 
+    // fill each room to `fillRooms` size with workers from the same project
     val loopProjects = Stream.continually(newProjects).flatten
     for ((room, project) <- newLunchrooms zip loopProjects) {
       val projectWorkers = workersByProject(project)
@@ -60,13 +64,13 @@ case class LunchSpec(
       workersByProject(project) = projectWorkers.drop(fillRooms)
     }
 
+    // set the appropriate number of workers to hungry
     newWorkers
       .filter(_.location.isEmpty)
       .take(hungryWorkers)
       .foreach(_.hungry = true)
 
-    val model =
-      new LunchScenario(newProjects, newWorkers, newWorkrooms, newLunchrooms)
+    val model = new LunchScenario(newProjects, newWorkers, newWorkrooms, newLunchrooms)
     if (isLunchTime) model.now = LocalTime.of(13, 37)
     model
   }
@@ -75,6 +79,5 @@ case class LunchSpec(
 }
 
 object LunchSpec {
-  implicit def tupleToRoomParam(tuple: (Int, Int)): RoomParam =
-    RoomParam(tuple._1, tuple._2)
+  implicit def tupleToRoomParam(tuple: (Int, Int)): RoomParam = RoomParam(tuple._1, tuple._2)
 }

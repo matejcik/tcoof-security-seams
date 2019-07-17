@@ -110,6 +110,10 @@ case class SimulatorSpec(simulator: LunchSimulator, iter: Int) extends Spec[Lunc
   override def toPerfLine: String = iter.toString
 }
 
+/** Measure performance in a simulator building.
+  *
+  * @see thesis section 7.3.6
+  */
 object MeasureLunchSimulator extends TestHarness[LunchScenario] {
   override type ScenarioSpec = SimulatorSpec
 

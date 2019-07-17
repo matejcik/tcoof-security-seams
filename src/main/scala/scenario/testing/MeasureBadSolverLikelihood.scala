@@ -3,6 +3,10 @@ package scenario.testing
 import scenario.lunch.LunchSpec._
 import scenario.lunch._
 
+/** Test likelihood of "bad" problem configuration.
+  *
+  * @see thesis section 7.3.3
+  */
 object MeasureBadSolverLikelihood extends TestHarness[LunchScenario] {
   override type ScenarioSpec = LunchSpec
 

@@ -34,6 +34,10 @@ case class ManyVarSpec(ints: Int, bools: Int, constraints: Int) extends Spec[Man
   override def policy(scenario: ManyVarScenario): Policy[_] = scenario.policy
 }
 
+/** Benchmark performance of different kinds of basic objects.
+  *
+  * @see thesis section 7.2
+  */
 object MeasureVariables extends TestHarness[ManyVarScenario] {
   override type ScenarioSpec = ManyVarSpec
 

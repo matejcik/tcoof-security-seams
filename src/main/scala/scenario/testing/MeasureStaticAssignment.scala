@@ -3,6 +3,10 @@ package scenario.testing
 import scenario.lunch._
 import scenario.lunch.LunchSpec._
 
+/** Measure performance of WorkroomAssignment ensemble.
+  *
+  * @see thesis section 7.3.1
+  */
 object MeasureStaticAssignment extends TestHarness[LunchScenario] {
   override type ScenarioSpec = LunchSpec
 

@@ -6,9 +6,14 @@ import scenario.lunch._
 import scala.util.Random
 import scala.util.control.Breaks._
 
+/** Measure performance on synthetic problems. */
 object MeasureLunchVariants extends TestHarness[LunchScenario] {
   override type ScenarioSpec = LunchSpec
 
+  /** Solve scenario by submitting hungry workers one by one.
+    *
+    * Used in old test cases.
+    */
   def solveOneByOne(spec: ScenarioSpec): Measure = {
     val model = spec.makeScenario()
 
@@ -36,19 +41,10 @@ object MeasureLunchVariants extends TestHarness[LunchScenario] {
     Measure(success, time, utility)
   }
 
-  def warmup: Unit = {
-    val spec = LunchSpec(
-      projects = 3,
-      lunchrooms = (3, 10),
-      workrooms = (3, 10),
-      workers = 10,
-      hungryWorkers = 10,
-      fillRooms = 0,
-      isLunchTime = true,
-    )
-    warmup(spec)
-  }
-
+  /** Measure scenario with more projects than rooms.
+    *
+    * @see thesis section 7.3.2
+    */
   def measure_moreProjectsThanRooms =
     measure(
       "moreprojects",
@@ -78,6 +74,10 @@ object MeasureLunchVariants extends TestHarness[LunchScenario] {
       }
     }
 
+  /** Measure scenario with more rooms than projects.
+    *
+    * @see thesis section 7.3.2
+    */
   def measure_moreRoomsThanProjects =
     measure(
       "morerooms-optimizing",
@@ -100,6 +100,10 @@ object MeasureLunchVariants extends TestHarness[LunchScenario] {
       }
     }
 
+  /** Measure performance of seating one worker
+    *
+    * @see thesis section 7.3.5
+    */
   def measure_oneByOne_growingParams =
     measure(
       "oneworker-params",
@@ -130,18 +134,6 @@ object MeasureLunchVariants extends TestHarness[LunchScenario] {
     }
 
   def main(args: Array[String]): Unit = {
-//    val defaultSpec = ScenarioSpec(
-//      projects = 3,
-//      lunchrooms = (15, 5),
-//      workrooms = (10, 50),
-//      workers = 200,
-//      hungryWorkers = 5,
-//      preassignedRooms = 0,
-//      isLunchTime = true,
-//    )
-//    warmup(defaultSpec, 10, solveOneByOne)
-//    return
-
     measure_moreProjectsThanRooms
     measure_oneByOne_growingParams
     measure_moreRoomsThanProjects

@@ -1,5 +1,6 @@
 package scenario.testing
 
+/** Run all measurements at once. */
 object MeasureAll {
   def main(args: Array[String]): Unit = {
     MeasureStaticAssignment.main(args)
