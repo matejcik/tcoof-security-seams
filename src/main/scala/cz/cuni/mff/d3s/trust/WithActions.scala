@@ -4,7 +4,8 @@ import scala.collection.mutable
 
 /** Ensemble part for handling security actions.
   *
-  * Provides DSL functions that create security actions and notifications.
+  * Provides DSL functions that create security actions and notifications, and
+  * functionality for collecting the actions from sub-ensembles.
   */
 trait WithActions {
   this: WithEnsembleGroups =>
@@ -68,7 +69,7 @@ trait WithActions {
     * a component, or a collection of components. Implicit conversions from components
     * to roles are invoked if the argument is not a role object.
     *
-    * When the security actions are collected with [[Policy.commit()]], notifications
+    * When the security actions are collected with [[Policy.commit]], notifications
     * will also be sent to component instances.
     *
     * @param targets Target role

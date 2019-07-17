@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
 
 /** Group of candidates for selection by the solver.
   *
-  * Represents a collection underpinned by a [[SetVar]]. The solver can determine
+  * Represents a collection underpinned by a `SetVar`. The solver can determine
   * whether any of the `values` should be selected in the solution.
   *
   * See thesis section 6.1.7 for details.
@@ -133,14 +133,14 @@ class MemberGroup[+MemberType](val name: String, values: Iterable[MemberType])
 
   /** Create a set of values linked to members of the group.
     *
-    * Creates a [[SetVar]] whose members correspond to distinct results of `func` over
+    * Creates a `SetVar` whose members correspond to distinct results of `func` over
     * the group members. A value is a member of the channeling iff at least one selected
     * member maps to that value.
     *
     * @param func Mapping function
     * @param valMap Collection of possible values
     * @tparam T Value type
-    * @return a [[SetVar]] channeling the mapping function.
+    * @return a `SetVar` channeling the mapping function.
     */
   def _channelMapResults[T](func: MemberType => T, valMap: Map[T, Int]): SetVar = {
     val memberMap = allMembers.indices.groupBy(idx => func(allMembers(idx)))

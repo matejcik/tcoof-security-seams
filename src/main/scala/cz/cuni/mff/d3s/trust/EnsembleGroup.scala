@@ -4,14 +4,14 @@ import InitStages.InitStages
 
 /** Group of `Ensemble`s.
   *
-  * Represents a result of [[Ensemble.rules()]] or [[Ensemble.ensembles()]] call.
+  * Represents a result of `rules` or `ensembles` call.
   * A collection of [[Ensemble]]s must be a [[MemberGroup]], to enable dynamic selection
   * of member components. This class adds special handling for sub-ensembles, ensuring
   * that membership in the group is reified with the ensemble's selection status.
   *
   * If `enforceSituation` is set to true, the `EnsembleGroup` also makes the membership
   * status dependent on the situation predicate of member ensembles. This facilitates
-  * mandatory activation from [[Ensemble.rules()]].
+  * mandatory activation from `rules`.
   *
   * @see [[WithSelectionStatus]]
   * @param name Name of the group

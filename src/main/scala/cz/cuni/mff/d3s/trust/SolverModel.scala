@@ -8,7 +8,7 @@ import scala.collection.mutable
 
 /** Solver instance.
   *
-  * A specialization of Choco solver [[org.chocosolver.solver.Model]] class, extended
+  * A specialization of Choco solver `org.chocosolver.solver.Model` class, extended
   * to work with [[Integer]] and [[Logical]] objects. It also encloses concrete
   * implementations of [[Integer]], because they require access to the solver object.
   */
@@ -82,7 +82,7 @@ class SolverModel extends ChocoModel {
     *
     * Wrapper around the underlying `post()` method that works with a [[Logical]].
     *
-    * @see [[org.chocosolver.solver.Model.post]]
+    * @see `org.chocosolver.solver.Model.post`
     */
   def post(clause: Logical): Unit = {
     clause match {
@@ -168,7 +168,7 @@ class SolverModel extends ChocoModel {
     * there exists `i` which is a member of `membersVar`, and the corresponding
     * `membersClauses[i]` is satisfied.
     *
-    * Used for implementing the [[MemberGroup.some()]] predicate.
+    * Used for implementing the [[MemberGroup.some]] predicate.
     *
     * @param membersClauses Collection of constraints
     * @param membersVar Member set
@@ -208,7 +208,7 @@ class SolverModel extends ChocoModel {
     *
     * Wrapper around the underlying `sum()` method that works with `Integer`s.
     *
-    * @see [[org.chocosolver.solver.Model.sum]]
+    * @see `org.chocosolver.solver.Model.sum`
     * @param values Integer values
     * @return sum of `values` as an `Integer`
     */

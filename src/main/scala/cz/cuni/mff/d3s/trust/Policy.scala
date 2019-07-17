@@ -105,7 +105,7 @@ class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
 
   /** List of collected security actions.
     *
-    * [[commit()]] must be called after [[solve()]] in order for `actions` to become
+    * [[commit]] must be called after [[solve]] in order for `actions` to become
     * available.
     */
   def actions: Iterable[Action] = _actions
