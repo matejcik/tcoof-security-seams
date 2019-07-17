@@ -28,7 +28,7 @@ class Policy[EnsembleType <: Ensemble](builder: () => EnsembleType) {
   private var _solverModel: SolverModel = _
 
   /** Reset list of security actions. */
-  def _resetActions(): Unit = {
+  private def _resetActions(): Unit = {
     _actions = null
     _actionSet = Set.empty
   }

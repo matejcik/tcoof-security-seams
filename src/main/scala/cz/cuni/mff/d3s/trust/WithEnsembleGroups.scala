@@ -62,7 +62,7 @@ trait WithEnsembleGroups extends Initializable with CommonImplicits {
     * @tparam E Concrete sub-ensemble type
     * @return an `EnsembleGroup` representing the ensembles.
     */
-  def _addEnsembleGroup[E <: Ensemble](
+  private[trust] def _addEnsembleGroup[E <: Ensemble](
       name: String,
       ens: Iterable[E],
       enforceSituation: Boolean

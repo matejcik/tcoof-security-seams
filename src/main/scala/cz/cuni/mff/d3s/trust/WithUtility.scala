@@ -58,7 +58,7 @@ trait WithUtility extends Initializable {
   }
 
   /** True if this ensemble or any of its sub-ensembles have a utility expression. */
-  def _hasUtility: Boolean = {
+  private[trust] def _hasUtility: Boolean = {
     val childrenHaveUtility = _ensembleGroups.flatMap(g => g.allMembers).exists(_._hasUtility)
     _utilityFun.nonEmpty || childrenHaveUtility
   }
@@ -74,7 +74,7 @@ trait WithUtility extends Initializable {
     *         sub-ensembles, if at least one utility expression is configured. `None` if
     *         no utility expression is set in this ensemble nor in any of its sub-ensembles.
     */
-  def _collectUtility: Option[Integer] = {
+  private[trust] def _collectUtility: Option[Integer] = {
     if (!_hasUtility) None
     else {
       val subUtilities = _ensembleGroups.map(

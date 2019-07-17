@@ -27,10 +27,12 @@ private[trust] trait Initializable {
     * to their members. Implementers must always call the parent implementation.
     *
     * The initialization runs in three phases:
-    * * [[InitStages.ConfigPropagation]]: references to the global configuration
-    *   instance are registered
-    * * [[InitStages.VarsCreation]]: solver variables are generated
-    * * [[InitStages.RulesCreation]]: concrete rules and constraints are posted
+    * <ul>
+    * <li> [[InitStages.ConfigPropagation]]: references to the global configuration
+    *      instance are registered
+    * <li> [[InitStages.VarsCreation]]: solver variables are generated
+    * <li> [[InitStages.RulesCreation]]: concrete rules and constraints are posted
+    * </ul>
     *
     * The base implementation handles the `ConfigPropagation` stage.
     *

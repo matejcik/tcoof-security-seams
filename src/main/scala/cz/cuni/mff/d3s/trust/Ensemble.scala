@@ -6,15 +6,16 @@ import scala.language.implicitConversions
   *
   * A collection of functionality and DSL commands for use in the policy definitions.
   * The following functionality is provided:
-  *
-  * * Setting the ensemble name
-  * * Configuring an utility expression
-  * * Registering sub-ensembles
-  * * Registering roles
-  * * Specifying security actions
-  * * Specifying constraints
-  * * Specifying a situation predicate
-  * * Common implicit conversions
+  * <ul>
+  * <li>Setting the ensemble name
+  * <li>Configuring an utility expression
+  * <li>Registering sub-ensembles
+  * <li>Registering roles
+  * <li>Specifying security actions
+  * <li>Specifying constraints
+  * <li>Specifying a situation predicate
+  * <li>Common implicit conversions
+  * </ul>
   *
   * See documentation of constituent traits for details.
   */

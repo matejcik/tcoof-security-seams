@@ -35,7 +35,7 @@ abstract class Logical {
   *
   * Common functionality for LogicalLogOp and LogicalBoolVar, based on Choco solver's
   * [[ILogical]] interface.
-  * */
+  */
 private[trust] abstract class LogicalWithILogic extends Logical {
   protected type ValueType <: ILogical
 

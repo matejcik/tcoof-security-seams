@@ -142,7 +142,7 @@ class MemberGroup[+MemberType](val name: String, values: Iterable[MemberType])
     * @tparam T Value type
     * @return a `SetVar` channeling the mapping function.
     */
-  def _channelMapResults[T](func: MemberType => T, valMap: Map[T, Int]): SetVar = {
+  private def _channelMapResults[T](func: MemberType => T, valMap: Map[T, Int]): SetVar = {
     val memberMap = allMembers.indices.groupBy(idx => func(allMembers(idx)))
     val channelVar = _solverModel.setVar(Array.empty[Int], memberMap.keys.map(valMap(_)).toArray)
     for ((value, indices) <- memberMap) {
