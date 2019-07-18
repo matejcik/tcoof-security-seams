@@ -35,6 +35,22 @@ class RoleTest extends TestClass {
     assert(!rootFail.resolve())
   }
 
+  it should "select members as a set" in {
+    val members = for (i <- 1 to 5) yield Member(1)
+
+    val policy = Policy.root(new Ensemble {
+      val role = allOf(members)
+      val subset = subsetOf(members, _ > 0)
+    })
+
+    policy.init()
+    while (policy.solve()) {
+      policy.instance.role.selectedMembers should have size 1
+      policy.instance.subset.selectedMembers should have size 1
+    }
+    assert(policy.exists)
+  }
+
   "allOf" should "select all components" in {
     val members = for (i <- 1 to 5) yield Member(i)
 

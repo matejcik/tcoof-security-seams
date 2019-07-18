@@ -50,6 +50,10 @@ locked to 3.6. You might need to modify `Pipfile`.
 To run the example program:
 
     $ sbt run
+
+To run the unit test suite:
+
+    $ sbt test
    
 To run the measurement suite:
 

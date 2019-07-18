@@ -150,7 +150,7 @@ trait WithRoles extends Initializable with CommonImplicits {
     * @return a role object that selects all of the candidates.
     */
   def allOf[C <: Component](items: Iterable[C]): Role[C] =
-    _addRole("allOf_" + randomName, items, _ === items.size)
+    _addRole("allOf_" + randomName, items, _ === items.toSet.size)
 
   /** Register a role from a list of components
     *
