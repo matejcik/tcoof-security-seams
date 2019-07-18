@@ -54,29 +54,28 @@ To run the example program:
 To run the unit test suite:
 
     $ sbt test
-   
+
 To run the measurement suite:
 
     $ sbt "run scenario.MeasureAll"
-    
+
 Results will be saved in `results/YYYY-MM-DD` directory.
 
 To generate graphs from measurements saved in `results/final`:
 
-    $ cd python
-    $ ./all.sh
-    
+    $ ./python/all.sh
+
 
 ## Including in your project
 
 Generate the JAR with:
 
     $ sbt package
-    
+
 Then copy `target/scala-2.12/tcoof-trust_2.12-1.0.jar` into a `lib/` subdirectory of
 your project.
-    
-    
+
+
 ## Documentation
 
 To generate the API documentation:

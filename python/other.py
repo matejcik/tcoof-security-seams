@@ -55,7 +55,7 @@ def plot_simulation():
     data = resultlib.read_csv("simulated", {"iter": np.int32})
     data = data["nsec"]
 
-    print(data[data > 100].count())
+#    print(data[data > 100].count())
 
     fig = plt.figure(figsize=(7, 5), dpi=300)
     ax = fig.add_subplot(111)
