@@ -1,0 +1,169 @@
+\chapter{Data Archive Contents}
+
+The data archive accompanying this work is a copy of the \cc{tcoof-trust} GitHub
+repository. Its up-to-date version can always be found at the following URL:
+\href{https://github.com/matejcik/tcoof-trust}{\ttfamily https://github.com/matejcik/tcoof-trust}
+
+The only additional content in the archive is the \cc{apidoc} directory, which contains
+the generated Scaladoc API documentation. In a Git checkout, the API docs can be
+generated with the command \dop{sbt doc}.
+
+The following is a list of paths in the archive and descriptions of their contents.
+
+\bigskip
+
+\newenvironment{filepath}%
+    {%
+        \par\vspace{0.6em}\ttfamily\raggedright
+    }%
+    {%
+        \vspace{-0.2em}
+    }%
+
+\begin{filepath}
+README.md
+\end{filepath}
+\begin{dsldesc}
+    Markdown-formatted \cc{README} for the Git repository. Please refer to this file for
+    requirements to run the TCOOF-Trust framework and basic usage examples.
+\end{dsldesc}
+
+\begin{filepath}
+build.sbt\\
+project/
+\end{filepath}
+\begin{dsldesc}
+    SBT (Scala Build Tool) build script and build properties. These files are required
+    for building the project with \cc{sbt}, and for importing into IntelliJ IDEA, the
+    preferred Scala IDE.
+\end{dsldesc}
+
+\begin{filepath}
+apidoc/
+\end{filepath}
+\begin{dsldesc}
+    Scaladoc API documentation in HTML format.
+
+    The limitation of the generated API documentation is that it excludes non-public
+    members. Unfortunately, that cannot be avoided with the Scaladoc tool. See the
+    source code for documentation comments.
+\end{dsldesc}
+
+\begin{filepath}
+python/all.sh
+\end{filepath}
+\begin{dsldesc}
+    Shell script that installs the Python environment and regenerates graphs used in
+    this work. Must be executed in the \cc{python} subdirectory.
+\end{dsldesc}
+
+\begin{filepath}
+python/Pipfile\\
+python/Pipfile.lock
+\end{filepath}
+\begin{dsldesc}
+    \cc{pipenv} configuration files. Contain list of Python package dependencies
+    required for generating graphs.
+\end{dsldesc}
+
+\begin{filepath}
+python/lunch.py\\
+python/other.py\\
+python/resultlib.py\\
+python/variables.py
+\end{filepath}
+\begin{dsldesc}
+    Individual Python scripts that generate the graphs. \cc{variables.py} generate
+    graphs from section~\ref{eval:variables}, \cc{other.py} generates the simulation
+    histogram and the timeout graph, \cc{lunch.py} generates all the rest.
+    \cc{resultlib} is a small library of common functions.
+\end{dsldesc}
+
+\begin{filepath}
+results/final/badsolver-growingprojects.log
+\end{filepath}
+\begin{dsldesc}
+    Source data for figure~\ref{fig:badsolver}.
+\end{dsldesc}
+
+\pagebreak
+\begin{filepath}
+results/final/booleans.log\\
+results/final/constraints.log\\
+results/final/integers.log
+\end{filepath}
+\begin{dsldesc}
+    Source data for figures \ref{fig:variables:time} and \ref{fig:variables:mem}
+\end{dsldesc}
+
+\begin{filepath}
+results/final/moreprojects.log
+\end{filepath}
+\begin{dsldesc}
+    Source data for figure~\ref{fig:workers-moreprojects}.
+\end{dsldesc}
+
+\begin{filepath}
+results/final/morerooms-optimizing.log
+\end{filepath}
+\begin{dsldesc}
+    Source data for figure~\ref{fig:workers-morerooms}.
+\end{dsldesc}
+
+\begin{filepath}
+results/final/oneworker-params.log
+\end{filepath}
+\begin{dsldesc}
+    Source data for figure~\ref{fig:workers-oneworker}.
+\end{dsldesc}
+
+\begin{filepath}
+results/final/simulated.log
+\end{filepath}
+\begin{dsldesc}
+    Source data for figure~\ref{fig:simulation}.
+\end{dsldesc}
+
+\begin{filepath}
+results/final/timelimits.log
+\end{filepath}
+\begin{dsldesc}
+    Source data for figure~\ref{fig:timelimits}.
+\end{dsldesc}
+
+\begin{filepath}
+results/final/workercount-simple.log
+\end{filepath}
+\begin{dsldesc}
+    Source data for figure~\ref{fig:workers-simple}.
+\end{dsldesc}
+
+\begin{filepath}
+src/main/scala/cz/
+\end{filepath}
+\begin{dsldesc}
+    Scala source files for the TCOOF-Trust framework, specifically the package
+    \cc{cz.cuni.mff.d3s.trust}.
+\end{dsldesc}
+
+\begin{filepath}
+src/main/scala/scenario/
+\end{filepath}
+\begin{dsldesc}
+    Scala source files for the test measurement scenarios.
+\end{dsldesc}
+
+\begin{filepath}
+src/test/scala/
+\end{filepath}
+\begin{dsldesc}
+    Scala source files for the unit test suite.
+\end{dsldesc}
+
+\begin{filepath}
+thesis/
+\end{filepath}
+\begin{dsldesc}
+    \LaTeX{} source files and a PDF version of this work.
+\end{dsldesc}
+    

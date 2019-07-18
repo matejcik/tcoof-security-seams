@@ -1,0 +1,108 @@
+\chapter{Introduction}
+
+More and more areas of human activity are becoming computerized and connected to
+ever-growing networks. This allows us to use these networks in novel, increasingly
+powerful ways, as disparate systems are now able to communicate, aggregate knowledge,
+and relay commands across domains. The growth and pervasiveness of Internet of Things
+has a great promise for building cyber-physical networks, starting at smart homes,
+smart buildings, and growing towards smart cities and large-scale smart grids.
+
+At this scale, systems are necessarily heterogeneous. Devices from different
+manufacturers are connected via custom communication protocols on virtual sub-networks
+and managed by different organizations. Even if we limit the scope to a single
+organization wanting to computerize its physical properties, different parts of the
+system will usually be provided by different vendors, with separate connectivity and
+separate management consoles.
+
+To further complicate things, there is a strong demand for dynamic inter-connectivity.
+Adding a new sensor to a smart home should be seamless, and allowing house guests to,
+e.g., control music on the home stereo, should not be an insurmountable challenge. This
+is even more important in smart cities, where almost by definition users cannot be known
+in advance. And in enterprise environments, Bring-Your-Own-Device (BYOD) policies
+require that employees are able to access company systems with their own smart devices.
+
+Taken together, we are now surrounded by interconnected systems of enormous complexity.
+Managing such systems is a significant challenge. Due to the nature of the requirements,
+systems are also more vulnerable to malicious actors. And as their importance increases,
+so does the value for an attacker. Therefore, security is of the utmost concern.
+
+\bigskip
+
+Our focus is on a particular aspect of system security, \textit{access control}, both in
+physical and digital realms. Given a security policy, and the identities of users, it is
+necessary to determine whether they are authorized to perform various actions. From the
+physical realm, this usually means access to physical spaces, e.g., controlled by a
+smart lock or a card reader; but also control of building infrastructure such as heating
+and air conditioning, lights, etc. On the digital side, access permissions to data are
+common. And in a highly dynamic system, it is necessary to determine whether one party
+should be allowed to communicate with, and use services of, the counter-party.
+
+Permissions are often context-dependent. In a smart city, users might only be allowed to
+control resources that are near them, but denied access to more distant parts of the
+grid. Autonomous cars coordinating on an intersection should allow communication between
+each other, but only those that are actually engaged in the coordination task. Emergency
+exits should remain locked most of the time, but allow anyone out when a fire alarm is
+activated --- and emergency response teams should be authorized to access spaces that
+have strong access controls under normal circumstances.
+
+Current state-of-the-art access control systems are not well suited for these tasks. In
+most approaches, a static set of rules is used for describing the security policy,
+basically enumerating the situations that can arise and their resolutions. While modern
+approaches such as Attribute-Based Access Control can take the situation context into
+account, describing possibly overlapping situations causes an explosion of complexity.
+The resulting policy is difficult to manage and audit, resulting in possible unintended
+interactions between rules, or missed corner cases with undesired behavior.
+
+This is especially true in heterogeneous, large-scale and highly dynamic systems. The
+sheer number of agents and their possible interactions makes it difficult to enumerate
+all combinations of circumstances and situations for the purpose of designing a
+comprehensive security policy.
+
+\bigskip
+
+This work explores a different way of specifying security policies. We build on previous
+research in the area of autonomic component ensembles, which provide a more natural way
+of describing systems consisting of dynamic relationships between many independent
+agents. Security situations are expressed in terms of ensembles, and the security policy
+attaches rules to these ensembles.
+
+Continuing the work from~\citep{isola2018}, our aim is to present a policy specification
+language based on the ensemble model. We propose clear and well-defined semantics for
+the language, allowing its user to specify ensembles and constraints for their existence
+in a declarative way, with the goals of composability, readability and maintainability.
+
+We also present an accompanying framework for identifying security situations and
+resolving ensembles specified in the security policy. We make sure the system is capable
+of observing and modeling non-computational entities and other agents that are not
+controlled directly, such as humans. The framework can either respond to access control
+queries directly, or emit a set of rules suitable for traditional systems.
+
+%%%
+
+\section{Structure of this Work}
+
+We introduce a running example in chapter~\ref{running-example}. This is a scenario
+which will serve as context and motivation for the rest of this work. In subsequent
+chapters, we will refer back to the running example for showcases of certain features,
+performance effects, etc.
+
+In chapter~\ref{background} we look at problem background and related work in the
+fields of ensemble based systems and dynamic access control. A brief overview of many
+existing approaches is provided and evaluated with regard to our goals.
+
+Chapter~\ref{overview} summarizes the problem, presents a broad overview of the proposed
+solution, and restates our requirements in concrete terms.
+
+Chapter~\ref{dsl} is intended as a user guide to the TCOOF-Trust framework and language.
+It contains explanations of core concepts and their semantics, provides practical
+examples and a full reference of the features of the DSL. It also contains a full
+implementation of the security policy of the running example.
+
+Translation process from the DSL to a constraint satisfaction problem is described in
+chapter~\ref{impl}, together with implementation details for the DSL constructs.
+
+In chapter~\ref{evaluation} we evaluate performance of the basic operations of the
+framework, and then test the running example implementation in a number of synthetic and
+real-world-like scenarios.
+
+Finally, chapter~\ref{conclusion} summarizes our findings and concludes the work.

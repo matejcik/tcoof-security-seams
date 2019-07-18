@@ -1,0 +1,653 @@
+\section{From Scala to DSL}
+\label{impl:scala}
+
+The Scala language has many features which make it suitable as a host language for an
+internal DSL. The ability to use blocks of code as expressions allows us to define
+custom language constructs. By-name parameters enable delayed evaluation, a necessary
+feature for writing declarative code in otherwise mostly imperative language. Arbitrary
+nesting, together with code in class bodies, makes the resulting language flow feel
+natural. Scala's type system allows us to retain advantages of strong typing and build
+generic containers that do the right thing --- and at the same time, type inference is
+powerful enough so that users of the DSL almost never come into contact with type
+annotations. Finally, operator overloading lets us emulate primitive types with custom
+classes, and implicit conversions ensure that the emulated types interoperate with the
+built-in ones.
+
+This section describes the overall architecture of the framework, and technical details
+of all language constructs used in the DSL. Although we give a brief overview of each
+language feature that we are using, this section is mostly intended for readers already
+familiar with the Scala language.
+
+%%%
+
+\subsection{DSL Constructs}
+\label{impl:scala:verbs}
+
+The DSL uses a number of distinct language constructs. An ensemble definition is, in
+Scala terms, implementing a child class:
+
+\begin{lstlisting}[style=snippet]
+class MyEnsemble extends Ensemble { /* ... */ }
+\end{lstlisting}
+
+Creating a dynamic role is realized as creating a member field from the result of a
+function call:
+
+\begin{lstlisting}[style=snippet]
+val role = subsetOf(members)
+\end{lstlisting}
+
+The call runs directly in the class body. In Scala, this means that it is executed as
+part of the constructor.
+
+Scala does have first-class functions, but it does not have \textit{top-level}
+functions. Each function must be defined within a class. Functions that are available at
+ensemble definition time are in fact methods of the class \cc{Ensemble}. Their results
+are tied to the enclosing \cc{Ensemble} instance, which is also where the registration
+actually happens; if the result of \cc{subsetOf} in the above snippet was not saved to a
+member variable, the selection from \cc{members} would still happen behind the scenes.
+
+This is also one of the reasons ensemble instances must be explicitly registered with
+\cc{rules} or \cc{ensembles}: without the registration call, the enclosing instance
+would not know about the nested instances. While it would technically be possible to
+examine the class through reflection and find all \cc{Ensemble} instances in member
+attributes, this would be needlessly fragile in practice.
+
+\medskip
+
+Apart from ``functions'', the DSL also makes use of ``constructs''. The following code
+looks distinctly different from the above:
+
+\begin{lstlisting}[style=snippet]
+utility {
+    val occupied = occupants.size + assignees.cardinality
+    occupied * occupied
+}
+\end{lstlisting}
+
+Although \cc{utility} looks more like a keyword or a flow-control statement, it is in
+fact a normal method. Its definition could look like this:
+
+\begin{lstlisting}[style=snippet, language=Scala]
+def utility(util: Integer)
+\end{lstlisting}
+
+I.e., it is a method that takes a single argument of type \cc{Integer}. The special
+syntax is enabled by two useful properties of Scala.
+
+One, code blocks are expressions whose value is the last expression in the block. In
+this case, the value of the code block is \dop{occupied * occupied}. Given that a code
+block is an expression like any other, it is possible to use code blocks in unusual
+places, such as function arguments. The following is a contrived but perfectly valid
+example of Scala code:
+
+\begin{lstlisting}[style=ensembles, language=Scala]
+val maximum = math.max(
+  {
+    val a = someFunc()
+    if (a > 5) a
+    else {
+        val b = someOtherFunc()
+        a + b
+    }
+  }, 0)
+\end{lstlisting}
+
+Two, Scala allows omitting parentheses in certain conditions. In particular, when
+calling a function with one argument, it is possible to omit the enclosing parentheses
+if the argument is a code block enclosed in curly braces. The following three statements
+are equivalent:
+
+\begin{lstlisting}[style=snippet]
+utility(3)
+utility({ 3 })
+utility { 3 }
+\end{lstlisting}
+
+This way it is possible to define methods that can behave as custom language constructs.
+Note that this feature is particularly useful in combination with by-name parameters.
+See section~\ref{impl:scala:byname} for detailed explanation.
+
+
+%%%
+
+\subsection{Ensemble Structure}
+\label{impl:scala:ensemble}
+
+Each \cc{Ensemble} instance contains the following data:
+\begin{itemize}
+    \item Collection of role objects, representing dynamically assigned roles
+    \item Collection of \cc{EnsembleGroup} objects for each \cc{rules} or \cc{ensembles}
+    call
+    \item Collection of constraints, in the form of callables that return a \cc{Logical}
+    \item Collection of associated security actions and notifications
+    \item Situation predicate, if defined
+    \item Utility function, if defined
+\end{itemize}
+
+For each type of data, methods are available for configuring this data at ensemble
+definition time.
+
+As the total number of methods is rather large, and the related functionalities are
+mostly independent, each is implemented in a separate trait. We maintain separation of
+concerns between traits and declare their dependencies through inheritance and self-type
+annotations.
+
+Trait inheritance works the same as normal class inheritance. Most of ensemble traits
+inherit from \cc{Initializable}, allowing them to override the \cc{_init} method and
+access the solver instance; see section~\ref{impl:scala:initialization} for details.
+Inheritance also allows us to inject implicit conversions from \cc{CommonImplicits}
+trait.
+
+Self-type annotation in a trait enforces that any concrete class implementing that trait
+must also conform to the declared self-type. This usually means that it must implement
+some other trait. For example, the following self-type in trait \cc{WithRoles} informs
+the compiler of a dependency on two other traits:
+\begin{lstlisting}[style=snippet]
+trait WithRoles {
+  this: WithConstraints with WithSelectionStatus =>
+  /* ... */
+}
+\end{lstlisting}
+
+The \cc{WithRoles} trait is then allowed to access members of the other traits on self.
+
+Functional difference between inheritance and self-type annotation is subtle, but the
+takeaway is that self-types define a looser coupling, because they do not lock-in the
+inheritance hierarchy. We use self-types to declare that a trait \textit{uses} a
+functionality from another trait, but is not an extended version of it.
+
+\medskip
+
+The following list describes the individual traits of \cc{Ensemble}.
+
+\newenvironment{trait}[1]%
+    {%
+        \par\vspace{0.6em}
+        {\bfseries\ttfamily\raggedright\large#1}
+        \setlength{\parindent}{0em}
+        \setlength{\parskip}{0.3em}
+        \begin{adjustwidth}{1cm}{}
+    }%
+    {%
+        \end{adjustwidth}
+    }%
+
+\pagebreak
+
+\begin{trait}{Initializable}
+    Provides an initialization hook, plus access to the solver instance through the
+    \cc{_solverModel} property.
+\end{trait}
+
+\begin{trait}{CommonImplicits}
+    Defines implicit conversion from \cc{Int} to \cc{Integer}, from \cc{Boolean} to
+    \cc{Logical}, and adds methods to collections of \cc{MemberGroup}s. This makes those
+    implicit conversions available in ensemble definition context.
+\end{trait}
+
+\begin{trait}{WithName}
+    Provides a \cc{name} property. Mainly for debugging purposes.
+\end{trait}
+
+\begin{trait}{WithActions}
+    Provides \cc{allow}, \cc{deny} and \cc{notify} functions, and a method to collect
+    results of these functions from sub-ensembles. To achieve that, it has a dependency
+    on \cc{WithEnsembleGroups}.
+\end{trait}
+
+\begin{trait}{WithConstraints}
+    Provides the \cc{constraint} function, storage of registered constraints, and
+    functionality related to converting constraints to solver objects.
+\end{trait}
+
+\begin{trait}{WithEnsembleGroups}
+    Provides the ability to register groups of sub-ensembles, and the \cc{rules} and
+    \cc{ensembles} methods. Because groups must activate themselves based on the parent
+    ensemble selection status, this trait requires \cc{WithSelectionStatus}.
+\end{trait}
+
+\begin{trait}{WithRoles}
+    Provides the ability to register roles via role functions. Because roles implicitly
+    use constraints, and the \cc{subsetOf} function allows adding a constraint on the
+    subset cardinality, this requires the \cc{WithConstraints} trait. In addition,
+    \cc{WithSelectionStatus} is required to support group activation based on ensemble
+    selection status.
+\end{trait}
+
+\begin{trait}{WithSelectionStatus}
+    Provides a \cc{BoolVar} indicating the ensemble's selection status.
+\end{trait}
+
+\begin{trait}{WithUtility}
+    Provides methods to define and query the utility expression of the ensemble, and
+    collects utility value from sub-ensembles. To access sub-ensembles, this trait
+    requires the \cc{WithEnsembleGroups} trait.
+\end{trait}
+
+\medskip
+
+The \cc{Ensemble} class itself defines the \cc{situation} function and handling of the
+situation predicate. While it would be straightforward to extract this functionality to
+a separate trait, we opted to keep it in \cc{Ensemble}. The functionality is small
+enough that it does not clutter the class, esp. given that \cc{Ensemble} is otherwise
+empty; and it does not figure in the dependency graph, so extracting it would have
+little benefit for the rest of the code (unlike \cc{WithSelectionStatus}, which is also
+small and uncomplicated, but is a dependency of two other traits).
+
+%%%
+
+\subsection{Implicit Conversions}
+
+Scala's implicit conversions allow values of one type to be automatically converted to a
+different type, if they appear in a context where the target type is required. Two kinds
+of implicit conversions are available. With \cc{implicit def}, a function returning the
+target type is applied to the value in question. An \cc{implicit class} creates an
+instance of a new class, effectively allowing to add new methods to existing types.
+
+Code that uses implicit conversions is less readable, because there are non-local hidden
+calls. In the following example, an implicit conversion adds a method named \cc{foo} to
+a value of type \cc{Int}. It is impossible to know what is \cc{foo} just from this
+snippet; one would need to locate all methods named \cc{foo} in the codebase and then
+figure out which implicit conversion is in play.
+\begin{lstlisting}[style=snippet]
+val x: Int = 7
+val y = x.foo()
+\end{lstlisting}
+\noindent
+For this reason, it is usually better to avoid implicit conversions in normal code.
+However, they can be extremely helpful when creating a DSL.
+
+For an implicit conversion to take effect, its function or class must be in scope:
+either defined in the same class (or a parent class), or explicitly imported.
+
+\medskip
+
+We use implicit conversions for several different purposes. The most common one is
+upgrading \cc{Int}s to \cc{Integer}s and \cc{Boolean}s to \cc{Logical}s. This is
+important for seamless interoperability of native integer or boolean expressions with
+solver constraints, as described in section~\ref{impl:solver:constraints}. The
+appropriate conversion functions are defined in trait \cc{CommonImplicits}, which is
+mixed in where required. Importantly, it is mixed into the main \cc{Ensemble} class,
+thus ensuring that user code will have these conversions in scope whenever defining an
+ensemble.
+
+\medskip
+
+Implicit conversions also help cut down on the number of different method overloads. The
+method \cc{unionOf} accepts either an iterable of \cc{MemberGroup}s, or a variable
+number of \cc{MemberGroup} arguments. However, we want to support using \cc{Component}s
+for \cc{unionOf} directly. Otherwise, every time the user wanted to make an union of a
+role and a fixed list of components, they would need to specify a role for the component
+list. Scala has no support for union types, so it would be impossible to specify a
+function that takes a variable number of ``\cc{MemberGroup} or \cc{Component} or
+\cc{Iterable[Component]}'' arguments.
+
+Instead, an implicit conversion from \cc{Component} or \cc{Iterable[Component]} to
+\cc{MemberGroup[Component]} is defined, allowing the users to use either roles or fixed
+sets of components interchangeably.
+
+Similarly, the \cc{allow}, \cc{deny} and \cc{notify} verbs should accept components,
+list of components, or roles as their arguments. In the \cc{notify} case, it is simple
+enough to provide three overloads for three acceptable argument types. However,
+\cc{allow} and \cc{deny} have two arguments of this type. A full set of overloads would
+need 9 variants of each verb. Instead, each of these verbs only accepts
+\cc{MemberGroup}s as arguments, and implicit conversions ensure that components and
+lists of components are usable as well.
+
+\medskip
+
+Two distinct implicit conversions are used with ensemble collections. First, an
+\cc{EnsembleGroup} converts to a list of all its members, so that methods like \cc{map}
+can be used on results of \cc{rules} call directly. Second, an implicit class
+\cc{WithMembersIterable} adds methods \cc{cardinality} and \cc{allDisjoint} to
+collections of \cc{MemberGroup}s. This enables the following common idiom:
+\begin{lstlisting}[style=snippet]
+val r = rules(/* list of ensembles */)
+constraint { r.map(_.someRole).allDisjoint }
+\end{lstlisting}
+\noindent
+The variable \cc{r} of type \cc{EnsembleGroup} is converted to \cc{Iterable[E <:
+Ensemble]}, so that \cc{map} can be applied on it. This iterable is a plain sequence of
+objects of the appropriate ensemble type, which has a member role \cc{someRole}. The
+result of the map is therefore a plain sequence of \cc{MemberGroup} objects.
+
+This sequence is then implicitly converted to a class \cc{WithMembersIterable}, which
+has the method \cc{allDisjoint}, ensuring that no member is selected more than once for
+\cc{someRole}.
+
+Note that the implicit conversion turns the \cc{EnsembleGroup} into a list of
+\textit{all} its members, not just the selected ones. This is because at the time the
+conversion is used, the list of selected members is not yet known.
+
+The provided methods work due to the fact that inactive (not selected) ensembles do not
+have any members. Empty roles add zero to \cc{cardinality}, and are guaranteed to be
+disjoint with non-empty ones.
+
+An implicit conversion from an \cc{EnsembleGroup} to its \cc{allMembers} carries some
+risk of confusion when used in an inappropriate context. E.g., when inspecting a
+solution, the user might inadvertently invoke the implicit conversion and their code
+will visit even ensembles that are not part of the solution. We consider this risk
+acceptable because, again, ensembles that are not selected do not have any members.
+
+%%%
+
+\subsection{Operator Overloading}
+\label{impl:scala:operators}
+
+Method names in Scala are allowed to use special characters, and operators are defined
+as regular methods with the appropriate name. For instance, overloading the \dop{+}
+operator on an \cc{IntegerInt} type could look like this:
+\begin{lstlisting}[style=snippet]
+def +(other: Integer): Integer = other match {
+    case IntegerInt(value) => new IntegerInt(value + this.value)
+    // ...
+}
+\end{lstlisting}
+\noindent
+Combined with implicit conversions, both of the following will work:
+
+\begin{lstlisting}[style=snippet]
+val leftHand: Integer = someInteger + 5
+val rightHand: Integer = 5 + someInteger
+\end{lstlisting}
+\noindent
+The first case is simple. The expression \dop{someInteger + 5} is interpreted as
+\dop{someInteger.+(5)}. Because \cc{someInteger} has a \dop{+} operator, Scala tries to
+use it. The operator is defined for an \cc{Integer}, and there is an implicit conversion
+available that upgrades \cc{5} to \cc{Integer}. The resulting instance is passed to the
+\dop{+} method.
+
+The second case is slightly more complicated. As before, the expression translates to
+\dop{5.+(someInteger)}. In this case, the built-in \cc{Int} type does not have an
+appropriate \dop{+} operator for handling anything \cc{someInteger} could be converted
+to. It is necessary to search the list of possible implicit conversions of the left-hand
+operand, to see if one of them comes with an appropriate definition of \dop{+}.
+
+\medskip
+
+This process works fine for most operators, but fails for \dop{==}. The problem here is
+that \dop{==} is defined on the root class \cc{Any} with the following signature:
+
+\begin{lstlisting}[style=snippet]
+final def ==(arg: Any): Boolean
+\end{lstlisting}
+\noindent
+The method is final, so it cannot be overridden. It calls the \cc{equals} method
+internally, which is available for overriding, but then the return value is
+\cc{Boolean}, which is not appropriate when we need the result as a \cc{Logical}.
+
+It is possible to overload a specialized version of \dop{==} with a different return
+type. For the \cc{Integer} trait, the following definitions are desirable:
+
+\begin{lstlisting}[style=snippet]
+def ==(other: Integer): Logical
+def ==(other: Int): Logical
+\end{lstlisting}
+\noindent
+We need to have a special variant for \cc{Int}, because implicit conversion won't help
+us here: \dop{someInteger.==(5)} can use the default implementation for type \cc{Int}.
+
+The problem with this is that the integration is not seamless. If the \cc{Int} value
+appears on the right-hand side, it will always be able to use the built-in \dop{==}.
+This is made worse by the fact that both of the following will compile:
+
+\begin{lstlisting}[style=snippet]
+val l1: Logical = someInteger == 5
+val l2: Logical = 5 == someInteger
+\end{lstlisting}
+\noindent
+The type of \dop{5 == someInteger} is \cc{Boolean}, which has an implicit conversion to
+\cc{Logical}, and so it is valid in every context that requires a \cc{Logical} type. But
+the result of the comparison is always false, because we are comparing unequal types.
+
+\medskip
+
+The \cc{Integer} trait uses a triple-equals \dop{===} operator for comparing equality in
+the desired way. This is a convention used by many other Scala-based DSLs and language
+customizations. Scala compiler will emit a warning whenever two unrelated types are
+compared with \dop{==}, which should notify the user that they made a mistake.
+
+We considered raising an exception in an overridden \cc{equals} method, but that would
+silence this warning, and would not work when \cc{Int} is the left-hand operand anyway.
+
+%%%
+
+\subsection{Type Bounds}
+
+One of the features required from the DSL is seamless working with different ensemble
+and component types. Consider the following code:
+\begin{lstlisting}[style=ensembles]
+class Worker(val rank: String) extends Component
+val workers: Iterable[Worker] = /* ... */
+class Root extends Ensemble {
+    val supervisor = oneOf(workers)
+    constraint { supervisor.all(_.rank == "supervisor") }
+    allow(supervisor, "supervise", workers)
+}
+\end{lstlisting}
+
+The \dop{supervisor.all()} call must accept a function whose argument is of type
+\cc{Worker} --- otherwise, it would be impossible to access the \cc{rank} attribute.
+That means that \cc{supervisor} must carry the information that its member type is
+\cc{Worker}, not just a generic \cc{Component}. At the same time, the \cc{allow} call
+must accept \cc{supervisor} as its argument.
+
+\pagebreak
+Roles are of type \cc{MemberGroup}, which is generic over its member type. The signature
+looks like this:
+\begin{lstlisting}[style=snippet]
+class MemberGroup[+MemberType]
+\end{lstlisting}
+
+The \dop{+} symbol indicates that the class is \textit{covariant} in the \cc{MemberType}
+argument. That means that for superclass \cc{A} and its subclass \cc{B},
+\cc{MemberType[B]} is considered a subclass of \cc{MemberType[A]}.
+
+Method \cc{MemberGroup.all} accepts functions of type \cc{MemberType => Boolean}. In our
+example, member type is \cc{Worker}.
+
+Method \cc{accept} takes an argument of type \cc{MemberGroup[Component]}, so it accepts
+a \cc{MemberGroup[Worker]} object.
+
+The type signature of \cc{oneOf} looks like this:
+\begin{lstlisting}[style=snippet]
+def oneOf[C <: Component](items: Iterable[C]): MemberGroup[C]
+\end{lstlisting}
+The method takes an iterable of objects of concrete type \cc{C}, which is a subtype of
+\cc{Component}, as indicated by the \dop{<:} symbol. It returns a \cc{MemberGroup}
+parameterized by the appropriate concrete type. Scala's type inference makes sure that
+when passing an iterable of \cc{Worker}s, the returned \cc{MemberGroup} will have
+\cc{Worker} as its member type.
+
+\medskip
+
+Ensemble groups work in a similar way, except that \cc{EnsembleGroup} is a subclass of
+\cc{MemberGroup} specialized so that its member type must be a subtype of \cc{Ensemble}.
+This is the signature:
+\begin{lstlisting}[style=snippet]
+class EnsembleGroup[+EnsembleType <: Ensemble]
+    extends MemberGroup[EnsembleType]
+\end{lstlisting}
+
+The \dop{+} symbol indicates type covariance: an \cc{EnsembleGroup} of a concrete
+type of ensemble is a subclass of \cc{EnsembleGroup[Ensemble]}. The \dop{<:} symbol
+indicates a type bound: the member type must be a subtype of \cc{Ensemble}.
+
+Similar to role functions, \cc{rules} and \cc{ensembles} must be defined with
+appropriate type signatures, so that they return the appropriate variant of
+\cc{EnsembleGroup}.
+
+%%%
+
+\subsection{Initialization}
+\label{impl:scala:initialization}
+
+Every ensemble and group object requires an instance of the solver, through which
+variables and constraints are constructed. This is not available at ensemble definition
+time.
+
+In terms of Scala, the whole policy is a series of instances of nested classes. In order
+to propagate a solver object, the user of the DSL would be required to add parameters to
+their ensemble class definitions and manually propagate them when instantiating
+sub-ensembles. This violates separation of concerns: the solver object is an
+implementation detail of the framework, not something the users should care or even know
+about.
+
+Instead, the ensemble tree is constructed without access to the solver, and the solver
+object is passed to it in a separate initialization step. The \cc{Initializable} trait
+defines a method \cc{_init}, which allows classes and traits to hook into the
+initialization process. The \cc{Policy} object calls \cc{_init} on the root ensemble,
+and the \cc{Ensemble} class is responsible for propagating the call to its ensemble
+groups and role objects. Ensemble groups are in turn responsible for propagating the
+call to sub-ensembles. This way it is ensured that every part of the policy tree is
+initialized.
+
+The initialization runs in three phases:
+\begin{enumerate}
+  \item \cc{ConfigPropagation} propagates a \cc{Config} object, which contains the newly
+  created instance of the solver.
+  \item \cc{VarsCreation} is the phase where solver variable objects are created. The
+  class \cc{MemberGroup} initializes its set and activation variables, and \cc{Ensemble}
+  initializes its selection variable.
+  \item \cc{RulesCreation} can use variables created in the previous step to generate
+  and post solver constraints.
+\end{enumerate}
+
+While it might be possible to perform the initialization in a single pass, it would make
+it more difficult to implement properly. Developers would need to be extra careful about
+initialization order, e.g., make sure that an initialization step is not using variables
+from a child (or parent) object whose initialization isn't finished yet. Multi-phase
+initialization removes this source of fragility. Phase (1) can be done by every object
+individually. Phase (2) only requires that the solver is available, i.e., that phase (1)
+has finished everywhere, and phase (3) can rely on the fact that \textit{all} variables
+across all objects have been generated in the previous phase.
+
+\medskip
+
+Several component traits of \cc{Ensemble} implement their own \cc{_init} steps. This is
+possible because Scala has a well-defined trait linearization order, and calling
+\cc{super._init()} within a trait will invoke the \cc{_init} implementation in the next
+trait up.
+
+%%%
+
+\subsection{By-Name Parameters}
+\label{impl:scala:byname}
+
+As stated in section~\ref{impl:scala:initialization}, the solver object is not available
+at ensemble definition time --- or, more precisely, at ensemble instantiation time. Most
+of constraint definition and role creation is done in class body, and this code actually
+runs when the corresponding instance is constructed. This poses two related but distinct
+problems.
+
+First, consider a role that relies on external data:
+
+\begin{lstlisting}[style=ensembles]
+class Scenario(val workers: mutable.ArrayBuffer[Worker]) {
+  class Root extends Ensemble {
+    val role = subsetOf(workers)
+    constraint { role.cardinality > 5 }
+  }
+  val policy = Policy.root(new Root)
+}
+
+object Scenario {
+  def main() {
+    val scenario = new Scenario(/* ... */)
+    scenario.policy.resolve()
+    scenario.workers.append(new Worker(/* ... */))
+    scenario.policy.resolve()
+  }
+}
+\end{lstlisting}
+
+One would expect the second \cc{resolve} call to use the newly added \cc{Worker}
+instance. However, at that point, the ensemble seems to already exist, and the old value
+of \cc{workers} was used to construct \cc{role}. Groups register their members at
+construction time (see section~\ref{impl:solver:groups}), so the original argument no
+longer affects the set of role members.
+
+It would be useful if the framework could somehow ``refresh'' the policy definition
+using new data.
+
+Second, the \cc{constraint} statement works with \cc{role.cardinality}. We expect the
+result to be a \cc{Logical} object referencing an underlying \cc{BoolVar}. But as stated
+above, at this point the solver instance is not available, so a \cc{BoolVar} cannot be
+created.
+
+Both of those issues are solved using \textit{by-name parameters}.
+
+\medskip
+
+In Scala, functions are first-class objects, so naturally it is possible to pass them as
+arguments explicitly. That is what happens in this statement:
+\begin{lstlisting}[style=snippet]
+val role = subsetOf(members, _ > 1)
+\end{lstlisting}
+The expression \dop{_ > 1} is a shortcut for \dop{x => x > 1}. This is a function of
+type \dop{Integer => Logical}, i.e., takes an \cc{Integer} argument and returns a
+\cc{Logical}.
+
+By-name parameters are basically parameters that are passed as functions implicitly. The
+signature of a \cc{constraint} verb is:
+\begin{lstlisting}[style=snippet, language=Scala]
+def constraint(clause: => Logical): Unit
+\end{lstlisting}
+\cc{clause} is a by-name parameter, and its type is ``expression of type \cc{Logical}''.
+The important point is that unlike normal parameters, the expression is not evaluated
+until actually used in the \cc{constraint} method body. Furthermore, the following
+works:
+\begin{lstlisting}[style=snippet]
+val clauseFun: () => Logical = clause _
+\end{lstlisting}
+Using the above syntax, the ``expression'' parameter is converted to a normal function
+with no arguments. The \cc{constraint} method stores all such functions in a collection
+and only runs them in the \cc{RulesCreation} initialization phase, when the solver is
+available and all variables are already created.
+
+The verbs \cc{situation} and \cc{utility} also take by-name parameters and call them
+at appropriate times.
+
+\medskip
+
+Section~\ref{dsl:c:root} specifies that the root ensemble must be instantiated in the
+\cc{Policy.root} method. The reason is that the argument of this method is actually a
+by-name parameter too. The policy object does not store the instantiated policy tree, it
+stores a \textit{builder} function which constructs it. On every call to \cc{init()} or
+\cc{resolve()}, the policy tree is instantiated from scratch, and so it reflects the
+current values of all external variables.
+
+%%%
+
+\subsection{Variadic arguments}
+
+Many functions that accept iterables also accept variadic arguments. For example, it is
+possible to call \cc{oneOf} in two ways:
+\begin{lstlisting}[style=snippet]
+val a = oneOf(listOfMembers)
+val b = oneOf(memberA, memberB, memberC)
+\end{lstlisting}
+
+Scala natively supports variadic arguments. For the following two signatures, the type
+of \cc{items} is the same:
+\begin{lstlisting}[style=snippet, language=Scala]
+def oneOf(items: Seq[Component])
+def oneOf(items: Component*)
+\end{lstlisting}
+
+One minor issue with the second signature is that it allows the list of arguments to be
+empty. This does not cause any problems in practice --- after all, the user could as
+well pass an empty list of components --- but still, it would be cleaner to disallow
+code like \dop{val x = oneOf()}.
+
+To achieve this, all variadic functions actually have two arguments: one is mandatory,
+the other is variadic. This is the definition of \cc{oneOf}:
+\begin{lstlisting}[style=ensembles, language=Scala]
+def oneOf[C <: Component](itemFirst: C, itemRest: C*): Role[C] =
+    oneOf(itemFirst +: itemRest)
+\end{lstlisting}
+Type of \cc{itemFirst} is \cc{C}, and type of \cc{itemRest} is \cc{Seq[C]}. The code
+prepends the first item to the list and calls the other overload of \cc{oneOf}. It is
+possible to call \cc{oneOf} with one or more arguments; calling with no arguments is
+illegal.

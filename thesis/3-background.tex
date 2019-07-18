@@ -1,0 +1,305 @@
+\chapter{Background and Related Work}
+\label{background}
+
+\section{Ensemble-Based Architectures}
+\label{background:ensembles}
+
+The complexity of managing a system grows with its size. This has traditionally been
+handled through hierarchical decomposition, component-oriented programming, and similar
+techniques. With the rise of the Internet of Things, however, we are reaching the limits
+of these approaches. If the environment consists of many independent agents with no
+clear functional hierarchy, it is impractical to impose a top-down view of control.
+There is no single point of access to a ``swarm'' of sensors, smart things, and
+cyber-physical systems in general, especially when these are distributed over a large
+area with no promise of reliable connectivity and continued availability. The use-cases
+are new, too: clients want to access the system from different locations and
+perspectives, use different services in different configurations, and take advantage of
+the inherent dynamicity.
+
+The problem is partially solved through \textit{Service-Oriented Architectures}
+\citep{SOA}. SOA revolves around modular, dynamically discovered and dynamically bound
+services. Unlike a typical ``hard-coded'' component-based system, SOA can deal with
+small services that are randomly appearing and disappearing from the network. There are
+limitations, though. SOA is still a top-down approach that assumes its parts are
+discrete services. This is not necessarily true with IoT. Consider a home sensor
+network. SOA can expose every sensor as its own service, but then it falls to the client
+to locate, e.g., all sensors in a single room. Alternately, the whole network could be a
+single service, but then it needs to have ``zoom in on a single room'' as a feature.
+This gets complicated when the query changes, e.g., when locating all temperature
+sensors. The issue is more pronounced when considering a heterogeneous city-wide network
+of smart things. Also, service discovery starts being a difficult problem when the
+number of services grows to tens of thousands.
+
+A whole other issue is agent collaboration. Certain problems lend themselves to
+distributed approaches --- e.g., self-driving cars collaborating to find parking spaces
+along their driving routes. While it is possible to create a centralized service for
+this task, it would be more practical to have the agents collaborate directly and
+locally. This is not a problem that SOA can solve, and indeed it is unsuitable for any
+kind of top-down approach. Instead, we need to look towards multi-agent systems to
+manage the collaboration, and possibly some other approaches that will allow the agents
+to locate each other, establish communication links, organize and reorganize.
+
+To restate: we are experiencing an explosion of the size of cyber-physical systems and
+the number of independent computing devices, and traditional approaches fail to use
+these systems efficiently. There is a growing need to organize highly dynamic systems
+that consist of many independent agents. Not only is a different approach required, we
+actually need different abstractions.
+
+\medskip
+
+One such abstraction is the \textit{ensemble}. An ensemble is a loose coalition of
+\textit{components} formed around a shared goal. A component can be any kind of moving
+part: in a software system, a component would be a module, object, service, any piece of
+code performing a particular functionality. In the world of cyber-physical systems, a
+component can be a computer, an IoT device, a drone, etc. As we show in this work, we
+can even model humans, rooms and other non-computational entities as components.
+
+Members of an ensemble inhabit specific \textit{roles}, which are usually described in
+terms of capabilities or services a component can provide. This decouples concrete
+components from the ensemble. For example, an ensemble providing environmental data for
+a HVAC\footnote{Heating, Ventilation, Air Conditioning} system could have a
+``thermometer'' role, a ``CO\textsubscript{2} detector'' role, and an ``uplink'' role
+which handles Internet connectivity. These would be inhabited by appropriate devices,
+without regard to which specific device is providing which service.
+
+A single component can perform multiple roles in the same ensemble (e.g., an
+Internet-capable thermometer can function both as a sensor and as an uplink), or be a
+member of several different ensembles (the same uplink can serve multiple sensor suites
+at the same time). It is also conceptually simple to replace a component with a
+different one in the same role, in case the former member becomes unavailable or no
+longer fits the ensemble's parameters.
+
+Ensembles are composable; an ensemble can contain any number of sub-ensembles, which in
+turn can be composed of more sub-ensembles. Sometimes it is useful to set up a role
+which can be inhabited by a sub-ensemble.
+
+\medskip
+
+One of the key features of an ensemble-based architecture is its high level of
+dynamicity. Ensembles are formed and dissolved when needed. Similarly, membership in an
+ensemble is driven by current context and conditions, not by any sort of explicit
+registration. Therefore, the natural way to specify ensembles is declarative. We can use
+predicates over component properties and the local conditions. E.g., a smart parking lot
+can define an ensemble as ``parking meter, plus all vehicles seeking parking within 10
+minutes from it.''
+
+This meshes well with ideas of autonomic computing~\citep{IBM2003}: individual components
+could be able to determine ensemble membership based on their own knowledge, without a
+central coordinator. Alternately, when a global perspective is available, a coordinator
+can use all available information to optimize ensemble membership and role assignment,
+and can be flexible in responding to change.
+
+Due to its ephemeral nature, it is difficult to work with an ensemble ``from the
+outside''. In an autonomic system, ensembles might not even be visible from the outside,
+their existence known only to the individual members. And even with a central
+coordinator, there are some challenges: for example, an ensemble can dissolve at any
+time and its constituent components can be reassigned. There is no way to maintain a
+persistent reference to a particular ensemble or a role within it. Instead, the ensemble
+system should be considered self-organizing and self-governing. A user of the ensemble
+system can post goals, and the system will ensure that ensembles are formed to resolve
+that goal.
+
+\subsection{Related Work}
+
+Ensembles present a perspective which differs significantly from traditional views of
+component systems. For this reason, new methodologies and paradigms are being designed
+for efficient programming of ensemble systems.
+
+\medskip
+
+\textit{Software Component Ensemble Language} was introduced in \citep{SCEL2013} in 2013
+and refined a year later in \citep{SCEL2014}. SCEL is designed as a ``kernel'' language,
+a mostly abstract grammar that is supposed to be a building block for more concrete and
+full-featured languages. Its paradigm is built on four concepts: \textit{knowledge} of
+individual components; \textit{behaviors} operating over knowledge bases;
+\textit{aggregations} as collections of components; and finally \textit{policies} that
+can control and adapt execution of behaviors. Each component is represented as an
+interface exposing its knowledge base, available behaviors, and governing policies.
+
+Despite having ``ensemble'' in the name, there is no explicit notion of an ensemble nor
+a role. They exist implicitly, via the ability to control targets of actions with
+logical predicates.
+
+Interestingly, the SCEL paper~\citep{SCEL2014} shows an access control sub-language as
+an example of the policy concept. However, the language is used to protect processes on
+the level of one component, and its capability to consider broader situation context is
+limited, so it is of little interest to the topic of this work.
+
+\medskip
+
+HELENA, from \textit{Handling massively distributed systems with ELaborate ENsemble
+Architectures} \citep{HELENA2014} \citep{HELENA2016}, is a rigorous formal approach to
+ensemble-based systems, focused primarily on the role concept. The goal of the design is
+to enable formal verification of ensemble behavior. Role operations are specified by
+a~labeled transition system, and ensembles are modeled as automata. Components are
+considered resources for the roles they can fulfill, but are themselves passive; any
+active behavior is initiated through the role abstraction.
+
+As the HELENA approach examines the problem from the role level, the process of forming
+an ensemble is left unexplored. Finding components to inhabit roles is assumed to be
+implicit.
+
+\medskip
+
+The \textit{Distributed Emergent Ensembles of Components} (DEECo) model
+\citep{DEECo2016} is a more practice-oriented approach, tailored for use in IoT
+applications. It defines a paradigm of \textit{ensemble-based component systems}, where
+components, roles, and ensembles are all first-class objects. The DEECo paper also
+discusses the question of reliability of communication and presumes use of mesh
+networking.
+
+Membership in an ensemble is determined by a \textit{membership condition} over
+components' knowledge attributes. Component roles are modeled as interfaces, prescribing
+the knowledge attributes that must be available to the ensemble. Ensemble definition
+further specifies what knowledge is exchanged between members, when, and how often.
+
+Ensemble formation is initiated by a \textit{coordinator}. Each ensemble specifies a
+single coordinator role. The component which inhabits that role will look for other
+members via local or routed broadcast on the network, and facilitate the knowledge
+exchange processes. While the paper doesn't elaborate on this, the concept is
+nevertheless important, as it basically imposes locality on the search for members.
+
+\medskip
+
+A follow-up paper~\citep{dynamic2017} expands on the idea of search locality, adds
+discussion of performance issues, and introduces the concept of filtering as a way to
+limit the number of components in consideration. It also adds a concept of
+\textit{fitness}, a quality score of the formed ensemble. For example, it is possible to
+specify that an ensemble consisting of nearby components is a better candidate than an
+ensemble whose components are far from each other.
+
+In~\citep{tcoof2017} an architecture definition language called \textit{Trait-based
+Coalition Formation ADL} (TCOF-ADL) is presented. Its express goal is to facilitate
+selection of components and formation of ensembles, while ensuring that formation
+responsibilities are properly distributed between agents in the ensemble system. It
+provides some basic predicates and allows components to be extended with ensemble
+formation related traits such as location awareness, data prediction, and a statistical
+evaluator. The language is implemented as a Scala-internal DSL and employs a constraint
+solver to help with ensemble membership resolution.
+
+A variant of TCOF-ADL, named TCOOF-Trust\footnote{The additional ``O'' in the name is
+not explained. Presumably it comes from changing ``coalition'' to ``coordination'' in
+the acronym.}, is presented in~\citep{isola2018}. The paper specifically deals with
+application of ensemble concepts to access control, and this work is a direct follow-up
+to the same research. The TCOOF-Trust language reuses some of the original constructs,
+as well as the ensemble formation engine, and adds commands related to access control
+decisions.
+
+\section{Access Control in Dynamic Systems}
+\label{background:access}
+
+Historically, access control tended to be rule-based and local to specific resources,
+such as files or concrete objects. In UNIX, for example, each file has an owner and a
+group, and a fixed bitmap of permissions that can be granted or denied to the owner,
+members of the group, or everyone else. An improvement to this system is an
+\textit{Access Control List} (ACL) attached to an object, which can list an arbitrary
+number of users, groups, and their permissions.
+
+As system complexity grows, this is no longer a sufficient solution. Many contemporary
+systems use some variant of \textit{Role-Based Access Control}~\citep{rbac1995} (RBAC).
+Access control rules are expressed as tuples: (\textit{role}, \textit{operation},
+\textit{subject}), authorizing members of \textit{role} to perform \textit{operation} on
+a \textit{subject} resource. In addition, roles can be arranged in a hierarchy, so that
+a role higher in the hierarchy inherits all permissions of lower roles. This naturally
+fits human organizational hierarchies: e.g., a supervisor role will usually inherit all
+permissions of the worker role, without need to specify them again.
+
+A single user can be assigned to any number of roles. This provides an important
+abstraction and simplifies user management, as it is now possible to grant or revoke
+user privileges simply by modifying their role assignment. A more recent
+\textit{Organization-based Access Control}~\citep{orbac2003} (OrBAC) model adds another
+layer of abstraction: each of \textit{role}, \textit{operation} and \textit{subject}s in
+the master policy can now be ``implemented'' by a corresponding object in a local
+environment. This enables sharing policies between organizations at design-time and
+collaboration at run-time, as two organizations can cross-authorize their users in
+compatible roles.
+
+As described, RBAC-like policies are not aware of wider context. Role $R$ has permission
+to perform operation $O$ on subject $S$ at all times, regardless of situation or current
+conditions. That is not good enough for many real-world scenarios, where context plays
+an important role. For instance, a ``worker'' should have permission to ``enter'' the
+``workspace'' --- but only during work hours.
+
+Several approaches arose to close this gap. \textit{Context-Sensitive
+RBAC}~\citep{contextkumar2002} adds context information to roles, operations, and
+subjects, and attaches predicates over the contexts to individual access control rules.
+Similarly, \textit{Context-Aware RBAC}~\citep{contextkulkarni2008} introduces
+preconditions that can query context information before allowing the rule to apply. In
+addition, a ``context guard'' predicate can be specified, which must hold true in order
+for active sessions to remain open. In~\citep{contextrbac2004}, context constraints are
+separated into those that can be evaluated at design-time and those that must be
+evaluated at run-time, and a development methodology for constrained rules is presented.
+
+In recent years, \textit{Attribute-based Access Control}~\citep{abac2014} (ABAC) is
+gaining popularity because of its even greater flexibility. In ABAC, permissions are not
+attached to roles, but to arbitrary expressions over attributes of users and subjects.
+As an example, RBAC could be considered a special case of ABAC, with the only attribute
+under consideration being the list of user's roles. But every object can have any number
+of attributes and these can dynamically reflect current situation. Attributes of
+environment, such as current date and time, can also be accessed.
+
+A popular realization of the ABAC model is OASIS XACML~\citep{xacml2013} standard, which
+is an XML-based policy language, and a more developer-friendly language
+ALFA~\citep{alfa} that translates directly to XACML. Developers can describe rules using
+a large number of built-in predicates, or they can define custom functions for more
+complex situations.
+
+\medskip
+
+The main limitation of these approaches, which we will collectively call ``rule-based'',
+is the actor-action-subject perspective. ABAC is capable of querying the situation, but
+the query still originates from a static description of applicable actors, actions, and
+subjects. In other words, rules can query context, but context cannot influence rules.
+
+This makes rule-based approaches highly impractical in scenarios where the context does
+in fact cause the rules to change. The implementation of such context-dependent security
+policy is scattered across many different rules, which makes it hard to audit, maintain
+and debug. In fact, it is difficult to enumerate the rules that should be affected in
+the first place.
+
+One example is dynamic global state which cross-cuts ordinary rules. For instance, a
+``night policy'' might be different from a ``day policy''. Affected rules would need to
+have two variants, and updating one of the policies couldn't be done in one place. In
+addition, if global states can overlap (consider a ``lock-down state'' when every door
+only opens for members of a designated responder group and nobody else), complexity can
+grow exponentially. This growth manifests in every affected rule, possibly to the point
+where it is more practical to go outside the ABAC system and simply maintain separate
+manually deployed policy configurations.
+
+In highly dynamic systems, such as IoT networks, the same limitation can be seen from a
+different angle: it is burdensome to express every possible combination of actors,
+actions, and subjects beforehand. Dynamic relationships arise, form, and dissolve
+throughout the life of the system. In our running example, a person is not allowed to
+enter a room if another person working on a different project is already inside that
+room. Such rule can be expressed as a context query with some creative use of
+attributes, but it is more natural to query the context first and dynamically form the
+rule afterwards.
+
+\medskip
+
+A number of so-called ``adaptive security'' solutions and frameworks have been proposed
+to get around this limitation, each with their own pros and cons.
+
+dynSMAUG~\citep{dynsmaug2017} paper works with the concept of a \textit{situation}
+distinct from \textit{context}. While context is a collection of information on the
+actors and the environment at a specific point in time, a situation is a time frame ---
+an interval in which some context predicates hold true, possibly including particular
+sequences of events. Situations are defined separately from the security policy in a
+SQL-like language Esper~\citep{esper}, and currently applicable situations are exposed
+as attributes queryable by XACML/ALFA languages.
+
+While the model is sound, the need to describe the policy in two phases and in two
+different languages is impractical in terms of maintainability. Furthermore, the Esper
+language is powerful but also very complex even for simple cases.
+
+A self-learning model was presented in \citep{adaptivesec-bashar2012}. Protected assets,
+operational goals and possible threats are modeled and then compiled to a fuzzy decision
+network. This network can evaluate the state of the system at run-time and configure or
+reconfigure applicable security policies. This solution, however, is limited to
+reasoning about a closed system, with no consideration for independent agents.
+
+The solution presented in \citep{saleemi_framework_2011} uses inference rules based on
+logic programming to build higher-level context information from lower-level knowledge
+(such as sensor readings). Resulting high-level knowledge is then used as a basis for
+security actions. This enables the policy designer to make security decisions at the
+appropriate level of abstraction.

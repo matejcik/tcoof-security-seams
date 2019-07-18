@@ -1,0 +1,599 @@
+\section{Reference}
+\label{dsl:reference}
+
+Scala is a strongly typed language, so a Scala-internal DSL is also strongly typed. In
+order to make this section more concise, however, we will be using simplified type
+signatures. The following simplifications are used:
+
+\begin{itemize}
+\item Whenever a function has bounded type parameters, we omit them in favor of the most
+general type.
+\item If a function does not return a value, the return type \cc{Unit} is omitted.
+\item Whenever a function has a variadic argument (denoted with an asterisk), at least
+one argument must be provided.
+\item For every function with a variadic argument of type \cc{T}, denoted as \dop{T*},
+an overload exists that takes a single \cc{Iterable[T]} argument instead.
+\item We use type name \cc{Role} for brevity, but that type does not exist. The actual
+type is \cc{MemberGroup[Component]}.
+\end{itemize}
+
+Unabridged function signatures are available in the Scaladoc API documentation in the
+\cc{apidoc} directory of the accompanying archive.
+
+\medskip
+
+For readers not deeply familiar with Scala, we point out the \textit{by-name parameters}
+feature. Whenever an argument type is prefixed with \dop{=>}, it is not evaluated
+immediately, but only when it is used. This allows us to write expressions that would
+fail at ensemble definition time, but work fine when the framework executes them.
+
+%%%
+
+\newenvironment{dslsig}%
+    {%
+        \par\vspace{0.6em}\bfseries\ttfamily\raggedright
+    }%
+    {%
+        \vspace{-0.2em}
+    }%
+
+\newenvironment{dsldesc}%
+    {%
+        \nopagebreak
+        \setlength{\parindent}{0em}
+        \setlength{\parskip}{0.3em}
+        \begin{adjustwidth}{1cm}{}
+    }%
+    {%
+        \end{adjustwidth}
+    }%
+
+%%%
+
+\subsection{\texttt{Component} class}
+\label{dsl:r:component}
+
+\cc{Component} must be used as a superclass of every component type. Only one function
+is available at declaration time:
+
+\begin{dslsig}
+name(nm: String)
+\end{dslsig}
+\begin{dsldesc}
+    Set a name of the component. This is useful for debugging purposes, when printing
+    out ensemble memberships.
+\end{dsldesc}
+
+\medskip
+
+\noindent
+Component instances also have several methods from trait \cc{Notifiable} for querying
+received notifications:
+
+\begin{dslsig}
+notifications: Iterable[Notification]
+\end{dslsig}
+\begin{dsldesc}
+    Return a collection of all \cc{Notification} instances received by this component.
+\end{dsldesc}
+
+\begin{dslsig}
+notified(notification: Notification): Boolean
+\end{dslsig}
+\begin{dsldesc}
+    Query a specific notification. Return \cc{true} if the exact specified notification
+    was received by this component.
+\end{dsldesc}
+
+\begin{dslsig}
+notified[N <: Notification]: Boolean
+\end{dslsig}
+\begin{dsldesc}
+    Query a notification class. Return \cc{true} if any notification of type \cc{N} was
+    received by this component.
+\end{dsldesc}
+
+%%%
+
+\subsection{\texttt{Integer} type}
+
+\cc{Integer} is a generic reference to an integer number whose value might not be known
+until a solution is found. It is usually a result of operations on member group objects.
+Basic arithmetic operators on \cc{Integer}s are overloaded to return \cc{Integer}s and
+basic comparison operators are overloaded to return \cc{Logical}s. Implicit conversion
+from \cc{Int} is available, so that it is possible to mix \cc{Integer} calculations with
+standard Scala math.
+
+One notable imperfection is that the equality operator \dop{==} cannot be overloaded in
+Scala. For comparing values of \cc{Integer}s, use the triple-equals \dop{===} operator
+instead. The operator \dop{==} will compare object identities and return a~boolean.
+
+%%%
+
+\subsection{\texttt{Logical} type}
+
+\cc{Logical} is a generic reference to a truth value which might not be known until a
+solution is found. It is usually the type of constraint operations. Basic boolean
+operators on \cc{Logical}s are overloaded to return \cc{Logical}s. Implicit conversion
+from \cc{Boolean} is available, so that it is possible to mix \cc{Logical} expressions
+with statically evaluated booleans.
+
+%%%
+
+\subsection{\texttt{Ensemble} class}
+
+The security policy consists of a nested series of classes deriving from \cc{Ensemble}.
+Most of the ensemble definition happens in the body of \cc{Ensemble}, so this class
+provides most of the available functions.
+
+\begin{dslsig}
+name(nm: String)
+\end{dslsig}
+\begin{dsldesc}
+    Set a descriptive name of the ensemble. This is useful for code documentation and 
+    for debugging purposes, when printing out ensemble memberships.
+\end{dsldesc}
+
+\begin{dslsig}
+utility(util: => Integer)
+\end{dslsig}
+\begin{dsldesc}
+    Assign an utility function to the ensemble. \cc{util} is an \cc{Integer} expression
+    that is evaluated for each solution being tested. Refer to
+    subsection~\ref{dsl:c:utility} for detailed semantics.
+\end{dsldesc}
+
+\begin{dslsig}
+rules(ensembles: Ensemble*): EnsembleGroup
+\end{dslsig}
+\begin{dsldesc}
+    Register sub-ensemble(s) with static activation. Sub-ensembles registered via this
+    function \textit{must} be activated if possible.
+
+    Each sub-ensemble must be registered with \cc{rules} or \cc{ensembles} to take part
+    in the computation.
+\end{dsldesc}
+
+\begin{dslsig}
+ensembles(ensembles: Ensemble*): EnsembleGroup
+\end{dslsig}
+\begin{dsldesc}
+    Register sub-ensemble(s) with dynamic activation. Sub-ensembles that are registered
+    via this function \textit{can} be activated by the solver, if that leads to a good
+    solution.
+
+    Each sub-ensemble must be registered with \cc{rules} or \cc{ensembles} to take
+    part in the computation.
+\end{dsldesc}
+
+\pagebreak
+\begin{dslsig}
+oneOf(items: Component*): Role \\
+oneOf(role: Role): Role
+\end{dslsig}
+\begin{dsldesc}
+    Define a role inhabited by \textit{exactly one} of the specified components or
+    inhabitants of the specified role.
+\end{dsldesc}
+
+\begin{dslsig}
+allOf(items: Component*): Role
+\end{dslsig}
+\begin{dsldesc}
+    Define a role inhabited by \textit{all} of the specified components.
+
+    This function is useful for explicit conversion of components to role objects.
+    However, in most cases, components and collections of components are implicitly
+    converted to roles as needed. E.g., the following two ensemble definitions are
+    equivalent:
+\begin{lstlisting}[style=ensembles]
+val members = for (_ <- 1 to 5) yield new Member
+
+object WithAllOf extends Ensemble {
+    val role = allOf(members)
+    allow(role, "open", door)
+}
+
+object WithoutAllOf extends Ensemble {
+    allow(members, "open", door)
+}
+\end{lstlisting}
+\end{dsldesc}
+
+\begin{dslsig}
+subsetOf(items: Component*): Role \\
+subsetOf(role: Role): Role \\
+subsetOf(role: Role, cardinality: Integer => Logical): Role
+\end{dslsig}
+\begin{dsldesc}
+    Define a role inhabited by a \textit{subset} of the specified components or
+    inhabitants of the specified role.
+    
+    The optional argument \cc{cardinality} specifies a constraint on the subset's
+    cardinality. It is a function that takes an \cc{Integer} argument, representing the
+    subset's cardinality, and returns a \cc{Logical} result configuring whether the
+    cardinality is valid. It is possible to use Scala's placeholder underscore as a
+    shortcut, i.e.:
+
+\begin{lstlisting}[style=snippet]
+val role = subsetOf(components, _ < 10)
+\end{lstlisting}
+\end{dsldesc}
+
+\begin{dslsig}
+unionOf(roles: Role*): Role
+\end{dslsig}
+\begin{dsldesc}
+    Defines a role whose members are a \textit{union of specified roles}. Specifically,
+    any component that inhabits one of the \cc{roles} also inhabits the union role, and
+    if a component inhabits the union role, then there exists at least one role in
+    \cc{roles} which the component also inhabits. This is mainly useful for specifying
+    constraints over collections of roles that would otherwise be difficult to express
+    individually; e.g., total size of the union must not exceed a specified number.
+\end{dsldesc}
+
+\begin{dslsig}
+allow(actors: Role, action: String, subjects: Role)
+\end{dslsig}
+\begin{dsldesc}
+    Grant permission to each inhabitant of \cc{actors} role to perform \cc{action} on
+    each inhabitant of the \cc{subjects} role.
+
+    Through implicit conversions, it is possible to use a component or an iterable of
+    components in place of any of the \cc{Role} arguments.
+\end{dsldesc}
+
+\pagebreak
+\begin{dslsig}
+deny(actors: Role, action: String, subjects: Role)
+\end{dslsig}
+\begin{dsldesc}
+    Deny permission to each inhabitant of \cc{actors} role to perform \cc{action} on
+    each inhabitant of the \cc{subjects} role.
+
+    Through implicit conversions, it is possible to use a component or an iterable of
+    components in place of any of the \cc{Role} arguments.
+\end{dsldesc}
+
+\begin{dslsig}
+notify(targets: Role, message: Notification)
+\end{dslsig}
+\begin{dsldesc}
+    Send a \cc{message} to each of \cc{targets}. The message is persisted
+    across solver runs, and its presence can be queried when forming ensembles. See
+    subsection~\ref{dsl:c:notifications} for detailed semantics and
+    subsection~\ref{dsl:r:component} for query methods.
+
+    Through implicit conversions, it is possible to use a component or an iterable of
+    components in place of the \cc{Role} argument.
+\end{dsldesc}
+
+\begin{dslsig}
+constraint(clause: => Logical)
+\end{dslsig}
+\begin{dsldesc}
+    Set up a constraint that must be satisfied in every solution. The clause must be of
+    type \cc{Logical}, because it is propagated to the constraint programming
+    engine, where it limits the search space. Therefore, it is possible to use role
+    object expressions as constraints.
+
+    Multiple constraints can be specified in an ensemble and each one must be satisfied
+    in a valid solution.
+\end{dsldesc}
+
+\begin{dslsig}
+situation(predicate: => Boolean)
+\end{dslsig}
+\begin{dsldesc}
+    Set up a situation predicate. The predicate is evaluated \textit{before} the solver
+    starts processing the ensemble. If it evaluates to \cc{false}, the ensemble
+    is excluded from the solution.
+
+    \cc{situation} has no effect in the root ensemble.
+\end{dsldesc}
+
+%%%
+
+\subsection{Member Groups}
+\label{dsl:r:membergroups}
+
+The base class \cc{MemberGroup[T]} maintains a collection of components or ensembles. A
+so-called ``role object'' is in fact a \cc{MemberGroup[C <: Component]}. Ensemble groups
+are represented by a subclass \cc{EnsembleGroup}, which performs additional handling
+related to ensemble hierarchies. However, all functionality relevant to the DSL is
+defined in the base class, and thus identical for roles and ensemble groups.
+
+For simplicity, we will use the type name \dop{Member} to stand in for the member type
+of a \cc{MemberGroup}.
+
+The member group provides a notion of \textit{selected members} --- a subset of the
+member collection which is considered part of the solution. For instance, a role created
+with the \cc{oneOf} function will have exactly one selected member.
+
+All \cc{Integer} methods can be used to build constraints with arithmetic and comparison
+operators. All \cc{Logical} methods can be used as constraints directly, or combined
+with other constraints using boolean operators. For simplicity, the descriptions use
+terms like ``true if'' or ``false if'', but keep in mind that the truth value of
+\cc{Logical} is only relative to a candidate solution.
+
+\begin{dslsig}
+selectedMembers: Iterable[Member]
+\end{dslsig}
+\begin{dsldesc}
+    List of \cc{Member} instances that are selected for the solution.
+
+    Throws an exception if no solution has been generated.
+\end{dsldesc}
+
+\begin{dslsig}
+cardinality: Integer
+\end{dslsig}
+\begin{dsldesc}
+    Cardinality of the group, i.e., the number of selected members.
+\end{dsldesc}
+
+\begin{dslsig}
+contains(member: Any): Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if the specified member is selected.
+\end{dsldesc}
+
+\begin{dslsig}
+containsOtherThan(member: Any): Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if at least one member other than \cc{member} is selected.
+\end{dsldesc}
+
+\begin{dslsig}
+containsOnly(member: Any): Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if \cc{member} is the only selected member.
+\end{dsldesc}
+
+\begin{dslsig}
+sum(func: Member => Integer): Integer
+\end{dslsig}
+\begin{dsldesc}
+    Sum of values obtained by applying \cc{func} on each selected member.
+
+    Typically used to sum the value of some knowledge field of the selected components.
+    Scala's placeholder underscore is useful here:
+
+\begin{lstlisting}[style=snippet]
+val swarm = subsetOf(robots)
+constraint { swarm.sum(_.arms) > 7 }
+\end{lstlisting}
+\end{dsldesc}
+
+\begin{dslsig}
+all(func: Member => Logical): Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if predicate \cc{func} holds for all selected members.
+\end{dsldesc}
+
+\begin{dslsig}
+some(func: Member => Logical): Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if predicate \cc{func} holds for at least one selected member.
+\end{dsldesc}
+
+\begin{dslsig}
+allEqual(func: Member => Any): Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if result of \cc{func} is the same for every selected member. In other
+    words, the set of values yielded by \cc{func} for each selected member has at most
+    one element.
+
+    Typically used to ensure that components selected for a role all have the same value
+    of some knowledge field, e.g., belong to the same team, have the same rank, etc.
+\end{dsldesc}
+
+\begin{dslsig}
+allDifferent(func: Member => Any): Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if result of \cc{func} is different for every selected member. In other
+    words, the set of values yielded by \cc{func} for each selected member is the
+    same size as the set of selected members.
+
+    Typically used to ensure that components selected for a role all differ in some
+    knowledge field, e.g., no two components from the same team are picked.
+\end{dsldesc}
+
+\begin{dslsig}
+disjointAfterMap[T,M](funcThis: Member => T, \\
+~~~~~~~~~~~~~~~~~~~~~~other: MemberGroup[M], \\
+~~~~~~~~~~~~~~~~~~~~~~funcOther: M => T): Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if, after converting the selected members of this and the other group to a
+    common type \cc{T}, the resulting sets are disjoint.
+
+    There are two types of usage for this function. One type is ensuring that two groups
+    of same or similar types of components are partitioned according to some variable
+    --- e.g., groups of workers disjoint over the projects they are working on.
+
+    The other type is ensuring that two groups of different types of components do not
+    mix with regard to some property. An example of this would be a sort of ``wolf,
+    goat, cabbage'' scenario: the \cc{eaters} role in a \cc{Shore}
+    ensemble must be disjoint with the \cc{foods} role, so that none of the
+    eaters will eat any of the food.
+\end{dsldesc}
+
+%%%
+
+\subsection{Collections of Member Groups}
+
+Special behavior is defined for collections of \cc{MemberGroup}s, which are typically
+obtained by mapping a collection of ensembles to one of their roles. The purpose of this
+behavior is to support a common idiom: ensuring that membership of a role in multiple
+ensembles does not overlap.
+
+The following example assigns workers to teams in a way that no worker is assigned to
+two teams:
+
+\begin{lstlisting}[style=ensembles]
+val workers: List[Worker] = /* ... */
+
+class Team(val id: Int) extends Ensemble {
+  val teamMembers = subsetOf(workers, _ > 0)
+}
+
+val teams = rules {
+    for (i <- 1 to 4) yield new Team(i)
+}
+
+constraint { teams.map(_.teamMembers).allDisjoint }
+constraint { teams.map(_.teamMembers).cardinality === workers.size }
+\end{lstlisting}
+
+\noindent
+A collection of member groups has the following methods:
+
+\begin{dslsig}
+cardinality: Integer
+\end{dslsig}
+\begin{dsldesc}
+    Cardinality of the collection, i.e., the total number of selected members across all
+    groups in the collection.
+\end{dsldesc}
+
+\begin{dslsig}
+allDisjoint: Logical
+\end{dslsig}
+\begin{dsldesc}
+    True if all groups in the collection are disjoint, i.e., no member is selected in
+    more than one group.
+\end{dsldesc}
+
+%%%
+
+\subsection{\texttt{Policy} class}
+
+The \cc{Policy} class represents the security policy in a single object, and provides
+methods to initiate solving and examine its results.
+
+The \cc{resolve()} method is the most straightforward way to interact with the policy
+object:
+
+\begin{dslsig}
+resolve(): Boolean \\
+resolve(limit: Long): Boolean
+\end{dslsig}
+\begin{dsldesc}
+    Find a valid solution and record security actions. If no utility expression is
+    defined, returns the first solution that satisfies all constraints. If an utility
+    expression is defined, returns the maximum utility solution, or the best solution
+    that could be found within a time limit. Returns \cc{true} if a solution was found,
+    or \cc{false} if not.
+
+    When \cc{limit} is specified, it is used as a time limit for the solving process, in
+    milliseconds. If the method does not return before the time limit expires, the best
+    solution found so far is recorded.
+
+    This is an all-in-one method that performs all solving steps automatically. To
+    customize the solving process, it is necessary to use the methods below.
+\end{dsldesc}
+
+\bigskip
+\noindent
+The following attributes are available as soon as a solution is attempted:
+
+\begin{dslsig}
+exists: Boolean
+\end{dslsig}
+\begin{dsldesc}
+    True if a solution was found.
+\end{dsldesc}
+
+\begin{dslsig}
+instance: Ensemble
+\end{dslsig}
+\begin{dsldesc}
+    Reference to an instance of the root ensemble class. Through \cc{instance}, it is
+    possible to examine role and sub-ensemble assignment.
+\end{dsldesc}
+
+\begin{dslsig}
+actions: Iterable[Action]
+\end{dslsig}
+\begin{dsldesc}
+    Generated list of security actions, collected from all sub-ensembles. Contains
+    objects of type \cc{AllowAction}, \cc{DenyAction} and \cc{NotifyAction}.
+\end{dsldesc}
+
+\begin{dslsig}
+solutionUtility: Int
+\end{dslsig}
+\begin{dsldesc}
+    Total utility of the solution, if one exists. If the solution exists but has no
+    utility expressions, this will return zero.
+\end{dsldesc}
+
+\begin{dslsig}
+allows(actor: Component,\\
+~~~~~~~action: String,\\
+~~~~~~~subject: Component): Boolean
+\end{dslsig}
+\begin{dsldesc}
+    Return true if \cc{actor} is permitted to \cc{action} on \cc{subject}.
+
+    See section~\ref{dsl:c:access} for semantics of access control queries.
+\end{dsldesc}
+
+\bigskip
+\noindent
+In case a customization of the solving process is needed, the following methods are
+available to run the solving step-by-step:
+
+\begin{dslsig}
+init() \\
+init(limit: Long)
+\end{dslsig}
+\begin{dsldesc}
+    Reset the solver, configure time limit, delete all solutions and recorded security
+    actions, and prepare for finding a solution.
+
+    Time limit is in milliseconds and applies across all subsequent solving runs. If
+    the time limit expires while a call to \cc{solve()} is in progress, the solving
+    process stops and \cc{solve()} returns \cc{false}. See section~\ref{dsl:c:time} for
+    details.
+
+    Must be called whenever the situation changes, otherwise the policy will reflect the
+    previous state of ensembles, components, and the environment. In particular, must be
+    called before the first call to \cc{solve()}.
+\end{dsldesc}
+
+\begin{dslsig}
+solve(): Boolean
+\end{dslsig}
+\begin{dsldesc}
+    Find one solution. Return \cc{true} if a valid solution is found, \cc{false}
+    otherwise.
+    
+    This method can be called repeatedly to iterate over all solutions. If no solution
+    is found, and a previously-found solution exists, it will still be accessible.
+    
+    If no utility expression is specified, repeated calls will yield successive
+    solutions. With a utility expression, each successive call will find a solution with
+    higher utility than the previous one. If no such solution exists, \cc{solve()} will
+    return \cc{false}, even if other solutions exist with equal utility. To find the
+    solution with maximum utility, the following idiom is used:\nopagebreak
+\begin{lstlisting}[style=snippet]
+while (policy.solve()) {}
+\end{lstlisting}
+\end{dsldesc}
+
+\begin{dslsig}
+commit()
+\end{dslsig}
+\begin{dsldesc}
+    Commit current solution, generate security rules, and send notifications to
+    components. Must be called before accessing \cc{actions} for a new solution.
+\end{dsldesc}

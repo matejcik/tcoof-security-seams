@@ -1,0 +1,101 @@
+\newcommand{\cc}[1]{\lstinline{#1}}
+\newcommand{\dop}[1]{``\lstinline{#1}''}
+
+\hyphenation{lunch-room}
+\hyphenation{lunch-rooms}
+
+\newenvironment{snippet}%
+    {%
+        \begin{lstlisting}[style=snippet]
+    }%
+    {%
+        \end{lstlisting}
+        \vspace{-1\linespread}
+        \noindent
+    }%
+
+\definecolor{commentcolor}{rgb}{0.5,0.5,0.5}
+\definecolor{darkgreen}{rgb}{0.09, 0.45, 0.27}
+\definecolor{bgcolor}{rgb}{0.99,0.99,0.99}
+\lstset{%
+    basicstyle=\linespread{0.9}\ttfamily,        % the size of the fonts that are used for the code
+    numberstyle=\sffamily\scriptsize,
+    breaklines=false,
+    numbersep=5pt,
+    captionpos=b,
+    keepspaces=true,
+    frame=single,
+    escapechar=|,
+    commentstyle=\color{commentcolor},
+    %    backgroundcolor = \color{bgcolor},
+    keywordstyle=\color{blue},
+    stringstyle=\color{darkgreen},
+    columns=fullflexible,
+%    %    basicstyle=\linespread{0.8}\sffamily\tiny\lsstyle,       % or even smaller size
+%    breakatwhitespace=true,           % sets if automatic breaks should only happen at whitespace
+%    showstringspaces=false,
+%    tabsize=2,%
+%    breaklines=true,
+%    captionpos=b,
+%    numbers=left,
+%    numbersep=5pt,
+%    numberstyle=\linespread{0.8}\sffamily\tiny\lsstyle,
+%    %linewidth=0.9\columnwidth,
+%    xleftmargin=0.05\columnwidth,
+%    %frame=single,
+%    commentstyle=\color{commentcolor},
+%    %    backgroundcolor = \color{bgcolor},
+%    keywordstyle=\color{blue},
+%    stringstyle=\color{darkgreen},
+%    %belowskip=-1em,
+%    %belowcaptionskip=-0.5em
+}
+\lstdefinestyle{ensembles}{
+    basicstyle=\linespread{0.9}\ttfamily\footnotesize,  %the size of the fonts that are used for the code
+    language=Scala,
+    morekeywords={situation,constraint,allow,utility,notify,rules,ensembles,oneOf,unionOf,subsetOf,allOf},
+    showstringspaces=false,
+    columns=fullflexible,
+    tabsize=2,
+    numbers=left,
+    %linewidth=0.9\columnwidth,
+    xleftmargin=0.05\columnwidth,
+    %frame=single,
+    %belowskip=-2em,
+    %belowcaptionskip=-0.5em
+}
+\lstdefinestyle{output}{
+    basicstyle=\linespread{0.9}\ttfamily\footnotesize,
+    morekeywords={AllowAction,DenyAction,Notify},
+}
+
+\lstdefinestyle{pseudo}{
+    basicstyle=\linespread{0.9}\ttfamily\footnotesize,
+    morekeywords={ensemble,role,select,of,allow,to,constraint},
+}
+
+\lstdefinestyle{snippet}{
+    basicstyle=\linespread{0.9}\ttfamily\small,
+    language=Scala,
+    morekeywords={situation,constraint,allow,utility,notify,rules,ensembles,oneOf,unionOf,subsetOf,allOf},
+    showstringspaces=false,
+    columns=fullflexible,
+    tabsize=2,
+    frame=none,
+    belowskip=\smallskipamount,
+    %linewidth=0.9\columnwidth,
+    xleftmargin=0.05\columnwidth,
+    %frame=single,
+    %belowcaptionskip=-0.5em
+}
+
+\definecolor{linkcolor}{HTML}{2D24A3}
+\definecolor{citecolor}{HTML}{A80B00}
+\definecolor{urlcolor}{HTML}{A80B00}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linkcolor,
+    citecolor=citecolor,
+    urlcolor=urlcolor,
+}

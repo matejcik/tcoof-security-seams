@@ -1,0 +1,88 @@
+\chapter{Evaluation}
+\label{evaluation}
+
+To evaluate practicality and performance characteristics of our approach, we have
+designed a number of testing scenarios. Each tests a particular aspect or feature of the
+DSL.
+
+\section{Methodology}
+
+In this chapter, we take \textit{scenario} to mean a particular situation or task with
+possible variables. A \textit{configuration} is an instance of the scenario, where the
+variables are bound to particular values. A \textit{test case} is a set of
+configurations to be evaluated. In a test case, each configuration is usually tested
+many times, and each attempt is called a \textit{test run}.
+
+E.g., a scenario can be described as: ``pick several Workers and one Leader from a pool
+of Persons''. A configuration of that scenario can be ``pick one Worker and one Leader
+from a pool of 15 Persons''. One test case involving this scenario can be a set of
+configurations ``pick three Workers and one Leader from a pool of $N$ Persons'', with $N
+\leftarrow 10, 15, 20... 100$. Another test case would be ``pick $N$ Workers and one
+Leader from a pool of 100 Persons'', with $N \leftarrow 1, 2... 20$
+
+Each scenario is represented by a class containing the necessary objects and a
+definition of the associated ensemble(s). A companion \cc{Spec} subclass is a concise
+description of scenario parameters and an interface for the test runner. It generates
+appropriate instances of the scenario class on which each test run is performed.
+
+Because Scala runs in a Java Virtual Machine (JVM) with Just-in-Time compilation, it is
+necessary to ``warm up'' for the given scenario. Otherwise, earlier test runs would be
+slower than the later ones, where the JIT has had time to catch up and pre-compile hot
+paths. To prevent this, the smallest configuration is run repeatedly for 10 seconds of
+wall-clock time.
+
+We run each configuration a specified number of times and record the time to find a
+solution, utility (if specified), and peak memory usage for each run. Raw data from the
+results can be found in the accompanying archive in \texttt{results} directory,
+organized by test case name. Graphs are generated with Python, using
+scipy~\citep{scipy}, pandas~\citep{pandas}, and matplotlib~\citep{matplotlib}. It is
+possible to regenerate them by executing the script \cc{python/all.sh}.
+
+All results are generated on an Intel\textregistered{} Core\texttrademark{} i5-6600K
+CPU, running on a single core at 3.90 GHz.
+
+\subsection{Time Limits}
+
+In most scenarios, we set a solver time limit to 30 seconds per test run. This number
+was chosen as an arbitrary cut-off point. Preliminary experiments showed that observed
+trends are robust even below 30 seconds, and increasing the time limit has diminishing
+returns in terms of solution quality (see also section~\ref{eval:example:limits}).
+Setting a higher time limit would significantly prolong test times while providing very
+little additional useful data.
+
+Moreover, 30 seconds seem like a reasonable real-world time limit. The framework is
+designed for highly dynamic scenarios and needs to be able to respond to changing
+conditions as they happen. Waiting more than a couple seconds for access control
+decisions is not acceptable in terms of user experience, and could possibly even
+endanger the security goals of the system. Taken in this context, even 30 seconds is
+possibly too long. Our results show that in real-world scenarios it might be possible to
+lower the time limit further.
+
+\subsection{Memory Usage}
+
+The JVM provides a memory-managed environment with asynchronous garbage collection,
+which makes it difficult to obtain reliable memory usage information. As a rough
+measure, our test runner uses garbage collector notifications from the Java Management
+Extensions API~\citep{jmx} to record peak memory usage during each test run. We trigger a
+GC cycle between test runs, and attempt to wait until the cycle is complete. This is
+inherently unreliable, however, and there is no way to ensure that all unreachable
+objects have been released.
+
+As measured with this method, most scenarios use less than 200 MB of memory. These
+results cannot be used to draw any conclusions: any trends are lost in the variance,
+allocator granularity, and general overhead of the JVM runtime.
+
+In section~\ref{eval:variables}, we test relatively large configurations where memory
+consumption is significant. Although the data about memory usage is still very noisy, it
+provides some useful insights. We note that the measured data does not reflect true
+memory requirements; many scenarios can run with much less memory available, by doing
+garbage collection as needed during the computation.
+
+We have configured the JVM to use a maximum of 10 GB of RAM for its heap. This ensures
+that our chosen test configurations never need to deal with memory pressure, which
+considerably reduces timing jitter.
+
+%%%%%
+
+\input{71-evaluation-variables.tex}
+\input{72-running-example.tex}

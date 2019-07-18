@@ -1,0 +1,28 @@
+\chapter{Conclusion}
+\label{conclusion}
+
+In this work we have presented an ensemble-based approach to defining access control
+policies. Security situations are specified in terms of ensembles and their roles, and
+access control decisions are attached to the ensembles. This allows the policy to follow
+the evolution of a dynamic system as its shape and composition changes over time.
+
+We introduced a framework, TCOOF-Trust, which consists of two parts: a~policy
+specification language, implemented as an internal DSL in Scala, and a runtime
+environment for resolving the policies. The DSL can be used to specify ensembles, roles,
+constraints on their membership, and attached security decisions. The runtime
+environment processes the policy specification in the DSL, converts the problem to an
+input for its internal CSP solver, and uses the results to determine ensemble
+membership. Based on the solution and the rules attached to it, the framework can
+respond to access control queries.
+
+We have designed and specified detailed semantics for the behavior of the framework, and
+extended the existing TCOOF-Trust prototype implementation to properly support them. A
+clean API for embedding the framework in external projects is provided, and detailed
+documentation was created for the CSP conversion process and for the implementation
+details of the framework.
+
+An example security scenario with dynamic access control requirements was used to
+evaluate performance of the framework, both in synthetic and real-world-like
+configurations. While the underlying problem is exponential by nature, results show that
+the framework is capable of dealing with the complexity in a reasonable manner, and
+scales well in practical deployments.

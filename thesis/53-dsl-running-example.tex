@@ -1,0 +1,265 @@
+\section{Implementing the Running Example}
+\label{dsl:example}
+
+%%%
+
+\subsection{Overview}
+
+Our scenario consists of workers, which are assigned to projects; workrooms, which are
+also assigned to projects; and lunchrooms, which are unassigned. Workers, workrooms, and
+lunchrooms will be represented as components. Two distinct sub-problems exist, each with
+its own parameters: assignment of workrooms and assignment of lunchrooms. These can be
+naturally described as separate ensembles.
+
+\medskip
+
+When the building is open, workers are allowed to enter all workrooms assigned to their
+project. We will create an ensemble for every project, and this ensemble will have the
+following roles:
+\begin{itemize}
+    \renewcommand\labelitemi{--}
+    \setlength\itemsep{0em}
+    \item \textit{project workers}, inhabited by all workers for that project
+    \item \textit{project rooms}, inhabited by all workrooms for that project
+\end{itemize}
+The ensemble will grant all project workers access to all project rooms.
+
+\medskip
+
+Lunchrooms open at lunch time. Workers can indicate that they are hungry, which we
+represent as a knowledge field on the worker component. We would like to collect hungry
+workers in small ensembles, each granting access to a single lunchroom. To accomplish
+that, we will create an ensemble for every lunchroom, with the following roles:
+
+\begin{itemize}
+    \renewcommand\labelitemi{--}
+    \setlength\itemsep{0em}
+    \item \textit{occupants}, inhabited by all workers currently in the room, plus all
+    workers that have previously been assigned to the room
+    \item \textit{assignees}, inhabited by hungry workers who are not yet assigned
+\end{itemize}
+The ensemble will attempt to collect assignees from the pool of all hungry workers, up
+until room capacity is filled. An additional constraint is that every member of this
+ensemble must be assigned to the same project. That means that if there are existing
+occupants, new assignees must have the same project as them. If the room has no current
+occupants, new assignees can be selected from any project.
+
+In addition, not all seatings are equally good. We want to use lunchrooms sparingly:
+given the choice between putting a worker into an empty lunchroom and an occupied one,
+the occupied should be picked, so that we keep the empty lunchroom available for other
+projects.
+
+Once a satisfactory solution has been found, the ensemble will allow both occupants and
+assignees to enter the lunchroom, and notify new assignees that a seat was found for
+them.
+
+%%%
+
+\subsection{Implementation}
+
+Following this description is a full listing of the policy for the running example,
+including definitions of components.
+
+Lines~\ref{ex:components:start}--\ref{ex:components:end} define component types. All
+rooms are of common supertype \cc{Room}. Apart from name, the \cc{LunchRoom} has a
+knowledge field \cc{capacity}, stating its maximum occupancy.
+
+\cc{Worker}s have three knowledge fields: their assigned \cc{project} (specified in
+constructor), their \cc{hungry} status, and their current \cc{location}. A helper method
+\cc{isInLunchRoom} returns \cc{true} if the worker's location is a lunchroom, as an
+example of ``computed knowledge'' from section~\ref{dsl:c:components}
+
+Next, case classes are defined on lines~\ref{ex:casecls:start}--\ref{ex:casecls:end}.
+Projects do not need to be components, but we still need structured information about
+them, particularly their list of assigned workrooms. We also create a case class for
+lunchroom assignment notifications.
+
+Scenario class definition starts at line~\ref{ex:scenario}. Its inputs are lists of
+projects, workers, workrooms, and lunchrooms. An instance of this scenario class could
+represent a workday in a single building. Opening and closing times are part of the
+security policy and are hard-coded at lines~\ref{ex:times:start}--\ref{ex:times:end}.
+
+Line~\ref{ex:now} defines a variable to represent current time. In a real-life
+deployment, this might be represented by a reference to system clock; however, for our
+testing, it is useful to set the current time explicitly.
+
+We also define a helper attribute \cc{workersByProject} for easier access to lists of
+workers from the same project.
+
+Class \cc{RoomAssignment} at line~\ref{ex:root} represents the policy root. It defines
+one pseudo-role, \cc{hungryWorkers}, which is inhabited by all workers who are (1)
+hungry, (2) not currently in a lunchroom, and (3) not already assigned to a lunchroom.
+This will be the pool from which the lunchroom ensembles select candidates. Furthermore,
+the root ensemble contains definitions of the two sub-ensembles for our two
+sub-problems.
+
+Workroom ensemble is described by the class \cc{WorkroomAssignment} on
+line~\ref{ex:workroom}. It takes a project definition as a parameter. Its situation
+predicate specifies that it is only active between \cc{BuildingOpenTime} and
+\cc{BuildingCloseTime}. The statically-assigned role \cc{projectWorkers} is simply the
+list of workers for the ensemble's project. The grant at line~\ref{ex:workroomgrant}
+allows all \cc{projectWorkers} to enter all \cc{workrooms} of the project.
+
+\medskip
+
+Lunchroom ensemble is represented by the \cc{LunchroomAssignment} class at
+line~\ref{ex:lunchroom}, and takes a lunchroom as an argument. Like the workroom
+ensemble, it also has a situation predicate; this time specifying that it applies
+between \cc{LunchOpenTime} and \cc{LunchCloseTime}.
+
+The first role, \cc{occupants} at line~\ref{ex:occupants}, is a statically determined
+list of workers that are either (a) already assigned to the room, as determined by the
+appropriate \cc{LunchRoomAssigned} notification, or (b) physically present in the room,
+as indicated by their \cc{location} attribute.
+
+We use \cc{occupants} to calculate \cc{freeSpaces}, the number of remaining seats in the
+room. Then, at line~\ref{ex:assignees}, we define the \cc{assignees} role as a
+dynamically selected subset of \cc{hungryWorkers}, limiting its size to the number of
+free seats.
+
+The \cc{eaters} role at line~\ref{ex:eaters} is a union of \cc{occupants} and
+\cc{assignees}. It is not a meaningful role in the ensemble, but implementation-wise, it
+is needed to specify the constraint on the next line: all \cc{eaters} must have the same
+value of their \cc{project} attribute.
+
+Lines~\ref{ex:utility:start}--\ref{ex:utility:end} define the utility expression. Fuller
+rooms are preferred, which is expressed by setting the utility to the square of total
+number of used seats. This way, a solution that places two workers in the same lunchroom
+is measured as better than a solution that places each of them in a separate room.
+
+Finally, \cc{assignees} are notified of their assignment at line~\ref{ex:notify},
+and line~\ref{ex:lunchroomgrant} allows all \cc{eaters} to enter the room.
+
+\medskip
+
+Back at the \cc{RoomAssignment} level, lines~\ref{ex:rules:start}--\ref{ex:rules:end}
+create instances of the sub-ensembles. An instance of \cc{WorkroomAssignment} is
+generated for every project, and an instance \cc{LunchroomAssignment} is generated for
+every lunchroom. The \cc{rules} call configures the sub-ensembles to be selected
+whenever their situation predicate is true, i.e., they are always active in their
+specified time-frames.
+
+The constraint at line~\ref{ex:globalconstraint} ensures that all instances of the
+\cc{assignees} role are disjoint, or in other words, that no worker can get a seat
+reservation in more than one lunchroom at the same time.
+
+Line~\ref{ex:policy} instantiates the policy object and makes it available as an
+attribute.
+
+%%%
+\pagebreak
+
+\subsection{Source Code}
+
+\begin{lstlisting}[style=ensembles]
+// Different types of rooms |\label{ex:components:start}|
+abstract class Room(name: String) extends Component {
+  name(s"Room:$name")
+}
+class LunchRoom(name: String, val capacity: Int)
+  extends Room("Lunch" + name)
+class WorkRoom(name: String)
+  extends Room("Work" + name)
+
+// Worker assigned to a project, can be hungry or not
+class Worker(id: Int, val project: Project) extends Component {
+  name(s"Worker:$id:${project.name}")
+  var hungry = false
+  var location: Option[Room] = None
+
+  def isInLunchRoom: Boolean =
+    location.map(_.isInstanceOf[LunchRoom]).getOrElse(false)
+} |\label{ex:components:end}|
+
+// Project with pre-assigned workrooms |\label{ex:casecls:start}|
+case class Project(name: String, workrooms: Seq[WorkRoom])
+
+// Notification for lunchroom assignment
+case class LunchRoomAssigned(room: LunchRoom) extends Notification |\label{ex:casecls:end}|
+
+class LunchScenario(val projects: Seq[Project],  |\label{ex:scenario}|
+                    val workers: Seq[Worker],
+                    val workrooms: Seq[WorkRoom],
+                    val lunchrooms: Seq[LunchRoom]) {
+  // Opening times of the building and of the lunchrooms
+  val BuildingOpenTime  = LocalTime.of( 7, 30)  |\label{ex:times:start}|
+  val BuildingCloseTime = LocalTime.of(21,  0)
+  val LunchOpenTime     = LocalTime.of(11, 30)
+  val LunchCloseTime    = LocalTime.of(15,  0)  |\label{ex:times:end}|
+
+  val DefaultNow = LocalTime.of(8, 42)
+  var now = DefaultNow  |\label{ex:now}|
+  
+  // mapping projects to lists of workers
+  val workersByProject = workers.groupBy(_.project)
+
+  class RoomAssignment extends Ensemble { |\label{ex:root}|
+    name("assign workers to projects and rooms")
+
+    // list of all hungry workers waiting for a lunchroom
+    val hungryWorkers = workers.filter { w =>
+      w.hungry &&
+      !w.isInLunchRoom &&
+      !w.notified[LunchRoomAssigned]
+    }
+
+    // Each worker assigned to a project can access all workrooms
+    // assigned to that project when the building is open.
+    class WorkroomAssignment(project: Project) extends Ensemble { |\label{ex:workroom}|
+      name(s"assign workrooms to workers on project ${project.name}")
+
+      situation { (now isAfter BuildingOpenTime) &&
+                  (now isBefore BuildingCloseTime) }
+
+      val projectWorkers = workersByProject.getOrElse(project, Seq.empty)
+      allow(projectWorkers, "enter", project.workrooms) |\label{ex:workroomgrant}|
+    }
+
+    // Each hungry worker will get an assigned lunchroom so that
+    // no lunchroom is over capacity and workers from different
+    // projects do not meet in the same lunchroom.
+    class LunchroomAssignment(room: LunchRoom) extends Ensemble { |\label{ex:lunchroom}|
+      name(s"assign workers to lunchroom ${room.name}")
+
+      // Only activate when lunchrooms are open
+      situation { (now isAfter LunchOpenTime) &&
+                  (now isBefore LunchCloseTime) }
+
+      // list of previously assigned workers
+      val occupants = workers.filter { w =>  |\label{ex:occupants}|
+        w.notified(LunchRoomAssigned(room)) |\textbar\textbar|
+        w.location.contains(room)
+      }
+
+      // newly-assigned hungry workers must fit into free space
+      val freeSpaces = room.capacity - occupants.size
+      val assignees = subsetOf(hungryWorkers, _ <= freeSpaces) |\label{ex:assignees}|
+
+      val eaters = unionOf(occupants, assignees) |\label{ex:eaters}|
+      constraint { eaters.allEqual(_.project) }
+
+      // Set the solution utility to square of the number of occupants,
+      // i.e., prefer many workers in one room over few workers in many rooms
+      utility { |\label{ex:utility:start}|
+        val occupied = assignees.cardinality + occupants.size
+        occupied * occupied
+      } |\label{ex:utility:end}|
+
+      // grant access rights and notify newly selected hungry workers
+      notify(assignees, LunchRoomAssigned(room)) |\label{ex:notify}|
+      allow(eaters, "enter", room) |\label{ex:lunchroomgrant}|
+    }
+
+    val workroomAssignments =  |\label{ex:rules:start}|
+      rules(projects.map(new WorkroomAssignment(_)))
+    val lunchroomAssignments =
+      rules(lunchrooms.map(new LunchroomAssignment(_))) |\label{ex:rules:end}|
+
+    // ensure that a worker is not assigned to more than one lunchroom
+    constraint(lunchroomAssignments.map(_.assignees).allDisjoint) |\label{ex:globalconstraint}|
+  }
+
+  val policy = Policy.root(new RoomAssignment) |\label{ex:policy}|
+}
+\end{lstlisting}
+\pagebreak

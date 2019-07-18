@@ -1,0 +1,56 @@
+\chapter{Ensemble Framework}
+\label{dsl}
+
+We have designed and developed a framework for managing access control with ensembles.
+It consists of a \textit{domain-specific language} (DSL) for describing the ensembles,
+and a \textit{runtime environment} which can analyze the ensemble description and
+generate the specified ensembles from available components.
+
+The DSL is internal within the Scala language. That means that it uses the basic syntax
+of Scala, is compiled with the Scala compiler and runs on the Java virtual machine. We
+have implemented a number of functions and language constructs that enable the user to
+express ensemble-related concepts in a succinct and readable way. We also leverage
+Scala's strong type system to enforce typing checks and catch problems at compile-time.
+
+This chapter serves as a user guide to the framework. Section~\ref{dsl:hello} shows
+a~very simple example of usage. Section~\ref{dsl:concepts} introduces each of the main
+concepts in the framework, their function and semantics. Section~\ref{dsl:example}
+translates our running example from chapter~\ref{running-example} to the DSL. Finally,
+section~\ref{dsl:reference} lists all features available in the DSL and their usage.
+
+\section{Typographical Conventions}
+
+In the following text, \textit{italic type} is used to emphasize newly introduced
+terms. After the term is explained, its further occurrences are set in normal type.
+
+To highlight source code elements, such as functions, types, variable names, and code
+snippets, we use \cc{monospace font}.
+
+\section{Overview}
+\label{dsl:overview}
+
+The purpose of the framework is to analyze the DSL-specified ensemble structure and
+assign components to appropriate roles in a way that fits all the constraints, and/or
+maximizes values of some variables. This can be understood as a constraint satisfaction
+problem (CSP). Therefore, the main component of the framework is a CSP solver. We use
+the word \textit{solving} for the process of determining ensemble membership, and a
+\textit{solution} is a particular assignment of components to roles in the ensembles.
+Only when the scenario is solved, we can generate access control rules based on the
+solution.
+
+\medskip
+
+Input of the framework consists of two parts. First is a description of the ensemble
+structure, expressed with the DSL. Second is a collection of components, which are
+supposed to be assigned to roles.
+
+\medskip
+
+When the computation is done, the framework outputs a reference to the solution. It is
+possible to examine which ensembles were activated and which components were selected
+for which roles. The framework also emits access control rules and notifications.
+
+\input{51-hello-world.tex}
+\input{52-core-concepts.tex}
+\input{53-dsl-running-example.tex}
+\input{54-reference.tex}

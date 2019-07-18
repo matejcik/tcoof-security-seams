@@ -1,0 +1,369 @@
+\section{Core Concepts}
+\label{dsl:concepts}
+
+%%%
+
+\subsection{Components}
+\label{dsl:c:components}
+
+Every entity that the runtime knows about needs to be represented as an object derived
+from \cc{Component}. That means connected devices, locks, and even people, are treated
+as components. They can be members of ensembles and inhabit roles.
+
+A component represents the system's knowledge of an entity, but the framework has no
+control over it. From its point of view, a component and its data are purely inputs.
+This is also how we can represent people as components: as far as the runtime is
+concerned, they are view-only.
+
+Component instances don't need any methods, and in fact they should not have any. The
+possible exception to this recommendation is ``computed knowledge''. Sometimes it is
+useful to have a helper method that returns the result of some computation over the
+component's attributes. For example, a worker component can have knowledge of its
+location, and a method \cc{isInLunchRoom} that returns true if the location is a
+lunchroom. The result of this method is still component knowledge, i.e., something we
+know about the component, but does not need to be stored as a value.
+
+Components should come from outside the ensemble definitions, preferably from outside
+the scenario class. Component instances should never be created within an ensemble. All
+knowledge about a component should be represented in its attributes.
+
+%%%
+
+\subsection{Ensembles}
+\label{dsl:c:ensembles}
+
+Every ensemble is represented as an instance of a subclass of \cc{Ensemble}. The
+instance holds references to roles and their assigned components, sub-ensembles,
+situation predicates and constraints.
+
+If there is just one ensemble or sub-ensemble for a particular purpose, it can be
+specified as a singleton with Scala's \cc{object} keyword. If more ensembles of the same
+type are needed, a class is more appropriate. All instances of the class must be
+explicitly created in the parent ensemble body. Every instance must also be registered,
+using either \cc{rules} or \cc{ensembles} call:
+
+\begin{lstlisting}[
+    label=lst:rules,
+    style=ensembles,
+]
+class Root extends Ensemble {
+  object SubEnsembleObject extends Ensemble {
+    // ...
+  }
+  class SubEnsemble(id: Int) extends Ensemble {
+    // ...
+  }
+
+  val subEnsembles = for (i <- 1 to 5) yield new SubEnsemble(i)
+  rules(subEnsembles)
+  ensembles(SubEnsembleObject)
+}
+\end{lstlisting}
+
+Section~\ref{dsl:c:situations} explains the difference between \cc{rules} and
+\cc{ensembles}.
+
+The class body can specify role membership, sub-ensembles, constraints, and situation
+predicates. Each of these features is described in its own subsection.
+
+%%%
+
+\subsection{Ensemble Activation and Situations}
+\label{dsl:c:situations}
+
+An ensemble can be active or inactive. We also use the term \textit{selected} --- as in,
+the ensemble is selected as a member of the parent ensemble. Ensembles registered with
+the \cc{rules} function are active by default. When registered with \cc{ensembles}, the
+framework dynamically determines whether the ensemble should be active or inactive,
+based on constraints in its parents. 
+
+An active ensemble takes part in the computation and all constraints specified in the
+ensemble must be satisfied. Inactive ensembles are not considered, their roles have no
+members, and all their sub-ensembles are also inactive --- i.e., an ensemble can only be
+active if all its parents are active.
+
+It is possible to specify a boolean \textit{situation predicate}. If the predicate
+evaluates to false, the ensemble and all of its children are deactivated. Note that an
+ensemble registered with \cc{ensembles} can still be inactive if its situation predicate
+is true; it is a necessary condition, not a sufficient one.
+
+The situation predicate is specified via the \cc{situation} construct. At most one
+situation predicate can be used per ensemble; if more than one \cc{situation} is
+defined, the last one is used and all others are ignored.
+
+%%%
+
+\subsection{Roles}
+\label{dsl:c:roles}
+
+Fundamentally, an ensemble is a collection of components assigned to distinct roles.
+
+Some role assignments can be known in advance. Such roles don't need to be explicitly
+created. It is a good practice to assign the component to a member variable of the
+ensemble, but it is perfectly legal to use a variable from an outer scope directly.
+
+Other roles are assigned dynamically by the framework. For these, it is necessary to
+describe parameters of the assignment and a collection of candidates.
+
+The function \cc{subsetOf} specifies that a particular role is a subset of a given
+collection of components, or a subset of inhabitants of a different role. An optional
+argument allows in-line specification of a constraint on the subset's cardinality, e.g.,
+that no more than $N$ components must be selected.
+
+As a shortcut, the \cc{oneOf} function defines that exactly one of the candidates will
+be selected for the role. The \cc{allOf} function defines that all of the candidates
+will be selected, effectively converting components directly to roles. This can be
+useful in some cases, but it is usually not necessary to do it explicitly.
+
+The function \cc{unionOf} can link several roles into a single group. This is useful in
+situations where a constraint applies over many roles together and it would be difficult
+to express it in terms of the individual roles.
+
+Dynamically assigned roles are sets of components. A component can be a member of
+multiple roles, but cannot be a member of the same role in the same ensemble more than
+once.
+
+The result of each of these functions is a \textit{role object}. After a solution is
+found, this object can be used to access a list of the selected elements. At solving
+time, however, the results are not yet available, and instead specialized methods of the
+role object must be used. See section~\ref{dsl:r:membergroups} for a complete list of
+available operations.
+
+%%%
+
+\subsection{Constraints}
+\label{dsl:c:constraints}
+
+A \textit{constraint} places arbitrary limits on the solution. Unlike situation
+predicates, which are evaluated beforehand, constraints are applied during the search
+for a solution. It is thus a good place to specify requirements that the solution must
+fulfill. Constraints can be used to specify that membership of some role must be
+disjoint with another role, mark one role's cardinality as strictly smaller than that of
+another role, etc.
+
+Constraint predicates are specified with a \cc{constraint} call. There can be multiple
+\cc{constraint} calls in an ensemble, and all specified constraints must be fulfilled in
+the solution. If a constraint in an active ensemble cannot be fulfilled, no solution
+will be found.
+
+Constraints in inactive ensembles are ignored.
+
+Care must be taken when creating constraints over the results of \cc{subsetOf} and the
+other role functions. Role objects define several methods, such as \cc{all}, \cc{sum},
+and others, whose results are valid constraint objects. However, if the list of selected
+members is accessed directly while specifying a constraint, an exception will be thrown.
+See section~\ref{dsl:r:membergroups} for details.
+
+%%%
+
+\subsection{Solution Utility}
+\label{dsl:c:utility}
+
+It is possible to attach a utility expression to an ensemble. If present, the framework
+will by default try to maximize the value of this expression when looking for solutions.
+In other words, solutions with higher utility are preferred.
+
+Utility expression can be specified with the \cc{utility} construct. Only one utility
+expression can be specified per ensemble. If more than one \cc{utility} is used, only
+the last one takes effect.
+
+If multiple ensembles specify an utility expression, the total utility of the solution
+is a simple sum of all the individual utilities. This is usually the desired behavior.
+E.g., when calculating utilities for individual lunchrooms from the running example,
+each room has its own utility, and we are interested in the sum of all rooms.
+
+Sometimes this solution is insufficient, however. Maybe the total utility of an ensemble
+is the average utility of each of its sub-ensembles. If that's the case, \cc{utility}
+should not be used in the sub-ensembles, only in the parent. The sub-ensembles can
+instead specify a method calculating the partial utility, which will then be used in
+parent's utility expression:
+
+\begin{lstlisting}[
+    label=lst:subutility,
+    style=ensembles,
+]
+class Root extends Ensemble {
+  class SubEnsemble extends Ensemble {
+    val someRole = subsetOf(members, _ < 4)
+    def subUtility = someRole.cardinality * someRole.sum(_.weight)
+  }
+
+  val subEnsembles = for (_ <- 1 to 5) yield new SubEnsemble
+  utility {
+    subEnsembles.map(_.subUtility).reduce(_ + _) / subEnsembles.size
+  }
+}
+\end{lstlisting}
+
+Only active ensembles are counted towards the utility total.
+
+Similar to role objects, utilities are not actual numbers. Methods like \cc{sum} are not
+available and more elaborate calculations must be built from basic operators.
+
+%%%
+
+\subsection{Root Ensemble}
+\label{dsl:c:root}
+
+One ensemble must be designated as top-level, or root, in the scenario. This tells the
+framework where to start with solving. The root ensemble is always active, and
+\cc{situation} specified in the root has no effect.
+
+It would be natural to specify the root ensemble as an \cc{object}, but due to
+limitations of the DSL embedding, that is not possible. The root ensemble \textbf{must}
+be a class, instantiated in a call to \cc{Policy.root}:
+
+\begin{lstlisting}[
+    label=lst:rootens,
+    style=ensembles,
+]
+class Example {
+  class Root extends Ensemble {
+    // ...
+  }
+  val policy = Policy.root(new Root)
+}
+\end{lstlisting}
+
+See section~\ref{impl:scala:byname} for explanation of this requirement.
+
+Result of the \cc{Policy.root} call is a \cc{Policy} object. By convention, we always
+store it in a member variable named \cc{policy} in a scenario class.
+
+%%%
+
+\subsection{Scenarios and Solving}
+\label{dsl:c:solving}
+
+Once a policy is specified, it is necessary to supply the actual \cc{Component}
+instances and other contextual data. These are usually enclosed in a so-called
+\textit{scenario class}.
+
+In terms of code, the scenario class is a plain class and does not need to implement any
+particular traits. Its purpose is code organization: it is a good practice to keep the
+policy definition (i.e., the hierarchy of \cc{Ensemble}s) in the same scope with the
+required context information. Having the context encapsulated within a class enables
+use-cases such as multiple instances of the same policy for different buildings.
+
+By convention, a \textit{policy instance} is stored in an attribute named \cc{policy}.
+
+The policy instance, created with \cc{Policy.root} call, provides access to the
+framework's solving functionality. The most basic feature is the \cc{resolve()} method,
+which performs the computation, assigns members to roles, and generates access control
+rules. The solution can be examined through the \cc{instance} member, which is a
+reference to the instance of the root ensemble. The rules can be accessed through the
+\cc{actions} member or queried via the \cc{allows()} method.
+
+The framework does not monitor the situation continuously. The solution generated with
+\cc{resolve()} is valid for the situation at the time it was called. If the situation
+changes, component knowledge updates, etc., the user of the framework is responsible for
+calling \cc{resolve()} again.
+
+Every call to \cc{resolve()} runs from scratch. Previously established ensembles are
+dissolved and members are assigned to roles without consideration for previous
+assignments. This matches the operation of ensemble-based systems: ensembles are loose
+coalitions that form and re-form based on current conditions. For handling of
+persistence, refer to subsection~\ref{dsl:c:notifications}.
+
+If no utility functions are specified, \cc{resolve()} will find and apply the first
+solution that satisfies all the constraints. When utility functions are present, it will
+find and apply a solution with the highest utility.
+
+It is also possible to iterate over possible solutions manually. The \cc{init()} method
+will reset solver state. After that, every call to \cc{solve()} will find a new
+solution, viewable through \cc{instance}, or return \cc{false} if no more solutions are
+found. Finally, a call to \cc{commit()} will apply access control rules from the current
+solution.
+
+The behavior is slightly different with utility functions; there is an added constraint
+that each new solution must have higher utility than the one before it. That means that
+it will not be possible to examine every valid solution, and the computation will stop
+at the first solution that cannot be improved. Of course, finding out that a particular
+solution cannot be improved might take a long time.
+
+%%%
+
+\subsection{Time Limits}
+\label{dsl:c:time}
+
+Some security policies can have an exponential number of solutions. Absent other
+constraints, there are $2^N$ possible results of \cc{subsetOf} on $N$ members. Finding a
+solution with maximum utility could therefore take a very long time.
+
+To manage this issue, it is possible to configure a time limit after which the search
+stops. As explained in the previous section, an optimizing solver iterates through valid
+solutions, searching for those with increasing utility. By setting a time limit, we are
+effectively declaring that we are interested not in the optimal solution, but the best
+that can be found inside the limit.
+
+Time limits are most useful in scenarios with utility expressions. They provide little
+benefit when iterating over all valid solutions, as the search can usually be stopped
+simply by not requesting another solution.
+
+An optional parameter to \cc{init()} or \cc{resolve()} specifies a time limit in
+milliseconds. The countdown starts at the time the method is called, and carries across
+calls to \cc{solve()}. If the time limit expires while \cc{solve()} is running, it will
+stop the computation and return false, and all subsequent calls will also return false
+--- same as if no more solutions can be found.
+
+%%%
+
+\subsection{Access Control}
+\label{dsl:c:access}
+
+When the scenario is solved and component assignments are known, the runtime emits
+specified access control rules. There are two available functions: \cc{allow} and
+\cc{deny}. Both take three arguments: actor, action and subject. Actors and subjects can
+be components, collections of components, or roles. Action must be a string.
+
+Specifying a collection of actors or subjects is the same as specifying each actor and
+each subject one by one. Specifying a role applies the rule to selected members of that
+role.
+
+If the ensemble is active, access control directives will be emitted. The framework
+takes a default-deny approach. If a triplet does not exist in emitted directives, the
+permission is denied. If an \cc{allow} triplet exists, the permission is granted, unless
+a \cc{deny} triplet also exists. This way, it is possible to grant a~wide permission in
+an ensemble, but refine it in a sub-ensemble or a different situation-specific ensemble.
+
+%%%
+
+\subsection{Notifications and Persistence}
+\label{dsl:c:notifications}
+
+Using the function \cc{notify}, it is possible to attach messages to components. This is
+the only way the framework can affect components (which are usually autonomous entities
+beyond our control). The notification feature serves two purposes.
+
+First, it is possible to query the notifications inside an ensemble. This way it is
+possible to persist earlier configurations. Consider this example:
+
+\begin{lstlisting}[
+    label=lst:notify,
+    style=ensembles,
+]
+case class Reservation(room: Room) extends Notification
+
+class SeatReservations(room: Room) extends Ensemble {
+  val alreadyReserved = workers.filter(_.notified(Reservation(room)))
+  val newlyReserved = oneOf(workers.filter(_.askingForReservation))
+
+  allow(alreadyReserved, "enter", room)
+  allow(newlyReserved, "enter", room)
+  notify(newlyReserved, Reservation(room))
+}
+\end{lstlisting}
+
+Workers that have reserved seats in previous runs will still be granted the \cc{"enter"}
+permission on subsequent runs. If we didn't attach the notification, they would lose the
+permission when the solution is rerun.
+
+Second, a notification action is recorded as part of the generated access control rules.
+Users of the system can listen for these notification actions and forward them to
+components. This can be useful to, e.g., send a message to a worker's smartphone, to
+inform them about their seat reservation.
+
+Notification messages must implement trait \cc{Notification}. It is useful to define
+them as case classes, so that it is possible to filter them by value, as demonstrated in
+the example.
+

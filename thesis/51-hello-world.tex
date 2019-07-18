@@ -1,0 +1,86 @@
+\section{Hello, World!}
+\label{dsl:hello}
+
+The following code snippet describes a simple ensemble with one member --- the
+\lstinline{greeter}, who is granted the \lstinline{"greet"} permission for each of
+\lstinline{people}.
+
+\begin{lstlisting}[
+    label=lst:hello,
+    style=ensembles,
+]
+class Person(name: String) extends Component { |\label{lst:hello:component}|
+  name(name)
+}
+
+class SimpleScenario(val people: Seq[Person]) { |\label{lst:hello:model}|
+
+  class HelloWorld extends Ensemble { |\label{lst:hello:ensemble}|
+    val greeter = oneOf(people) |\label{lst:hello:role}|
+
+    allow(greeter, "greet", people) |\label{lst:hello:grant}|
+  }
+
+  val policy = Policy.root(new HelloWorld) |\label{lst:hello:root}|
+}
+\end{lstlisting}
+
+Line~\ref{lst:hello:component} defines a very simple component --- a person with a name.
+
+Line~\ref{lst:hello:model} defines a scenario class. We use scenario classes to enclose
+the ensemble definitions and related data. In this case, it's the list of
+\lstinline{people} on which our ensemble will be operating.
+
+Line~\ref{lst:hello:ensemble} defines a root ensemble, and line~\ref{lst:hello:role}
+specifies a \lstinline{greeter} role, which is \lstinline{oneOf} the \lstinline{people}
+in this scenario.
+
+With line~\ref{lst:hello:grant} we grant the selected \lstinline{greeter} the permission
+to perform action \lstinline{"greet"} on any of the \lstinline{people}. Actions are
+specified as strings.
+
+Finally, line~\ref{lst:hello:root} sets up a new instance of the \lstinline{HelloWorld}
+ensemble as a root. This tells the solver where to start.
+
+\bigskip
+
+We have specified our scenario, but the code above doesn't actually \textit{do} anything.
+We need a way to execute it and provide the list of people. Let's create a companion
+object:
+
+\begin{lstlisting}[
+    label=lst:hello-runner,
+    style=ensembles,
+    firstnumber=15,
+]
+object SimpleScenario {
+  val Names = Seq("Roland", "Lilith", "Mordecai", "Brick")
+
+  def main(args: Array[String]): Unit = {
+    val people = for (name <- Names) yield new Person(name)
+    val scenario = new SimpleScenario(people) |\label{lst:hello-runner:instance}|
+
+    scenario.policy.resolve() |\label{lst:hello-runner:resolve}|
+    for (action <- scenario.policy.actions) println(action) |\label{lst:hello-runner:output}|
+  }
+}
+\end{lstlisting}
+
+The \lstinline{main} function generates a list of \lstinline{Person} instances, which is
+then used to instantiate the scenario on line~\ref{lst:hello-runner:instance}. The
+\lstinline{resolve} call on line~\ref{lst:hello-runner:resolve} instructs the framework
+to find and apply the first solution. Line~\ref{lst:hello-runner:output} prints out all
+permission grants.
+
+When the program is executed, its output will look like this:
+
+\begin{lstlisting}[style=output]
+AllowAction(<Component:Roland>,greet,<Component:Roland>)
+AllowAction(<Component:Roland>,greet,<Component:Lilith>)
+AllowAction(<Component:Roland>,greet,<Component:Mordecai>)
+AllowAction(<Component:Roland>,greet,<Component:Brick>)
+\end{lstlisting}
+
+We can see that the solver selected the first \lstinline{Person} to be a greeter,
+and granted them permission to perform the \lstinline{"greet"} action on all the other
+\lstinline{Person}s.
