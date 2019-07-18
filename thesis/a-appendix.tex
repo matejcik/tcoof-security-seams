@@ -1,16 +1,23 @@
 \chapter{Data Archive Contents}
+\label{appendix}
 
 The data archive accompanying this work is a copy of the \cc{tcoof-trust} GitHub
 repository. Its up-to-date version can always be found at the following URL:
 \href{https://github.com/matejcik/tcoof-trust}{\ttfamily https://github.com/matejcik/tcoof-trust}
 
-The only additional content in the archive is the \cc{apidoc} directory, which contains
-the generated Scaladoc API documentation. In a Git checkout, the API docs can be
-generated with the command \dop{sbt doc}.
+The code uses the Scala Build Tool (SBT) for building, running, and generating
+documentation. Please refer to \cc{README.md} for details.
+
+To run the example code, use \cc{sbt run}.
+
+To build the API documentation in HTML format, use \cc{sbt doc}. The resulting
+documentation will be stored in \cc{target/scala-2.12/api}.
+
+To run the unit test suite, use \cc{sbt test}.
+
+\medskip
 
 The following is a list of paths in the archive and descriptions of their contents.
-
-\bigskip
 
 \newenvironment{filepath}%
     {%
@@ -33,20 +40,9 @@ build.sbt\\
 project/
 \end{filepath}
 \begin{dsldesc}
-    SBT (Scala Build Tool) build script and build properties. These files are required
-    for building the project with \cc{sbt}, and for importing into IntelliJ IDEA, the
-    preferred Scala IDE.
-\end{dsldesc}
-
-\begin{filepath}
-apidoc/
-\end{filepath}
-\begin{dsldesc}
-    Scaladoc API documentation in HTML format.
-
-    The limitation of the generated API documentation is that it excludes non-public
-    members. Unfortunately, that cannot be avoided with the Scaladoc tool. See the
-    source code for documentation comments.
+    SBT build script and build properties. These files are required for building the
+    project with \cc{sbt}, and for importing into IntelliJ IDEA, the preferred Scala
+    IDE.
 \end{dsldesc}
 
 \begin{filepath}
